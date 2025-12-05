@@ -31,7 +31,7 @@ psql -d weather_dressing -f ../schema_postgres.sql
 在 `backend` 目录创建 `.env` 文件：
 
 ```env
-PORT=3000
+PORT=3300
 NODE_ENV=development
 DB_HOST=localhost
 DB_PORT=5432
@@ -58,8 +58,8 @@ npm run dev
 ### 5. 访问应用
 
 - 🌐 前端：http://localhost:5173
-- 🔧 后端API：http://localhost:3000
-- ❤️ 健康检查：http://localhost:3000/health
+- 🔧 后端API：http://localhost:3300
+- ❤️ 健康检查：http://localhost:3300/health
 
 ### 6. 测试账号
 
@@ -78,7 +78,7 @@ npm run dev
 
 ### 端口被占用
 
-- 后端端口（3000）：修改 `backend/.env` 中的 `PORT`
+- 后端端口（3300）：修改 `backend/.env` 中的 `PORT`
 - 前端端口（5173）：修改 `frontend/vite.config.js` 中的 `server.port`
 
 ### 天气API无数据

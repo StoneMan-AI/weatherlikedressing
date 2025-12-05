@@ -136,7 +136,7 @@ npm run dev
 6. **访问应用**
 
 - 前端：http://localhost:5173
-- 后端API：http://localhost:3000
+- 后端API：http://localhost:3300
 
 ## API 文档
 

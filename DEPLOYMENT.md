@@ -82,8 +82,8 @@ NODE_ENV=production
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=weather_dressing
-DB_USER=weather_user
-DB_PASSWORD=your_secure_password
+DB_USER=postgres
+DB_PASSWORD=12345
 
 JWT_SECRET=sadjfhjk43879sdfkln34w8
 
@@ -113,6 +113,12 @@ server {
     listen 80;
     server_name adddesigngroup.com www.adddesigngroup.com;
 
+    # ⚠️ 重要：Let's Encrypt验证路径必须在最前面，不能重定向到index.html
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        try_files $uri =404;
+    }
+
     # 后端 API
     location /api {
         proxy_pass http://localhost:3300;
@@ -124,23 +130,48 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 75s;
     }
 
-    # 前端静态文件
-    location / {
-        root /var/www/weather-app/frontend/dist;
-        try_files $uri $uri/ /index.html;
-        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    # 健康检查端点
+    location /health {
+        proxy_pass http://localhost:3300/health;
+        proxy_set_header Host $host;
+        access_log off;
     }
 
-    # 静态资源缓存
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
+    # 静态资源缓存（必须在location /之前）
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
         root /var/www/weather-app/frontend/dist;
         expires 1y;
         add_header Cache-Control "public, immutable";
+        access_log off;
     }
+
+    # 前端静态文件（SPA路由处理，放在最后）
+    location / {
+        root /var/www/weather-app/frontend/dist;
+        try_files $uri $uri/ /index.html;
+        
+        # index.html不缓存
+        location = /index.html {
+            add_header Cache-Control "no-cache, no-store, must-revalidate";
+            add_header Pragma "no-cache";
+            add_header Expires "0";
+        }
+    }
+
+    # 日志配置
+    access_log /var/log/nginx/weather-app-access.log;
+    error_log /var/log/nginx/weather-app-error.log;
 }
 ```
+
+**⚠️ 重要提示：**
+- `.well-known/acme-challenge/` 路径必须在最前面，用于Let's Encrypt SSL证书验证
+- location块的顺序很重要，更具体的匹配应该在前面
+- 必须创建certbot目录：`sudo mkdir -p /var/www/certbot && sudo chown -R www-data:www-data /var/www/certbot`
 
 启用配置：
 ```bash
