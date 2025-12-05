@@ -57,11 +57,11 @@ sudo apt-get install -y nodejs
 
 ```bash
 # 创建应用目录
-sudo mkdir -p /var/www/weather-app
-sudo chown $USER:$USER /var/www/weather-app
+sudo mkdir -p /var/www/weatherlikedressing
+sudo chown $USER:$USER /var/www/weatherlikedressing
 
 # 克隆或上传代码
-cd /var/www/weather-app
+cd /var/www/weatherlikedressing
 
 # 安装依赖
 cd backend
@@ -73,7 +73,7 @@ sudo npm install -g pm2
 
 #### 3.3 配置环境变量
 
-创建 `/var/www/weather-app/backend/.env`：
+创建 `/var/www/weatherlikedressing/backend/.env`：
 
 ```env
 PORT=3300
@@ -98,7 +98,7 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 #### 3.4 启动后端服务
 
 ```bash
-cd /var/www/weather-app/backend
+cd /var/www/weatherlikedressing/backend
 pm2 start server.js --name weather-backend
 pm2 save
 pm2 startup  # 设置开机自启
@@ -106,7 +106,7 @@ pm2 startup  # 设置开机自启
 
 #### 3.5 配置 Nginx 反向代理
 
-创建 `/etc/nginx/sites-available/weather-app`：
+创建 `/etc/nginx/sites-available/weatherlikedressing`：
 
 ```nginx
 server {
@@ -143,7 +143,7 @@ server {
 
     # 静态资源缓存（必须在location /之前）
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-        root /var/www/weather-app/frontend/dist;
+        root /var/www/weatherlikedressing/frontend/dist;
         expires 1y;
         add_header Cache-Control "public, immutable";
         access_log off;
@@ -151,7 +151,7 @@ server {
 
     # 前端静态文件（SPA路由处理，放在最后）
     location / {
-        root /var/www/weather-app/frontend/dist;
+        root /var/www/weatherlikedressing/frontend/dist;
         try_files $uri $uri/ /index.html;
         
         # index.html不缓存
@@ -163,8 +163,8 @@ server {
     }
 
     # 日志配置
-    access_log /var/log/nginx/weather-app-access.log;
-    error_log /var/log/nginx/weather-app-error.log;
+    access_log /var/log/nginx/weatherlikedressing-access.log;
+    error_log /var/log/nginx/weatherlikedressing-error.log;
 }
 ```
 
@@ -175,7 +175,7 @@ server {
 
 启用配置：
 ```bash
-sudo ln -s /etc/nginx/sites-available/weather-app /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/weatherlikedressing /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl restart nginx
 ```
@@ -185,7 +185,7 @@ sudo systemctl restart nginx
 #### 4.1 构建前端应用
 
 ```bash
-cd /var/www/weather-app/frontend
+cd /var/www/weatherlikedressing/frontend
 npm install
 npm run build
 ```
@@ -329,7 +329,7 @@ pm2 logs weather-backend
 sudo netstat -tlnp | grep 3000
 
 # 检查环境变量
-cd /var/www/weather-app/backend
+cd /var/www/weatherlikedressing/backend
 cat .env
 ```
 
@@ -366,7 +366,7 @@ sudo tail -f /var/log/nginx/error.log
 
 ```bash
 # 恢复代码
-cd /var/www/weather-app
+cd /var/www/weatherlikedressing
 git checkout <previous-version>
 
 # 重新安装依赖和构建

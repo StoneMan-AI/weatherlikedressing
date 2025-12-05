@@ -12,7 +12,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # 备份当前配置
-CONFIG_FILE="/etc/nginx/sites-available/weather-app"
+CONFIG_FILE="/etc/nginx/sites-available/weatherlikedressing"
 if [ -f "$CONFIG_FILE" ]; then
     BACKUP_FILE="${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
     cp "$CONFIG_FILE" "$BACKUP_FILE"

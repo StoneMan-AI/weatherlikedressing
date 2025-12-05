@@ -28,7 +28,7 @@ server {
 
     # 静态资源 - 带缓存
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-        root /var/www/weather-app/frontend/dist;
+        root /var/www/weatherlikedressing/frontend/dist;
         expires 1y;
         add_header Cache-Control "public, immutable";
         access_log off;
@@ -43,7 +43,7 @@ server {
 
     # 前端应用 - SPA路由处理
     location / {
-        root /var/www/weather-app/frontend/dist;
+        root /var/www/weatherlikedressing/frontend/dist;
         try_files $uri $uri/ /index.html;
         
         # 禁用index.html的缓存
@@ -55,8 +55,8 @@ server {
     }
 
     # 日志配置
-    access_log /var/log/nginx/weather-app-access.log;
-    error_log /var/log/nginx/weather-app-error.log;
+    access_log /var/log/nginx/weatherlikedressing-access.log;
+    error_log /var/log/nginx/weatherlikedressing-error.log;
 }
 
 # HTTPS配置（SSL证书配置后启用）
@@ -98,7 +98,7 @@ server {
 
     # 静态资源
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-        root /var/www/weather-app/frontend/dist;
+        root /var/www/weatherlikedressing/frontend/dist;
         expires 1y;
         add_header Cache-Control "public, immutable";
         access_log off;
@@ -113,7 +113,7 @@ server {
 
     # 前端应用
     location / {
-        root /var/www/weather-app/frontend/dist;
+        root /var/www/weatherlikedressing/frontend/dist;
         try_files $uri $uri/ /index.html;
         
         location = /index.html {
@@ -123,8 +123,8 @@ server {
         }
     }
 
-    access_log /var/log/nginx/weather-app-ssl-access.log;
-    error_log /var/log/nginx/weather-app-ssl-error.log;
+    access_log /var/log/nginx/weatherlikedressing-ssl-access.log;
+    error_log /var/log/nginx/weatherlikedressing-ssl-error.log;
 }
 
 # HTTP重定向到HTTPS（SSL配置后启用）
