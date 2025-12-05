@@ -1,0 +1,33 @@
+.health-alerts {
+  margin-bottom: var(--spacing-lg);
+  background: #FFF3E0;
+  border-left: 4px solid #FF9800;
+}
+
+.health-alerts-title {
+  color: #E65100;
+  font-size: 18px;
+  margin-bottom: var(--spacing-md);
+}
+
+.health-messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.health-message {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: white;
+  border-radius: var(--border-radius);
+  color: var(--text-dark);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.health-disclaimer {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  color: var(--text-gray);
+}

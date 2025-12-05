@@ -1,0 +1,178 @@
+{
+  "meta": {
+    "version": "1.0",
+    "created": "2025-12-04",
+    "author": "自动生成",
+    "notes": "基于规则的体感计算与穿衣层映射，适配中国/海外/离线。"
+  },
+  "inputs": [
+    "timestamp",
+    "location",
+    "temperature_c",
+    "relative_humidity",
+    "wind_m_s",
+    "gust_m_s",
+    "uv_index",
+    "precip_prob",
+    "aqi",
+    "is_outdoor",
+    "activity_level",
+    "user_profile"
+  ],
+  "weights": {
+    "base_temp_reference": 15.0,
+    "temp_multiplier": 2.0,
+    "wind_threshold_mps": 1.5,
+    "wind_multiplier": 3.0,
+    "sun_score_default": 3.0,
+    "humidity_multiplier_cold": 1.2,
+    "humidity_multiplier_hot": 0.8
+  },
+  "user_profile_adjustments": {
+    "age_groups": {
+      "child_0_2": -6,
+      "child_3_6": -4,
+      "child_7_12": -2,
+      "adult": 0,
+      "elderly_65_plus": -3
+    },
+    "sensitivity": {
+      "none": 0,
+      "cold": -8,
+      "hot": 8
+    },
+    "conditions": {
+      "rheumatism": -3,
+      "asthma": 0
+    }
+  },
+  "compute": {
+    "T_score": "(temperature_c - base_temp_reference) * temp_multiplier",
+    "RH_score": "if(temperature_c <= 15.0, -((relative_humidity - 50.0)/10.0) * humidity_multiplier_cold, ((relative_humidity - 50.0)/10.0) * humidity_multiplier_hot)",
+    "Wind_score": "if(wind_m_s <= wind_threshold_mps, 0, - (wind_m_s - wind_threshold_mps) * wind_multiplier)",
+    "Sun_score": "if(is_outdoor == true && uv_index >= 3, sun_score_default, 0)",
+    "Activity_adj": "if(activity_level == 'low', 0, (activity_level == 'moderate') ? 2 : 5)",
+    "User_adj": "sum of applicable user_profile adjustments (age + sensitivity + conditions)",
+    "ComfortScore": "T_score + RH_score + Wind_score + Sun_score + Activity_adj + User_adj"
+  },
+  "mappings": {
+    "layers": [
+      {
+        "min_score": 12,
+        "label": "warm_light",
+        "layers": ["短袖/薄长袖","无需中层","轻薄外套（可选）"],
+        "accessories": ["太阳镜/遮阳帽（若UV高）"],
+        "notes": "适合温暖天或有明显日照时短时间户外活动"
+      },
+      {
+        "min_score": 3,
+        "label": "mild",
+        "layers": ["薄长袖","轻毛衣","夹克/薄羽绒"],
+        "accessories": ["薄围巾（建议）"],
+        "notes": "日常外出保守建议"
+      },
+      {
+        "min_score": -7,
+        "label": "cool",
+        "layers": ["保暖打底（羊毛/功能性）","羊毛衫/抓绒","软壳/羽绒外套"],
+        "accessories": ["围巾/手套/保暖袜"],
+        "notes": "老人和儿童建议多带一层"
+      },
+      {
+        "min_score": -20,
+        "label": "cold",
+        "layers": ["保暖内衣/羊毛打底","羊毛衫+羽绒马甲","中厚羽绒服"],
+        "accessories": ["帽子/手套/保暖袜"],
+        "notes": "尽量缩短户外停留时间"
+      },
+      {
+        "min_score": -999,
+        "label": "extreme_cold",
+        "layers": ["全套厚羽绒+功能性保暖内衣"],
+        "accessories": ["尽量不出门/紧急保暖包"],
+        "notes": "极端预警级别，优先提示减少外出"
+      }
+    ]
+  },
+  "health_rules": [
+    {
+      "id": "cold_wind_risk",
+      "condition": "temperature_c <= 5 && wind_m_s >= 5",
+      "message": "低温且大风，感冒和呼吸道感染风险上升，建议戴口罩/围巾并减少外出"
+    },
+    {
+      "id": "damp_rheumatism_risk",
+      "condition": "relative_humidity >= 70 && temperature_c <= 12",
+      "message": "湿冷天气，可能诱发风湿/关节不适，建议防潮保暖并适当活动"
+    },
+    {
+      "id": "high_uv_risk",
+      "condition": "uv_index >= 6 && is_outdoor == true",
+      "message": "紫外线强，建议全面防晒并避免中午长时间外出"
+    },
+    {
+      "id": "aqi_sensitive",
+      "condition": "aqi >= 151",
+      "message": "空气质量不佳，敏感人群请减少户外活动并佩戴合适口罩"
+    },
+    {
+      "id": "heat_humidity_risk",
+      "condition": "temperature_c >= 30 && relative_humidity >= 70",
+      "message": "高温高湿，中暑/脱水风险，建议轻薄透气衣物、补水、避免高强度活动"
+    },
+    {
+      "id": "rain_alert",
+      "condition": "precip_prob > 50",
+      "message": "预计有降雨，建议带雨具"
+    }
+  ],
+  "push_triggers": [
+    {
+      "id": "next_day_push",
+      "type": "scheduled",
+      "time": "user_preferred_evening",
+      "payload": "compute next-day 08:00 recommendation"
+    },
+    {
+      "id": "temp_drop",
+      "type": "delta",
+      "metric": "temperature_c",
+      "window_hours": 24,
+      "threshold": 5,
+      "direction": "decrease",
+      "payload": "气温骤降提醒"
+    },
+    {
+      "id": "humidity_jump",
+      "type": "delta",
+      "metric": "relative_humidity",
+      "window_hours": 3,
+      "threshold": 20,
+      "payload": "湿度骤增提醒"
+    },
+    {
+      "id": "wind_increase",
+      "type": "delta",
+      "metric": "wind_m_s",
+      "window_hours": 3,
+      "threshold": 3,
+      "min_value": 6,
+      "payload": "风力突增提醒"
+    },
+    {
+      "id": "extreme_weather",
+      "type": "api_flag",
+      "flag_keys": ["severe_alert"],
+      "payload": "极端天气高优先通知"
+    }
+  ],
+  "output_template": {
+    "comfort_score": "{ComfortScore}",
+    "recommendation_layers": "{layers}",
+    "accessories": "{accessories}",
+    "reason_summary": "计算明细：T_score={T_score}, RH_score={RH_score}, Wind_score={Wind_score}, User_adj={User_adj}",
+    "health_messages": ["applied health_rules messages"],
+    "urgency": "{urgency}",
+    "confidence": "{confidence_score}"
+  }
+}

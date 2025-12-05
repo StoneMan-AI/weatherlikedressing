@@ -1,0 +1,94 @@
+.weather-card {
+  margin-bottom: var(--spacing-lg);
+}
+
+.weather-header h2 {
+  font-size: 20px;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-dark);
+}
+
+.weather-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+}
+
+.temperature-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.temperature {
+  font-size: 64px;
+  font-weight: 700;
+  color: var(--primary-color);
+  line-height: 1;
+}
+
+.weather-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs) 0;
+}
+
+.detail-label {
+  color: var(--text-gray);
+  font-size: 14px;
+}
+
+.detail-value {
+  color: var(--text-dark);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.aqi-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aqi-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-lg);
+  background: var(--primary-light);
+  border-radius: var(--border-radius);
+  width: 100%;
+}
+
+.aqi-label {
+  font-size: 14px;
+  color: var(--text-gray);
+}
+
+.aqi-value {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.aqi-number {
+  font-size: 16px;
+  color: var(--text-gray);
+}
+
+@media (max-width: 768px) {
+  .weather-content {
+    grid-template-columns: 1fr;
+  }
+
+  .temperature {
+    font-size: 48px;
+  }
+}

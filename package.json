@@ -1,0 +1,13 @@
+{
+  "name": "weather-dressing-app",
+  "version": "1.0.0",
+  "description": "智能穿衣指导应用 - 全栈项目",
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
+  },
+  "keywords": ["weather", "dressing", "recommendation"],
+  "author": "",
+  "license": "MIT"
+}
