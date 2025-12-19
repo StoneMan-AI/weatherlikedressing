@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import RecommendationCard from '../components/RecommendationCard';
 import WeatherCard from '../components/WeatherCard';
@@ -27,7 +27,7 @@ const Home = () => {
   const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0); // 0: 第一屏, 1: 第二屏
-  const [visitedSlides, setVisitedSlides] = useState(new Set([0])); // 记录已访问的屏幕
+  const visitedSlidesRef = useRef(new Set([0])); // 记录已访问的屏幕（使用ref避免重新渲染）
   
   // 用于取消请求的AbortController
   const abortControllerRef = useRef(null);
@@ -245,47 +245,47 @@ const Home = () => {
     );
   }
 
-  // 保存当前屏幕的滚动位置
-  const saveCurrentSlideScroll = () => {
+
+  // 恢复屏幕的滚动位置（使用useCallback稳定函数引用）
+  const restoreSlideScroll = useCallback((slideIndex) => {
+    // 使用 requestAnimationFrame 确保 DOM 更新完成后再滚动
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const slideRef = getSlideRef(slideIndex);
+        const slideElement = slideRef.current;
+        if (slideElement) {
+          if (visitedSlidesRef.current.has(slideIndex)) {
+            // 如果已访问过，恢复滚动位置
+            slideElement.scrollTop = slideScrollPositions.current[slideIndex] || 0;
+          } else {
+            // 如果未访问过，滚动到顶部
+            slideElement.scrollTop = 0;
+            visitedSlidesRef.current.add(slideIndex);
+          }
+        }
+      });
+    });
+  }, []);
+
+  // 切换屏幕（使用useCallback稳定函数引用）
+  const handleSlideChange = useCallback((newSlide) => {
+    if (newSlide === currentSlide) return;
+    
+    // 保存当前屏幕的滚动位置
     const currentSlideRef = getSlideRef(currentSlide);
     const currentSlideElement = currentSlideRef.current;
     if (currentSlideElement) {
       slideScrollPositions.current[currentSlide] = currentSlideElement.scrollTop;
     }
-  };
-
-  // 恢复屏幕的滚动位置
-  const restoreSlideScroll = (slideIndex) => {
-    const slideRef = getSlideRef(slideIndex);
-    const slideElement = slideRef.current;
-    if (slideElement) {
-      // 使用 setTimeout 确保 DOM 更新完成后再滚动
-      setTimeout(() => {
-        if (visitedSlides.has(slideIndex)) {
-          // 如果已访问过，恢复滚动位置
-          slideElement.scrollTop = slideScrollPositions.current[slideIndex];
-        } else {
-          // 如果未访问过，滚动到顶部
-          slideElement.scrollTop = 0;
-          setVisitedSlides(prev => new Set([...prev, slideIndex]));
-        }
-      }, 100);
-    }
-  };
-
-  // 切换屏幕
-  const handleSlideChange = (newSlide) => {
-    if (newSlide === currentSlide) return;
-    
-    // 保存当前屏幕的滚动位置
-    saveCurrentSlideScroll();
     
     // 切换屏幕
     setCurrentSlide(newSlide);
     
-    // 恢复目标屏幕的滚动位置
-    restoreSlideScroll(newSlide);
-  };
+    // 恢复目标屏幕的滚动位置（延迟执行，避免在setState中调用setState）
+    setTimeout(() => {
+      restoreSlideScroll(newSlide);
+    }, 0);
+  }, [currentSlide, restoreSlideScroll]);
 
   // 处理触摸滑动（只在滑动容器内有效）
   const handleTouchStart = (e) => {
@@ -328,10 +328,11 @@ const Home = () => {
     if (!slideElement) return;
 
     const handleScroll = () => {
+      // 使用ref保存，避免触发重新渲染
       slideScrollPositions.current[currentSlide] = slideElement.scrollTop;
     };
 
-    slideElement.addEventListener('scroll', handleScroll);
+    slideElement.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       slideElement.removeEventListener('scroll', handleScroll);
     };
