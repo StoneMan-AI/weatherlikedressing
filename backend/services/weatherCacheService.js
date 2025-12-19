@@ -157,14 +157,28 @@ class WeatherCacheService {
    * 获取天气数据（优先从缓存，否则从API获取）
    */
   async getWeatherData(latitude, longitude, timezone = 'Asia/Shanghai', forecastDays = 15) {
-    // 记录活跃地区
-    await this.recordActiveRegion(latitude, longitude, timezone);
+    // 记录活跃地区（如果失败不影响主流程）
+    try {
+      await this.recordActiveRegion(latitude, longitude, timezone);
+    } catch (error) {
+      console.warn('Failed to record active region (table may not exist):', error.message);
+    }
 
-    // 尝试从缓存获取
-    const cached = await this.getCachedWeather(latitude, longitude, timezone);
+    // 尝试从缓存获取（如果表不存在，返回null）
+    let cached = null;
+    try {
+      cached = await this.getCachedWeather(latitude, longitude, timezone);
+    } catch (error) {
+      console.warn('Failed to get cached weather (table may not exist):', error.message);
+      cached = null;
+    }
     
     if (cached) {
-      await this.logWeatherRequest(latitude, longitude, timezone, 'cache');
+      try {
+        await this.logWeatherRequest(latitude, longitude, timezone, 'cache');
+      } catch (error) {
+        // 忽略日志记录错误
+      }
       return {
         ...cached.weather_data,
         aqi: cached.aqi,
@@ -182,17 +196,26 @@ class WeatherCacheService {
         forecastDays
       );
 
-      // 保存到缓存
-      await this.saveWeatherCache(
-        latitude,
-        longitude,
-        timezone,
-        weatherData,
-        weatherData.aqi,
-        weatherData.aqi_status
-      );
+      // 尝试保存到缓存（如果表不存在，忽略错误）
+      try {
+        await this.saveWeatherCache(
+          latitude,
+          longitude,
+          timezone,
+          weatherData,
+          weatherData.aqi,
+          weatherData.aqi_status
+        );
+      } catch (error) {
+        console.warn('Failed to save weather cache (table may not exist):', error.message);
+        // 继续执行，不抛出错误
+      }
 
-      await this.logWeatherRequest(latitude, longitude, timezone, 'api');
+      try {
+        await this.logWeatherRequest(latitude, longitude, timezone, 'api');
+      } catch (error) {
+        // 忽略日志记录错误
+      }
       
       return {
         ...weatherData,

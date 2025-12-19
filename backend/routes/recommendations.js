@@ -153,7 +153,11 @@ router.post('/calculate', async (req, res) => {
     });
   } catch (error) {
     console.error('Error in /recommendations/calculate:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      error: error.message || '获取推荐失败，请稍后重试',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
