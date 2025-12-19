@@ -11,68 +11,145 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
 
   const { hourly, daily, current } = weatherData;
 
-  // 获取当前时间（考虑时区）
-  const getCurrentTimeInTimezone = useMemo(() => {
+  // 获取目标时区今天的0点时间戳（ISO字符串格式，用于比较）
+  const getTodayStartInTimezone = useMemo(() => {
     const now = new Date();
-    // 将当前时间转换为目标时区的时间
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: false
-    });
-    const parts = formatter.formatToParts(now);
-    const hour = parseInt(parts.find(p => p.type === 'hour').value);
-    const minute = parseInt(parts.find(p => p.type === 'minute').value);
-    
-    // 创建目标时区的当前时间对象（今天0点 + 小时 + 分钟）
-    const today = new Date();
-    const tzToday = new Date(today.toLocaleString('en-US', { timeZone: timezone }));
-    tzToday.setHours(hour, minute, 0, 0);
-    
-    return tzToday;
+    // 获取目标时区今天的日期字符串（YYYY-MM-DD）
+    const dateStr = now.toLocaleDateString('en-CA', { timeZone: timezone }); // en-CA格式: YYYY-MM-DD
+    // 创建目标时区今天0点的ISO字符串
+    return `${dateStr}T00:00:00`;
   }, [timezone]);
 
-  // 获取当天0点到24点的小时数据（24小时）
+  // 获取目标时区的当前时间（ISO字符串格式）
+  const getCurrentTimeInTimezone = useMemo(() => {
+    const now = new Date();
+    // 获取目标时区的当前时间字符串
+    const dateStr = now.toLocaleDateString('en-CA', { timeZone: timezone });
+    const timeStr = now.toLocaleTimeString('en-US', { 
+      timeZone: timezone,
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    return `${dateStr}T${timeStr}`;
+  }, [timezone]);
+
+  // 获取当天0点到24点的小时数据（24小时，0时到23时）
   const todayHours = useMemo(() => {
     if (!hourly || hourly.length === 0) return [];
     
-    // 找到今天0点对应的时间戳
-    const today = new Date();
-    const tzToday = new Date(today.toLocaleString('en-US', { timeZone: timezone }));
-    tzToday.setHours(0, 0, 0, 0);
+    const todayStartStr = getTodayStartInTimezone;
+    const todayStartDate = new Date(todayStartStr);
     
-    // 找到最接近今天0点的数据点
-    let startIndex = 0;
+    // 找到今天0点对应的数据点
+    let startIndex = -1;
     let minDiff = Infinity;
+    
     for (let i = 0; i < hourly.length; i++) {
-      const hourTime = new Date(hourly[i].timestamp);
-      const diff = Math.abs(hourTime.getTime() - tzToday.getTime());
-      if (diff < minDiff) {
-        minDiff = diff;
-        startIndex = i;
+      const hourTimeStr = hourly[i].timestamp;
+      const hourTime = new Date(hourTimeStr);
+      
+      // 检查是否是今天的数据（在同一天）
+      const hourDateStr = hourTime.toLocaleDateString('en-CA', { timeZone: timezone });
+      const todayDateStr = todayStartDate.toLocaleDateString('en-CA', { timeZone: timezone });
+      
+      if (hourDateStr === todayDateStr) {
+        // 找到0点的数据
+        const hour = hourTime.toLocaleTimeString('en-US', { 
+          timeZone: timezone,
+          hour12: false,
+          hour: '2-digit'
+        });
+        
+        if (hour === '00' || hour === '0') {
+          startIndex = i;
+          break;
+        }
+        
+        // 记录最接近0点的索引
+        const diff = Math.abs(hourTime.getTime() - todayStartDate.getTime());
+        if (diff < minDiff) {
+          minDiff = diff;
+          startIndex = i;
+        }
       }
     }
     
-    // 获取24小时的数据
-    return hourly.slice(startIndex, startIndex + 24);
-  }, [hourly, timezone]);
+    // 如果没找到今天的数据，尝试找最接近今天0点的
+    if (startIndex === -1) {
+      for (let i = 0; i < hourly.length; i++) {
+        const hourTime = new Date(hourly[i].timestamp);
+        const diff = Math.abs(hourTime.getTime() - todayStartDate.getTime());
+        if (diff < minDiff) {
+          minDiff = diff;
+          startIndex = i;
+        }
+      }
+    }
+    
+    // 如果还是没找到，使用第一个数据点
+    if (startIndex === -1) {
+      startIndex = 0;
+    }
+    
+    // 获取24小时的数据（0时到23时，共24个点）
+    const hours24 = hourly.slice(startIndex, startIndex + 24);
+    
+    // 如果数据不足24个，尝试从前面补充
+    if (hours24.length < 24) {
+      // 如果startIndex前面还有数据，尝试补充
+      if (startIndex > 0) {
+        const needed = 24 - hours24.length;
+        const before = hourly.slice(Math.max(0, startIndex - needed), startIndex);
+        return [...before, ...hours24].slice(-24);
+      }
+    }
+    
+    return hours24.length >= 24 ? hours24.slice(0, 24) : hours24;
+  }, [hourly, getTodayStartInTimezone, timezone]);
 
-  // 获取当前时间索引（在24小时数据中的位置）
+  // 获取当前时间索引（在24小时数据中的位置，0-23）
   const currentHourIndex = useMemo(() => {
     if (todayHours.length === 0) return 0;
     
-    const currentTime = getCurrentTimeInTimezone;
+    const currentTimeStr = getCurrentTimeInTimezone;
+    const currentTime = new Date(currentTimeStr);
+    const todayStartStr = getTodayStartInTimezone;
+    const todayStart = new Date(todayStartStr);
     
-    for (let i = 0; i < todayHours.length; i++) {
-      const hourTime = new Date(todayHours[i].timestamp);
-      // 如果这个小时的时间已经超过当前时间，返回前一个索引
-      if (hourTime > currentTime) {
-        return Math.max(0, i - 1);
+    // 计算当前时间距离今天0点的小时数
+    const hoursDiff = (currentTime.getTime() - todayStart.getTime()) / (1000 * 60 * 60);
+    
+    // 当前小时索引（0-23）
+    let currentHour = Math.floor(hoursDiff);
+    
+    // 确保索引在有效范围内
+    if (currentHour < 0) currentHour = 0;
+    if (currentHour >= todayHours.length) currentHour = todayHours.length - 1;
+    
+    // 验证：检查当前索引对应的数据点是否确实是过去的数据
+    if (currentHour < todayHours.length) {
+      const hourTime = new Date(todayHours[currentHour].timestamp);
+      const hourTimeStr = hourTime.toLocaleString('en-US', { 
+        timeZone: timezone,
+        hour12: false,
+        hour: '2-digit'
+      });
+      const currentHourStr = currentTime.toLocaleString('en-US', { 
+        timeZone: timezone,
+        hour12: false,
+        hour: '2-digit'
+      });
+      
+      // 如果数据点的时间已经超过当前时间，向前调整
+      if (hourTime > currentTime && currentHour > 0) {
+        currentHour = currentHour - 1;
       }
     }
-    return todayHours.length - 1;
-  }, [todayHours, getCurrentTimeInTimezone]);
+    
+    return currentHour;
+  }, [todayHours, getCurrentTimeInTimezone, getTodayStartInTimezone, timezone]);
 
   // 获取最高和最低温度（扩大范围，让波动不那么明显）
   const temperatures = todayHours.map(h => h.temperature_c);
@@ -134,11 +211,17 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
   // 生成过去时间的路径（虚线）
   const generatePastPath = (points, splitIndex) => {
     if (splitIndex <= 0 || splitIndex >= points.length) return '';
-    if (splitIndex === 1) return '';
+    if (points.length < 2) return '';
+    
+    // 如果splitIndex为0，没有过去的数据
+    if (splitIndex === 0) return '';
     
     let path = `M ${points[0].x} ${points[0].y}`;
     
-    for (let i = 0; i < splitIndex - 1; i++) {
+    // 绘制到当前时间点之前的所有点
+    for (let i = 0; i < splitIndex; i++) {
+      if (i + 1 >= points.length) break;
+      
       const current = points[i];
       const next = points[i + 1];
       const controlX1 = current.x + (next.x - current.x) / 2;
@@ -154,10 +237,28 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
 
   // 生成未来时间的路径（实线）
   const generateFuturePath = (points, splitIndex) => {
-    if (splitIndex < 0 || splitIndex >= points.length - 1) return '';
+    if (splitIndex < 0 || splitIndex >= points.length - 1) {
+      // 如果没有分割点，返回完整路径
+      if (points.length < 2) return '';
+      let path = `M ${points[0].x} ${points[0].y}`;
+      for (let i = 0; i < points.length - 1; i++) {
+        const current = points[i];
+        const next = points[i + 1];
+        const controlX1 = current.x + (next.x - current.x) / 2;
+        const controlY1 = current.y;
+        const controlX2 = current.x + (next.x - current.x) / 2;
+        const controlY2 = next.y;
+        path += ` C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${next.x} ${next.y}`;
+      }
+      return path;
+    }
     
+    if (points.length < 2) return '';
+    
+    // 从当前时间点开始绘制
     let path = `M ${points[splitIndex].x} ${points[splitIndex].y}`;
     
+    // 绘制从当前时间点到未来的所有点
     for (let i = splitIndex; i < points.length - 1; i++) {
       const current = points[i];
       const next = points[i + 1];
@@ -354,8 +455,11 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
           {/* X轴标签（0-24时） */}
           <div className="chart-x-axis">
             {[0, 6, 12, 18, 24].map((hour) => {
+              // 计算在24个数据点中的位置
               const index = hour === 24 ? todayHours.length - 1 : Math.floor((hour / 24) * (todayHours.length - 1));
-              const currentHour = getCurrentTimeInTimezone.getHours();
+              
+              // 获取当前小时（在目标时区）
+              const currentHour = Math.floor((getCurrentTimeInTimezone.getTime() - getTodayStartInTimezone.getTime()) / (1000 * 60 * 60));
               const isCurrentHour = hour <= currentHour && hour + 6 > currentHour;
               
               return (
