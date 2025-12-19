@@ -70,6 +70,10 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     if (!hourly || hourly.length === 0) return [];
     
     const todayStart = getTodayStartInTimezone;
+    const now = new Date();
+    
+    // 获取目标时区今天的日期字符串
+    const todayDateStr = now.toLocaleDateString('en-CA', { timeZone: timezone });
     
     // 找到今天0点对应的数据点
     let startIndex = -1;
@@ -81,38 +85,42 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
       
       // 检查是否是今天的数据（在同一天，基于目标时区）
       const hourDateStr = hourTime.toLocaleDateString('en-CA', { timeZone: timezone });
-      const todayDateStr = todayStart.toLocaleDateString('en-CA', { timeZone: timezone });
       
       if (hourDateStr === todayDateStr) {
-        // 找到0点的数据
-        const hour = hourTime.toLocaleTimeString('en-US', { 
+        // 获取这个数据点在目标时区的小时数
+        const hour = parseInt(hourTime.toLocaleTimeString('en-US', { 
           timeZone: timezone,
           hour12: false,
           hour: '2-digit'
-        });
+        }));
         
-        if (hour === '00' || hour === '0') {
+        // 找到0点的数据
+        if (hour === 0) {
           startIndex = i;
           break;
         }
         
-        // 记录最接近0点的索引
+        // 记录最接近0点的索引（但必须是今天的数据）
         const diff = Math.abs(hourTime.getTime() - todayStart.getTime());
-        if (diff < minDiff) {
+        if (diff < minDiff && diff < 24 * 60 * 60 * 1000) { // 必须在24小时内
           minDiff = diff;
           startIndex = i;
         }
       }
     }
     
-    // 如果没找到今天的数据，尝试找最接近今天0点的
+    // 如果没找到今天0点的数据，尝试找今天最早的数据点
     if (startIndex === -1) {
       for (let i = 0; i < hourly.length; i++) {
         const hourTime = new Date(hourly[i].timestamp);
-        const diff = Math.abs(hourTime.getTime() - todayStart.getTime());
-        if (diff < minDiff) {
-          minDiff = diff;
-          startIndex = i;
+        const hourDateStr = hourTime.toLocaleDateString('en-CA', { timeZone: timezone });
+        
+        if (hourDateStr === todayDateStr) {
+          const diff = Math.abs(hourTime.getTime() - todayStart.getTime());
+          if (diff < minDiff) {
+            minDiff = diff;
+            startIndex = i;
+          }
         }
       }
     }
@@ -142,31 +150,53 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
   const currentHourIndex = useMemo(() => {
     if (todayHours.length === 0) return 0;
     
-    const currentTime = getCurrentTimeInTimezone;
-    const todayStart = getTodayStartInTimezone;
+    const now = new Date();
+    let currentHour = -1;
     
-    // 计算当前时间距离今天0点的小时数
-    const hoursDiff = (currentTime.getTime() - todayStart.getTime()) / (1000 * 60 * 60);
-    
-    // 当前小时索引（0-23）
-    let currentHour = Math.floor(hoursDiff);
-    
-    // 确保索引在有效范围内
-    if (currentHour < 0) currentHour = 0;
-    if (currentHour >= todayHours.length) currentHour = todayHours.length - 1;
-    
-    // 验证：检查当前索引对应的数据点是否确实是过去的数据
-    if (currentHour < todayHours.length) {
-      const hourTime = new Date(todayHours[currentHour].timestamp);
+    // 遍历数据点，找到当前时间对应的索引
+    for (let i = 0; i < todayHours.length; i++) {
+      const hourTime = new Date(todayHours[i].timestamp);
       
-      // 如果数据点的时间已经超过当前时间，向前调整
-      if (hourTime > currentTime && currentHour > 0) {
-        currentHour = currentHour - 1;
+      // 获取数据点在目标时区的时间
+      const hourTimeInTz = hourTime.toLocaleString('en-US', { 
+        timeZone: timezone,
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      // 获取当前时间在目标时区的时间
+      const nowInTz = now.toLocaleString('en-US', { 
+        timeZone: timezone,
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      // 比较时间字符串（格式：HH:MM）
+      const [hourH, hourM] = hourTimeInTz.split(':').map(Number);
+      const [nowH, nowM] = nowInTz.split(':').map(Number);
+      
+      // 如果数据点的时间已经超过或等于当前时间，返回前一个索引
+      if (hourH > nowH || (hourH === nowH && hourM > nowM)) {
+        currentHour = Math.max(0, i - 1);
+        break;
+      }
+      
+      // 如果这是最后一个数据点，且时间还没超过当前时间
+      if (i === todayHours.length - 1) {
+        currentHour = i;
+        break;
       }
     }
     
+    // 如果没找到，默认使用第一个数据点
+    if (currentHour === -1) {
+      currentHour = 0;
+    }
+    
     return currentHour;
-  }, [todayHours, getCurrentTimeInTimezone, getTodayStartInTimezone, timezone]);
+  }, [todayHours, timezone]);
 
   // 获取最高和最低温度（扩大范围，让波动不那么明显）
   const temperatures = todayHours.map(h => h.temperature_c);
@@ -305,7 +335,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
   const renderTemperatureChart = () => {
     const chartWidth = 800;
     const chartHeight = 300;
-    const padding = 20;
+    const padding = 30; // 增加内边距，为文字留出空间
     
     const values = todayHours.map(h => h.temperature_c);
     const points = generatePathPoints(values, adjustedMinTemp, adjustedMaxTemp, tempRange, chartWidth, chartHeight, padding);
@@ -399,7 +429,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
               <circle cx={minPoint.x} cy={minPoint.y} r="4" fill="#64B5F6" />
               <text 
                 x={minPoint.x} 
-                y={minPoint.y - 10} 
+                y={Math.max(minPoint.y - 10, padding + 5)} 
                 fill="#64B5F6" 
                 fontSize="12" 
                 textAnchor="middle"
@@ -409,7 +439,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
               </text>
               <text 
                 x={minPoint.x} 
-                y={minPoint.y + 25} 
+                y={Math.min(minPoint.y + 25, chartHeight - padding - 5)} 
                 fill="rgba(255, 255, 255, 0.85)" 
                 fontSize="16" 
                 textAnchor="middle"
@@ -424,7 +454,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
               <circle cx={maxPoint.x} cy={maxPoint.y} r="4" fill="#FF9800" />
               <text 
                 x={maxPoint.x} 
-                y={maxPoint.y - 10} 
+                y={Math.max(maxPoint.y - 10, padding + 5)} 
                 fill="#FF9800" 
                 fontSize="12" 
                 textAnchor="middle"
@@ -434,7 +464,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
               </text>
               <text 
                 x={maxPoint.x} 
-                y={maxPoint.y + 25} 
+                y={Math.min(maxPoint.y + 25, chartHeight - padding - 5)} 
                 fill="rgba(255, 255, 255, 0.85)" 
                 fontSize="16" 
                 textAnchor="middle"
@@ -445,7 +475,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
             </g>
             
             {/* 当前温度标记 */}
-            {currentHourIndex < points.length && (
+            {currentHourIndex >= 0 && currentHourIndex < points.length && (
               <g className="current-marker">
                 <circle 
                   cx={points[currentHourIndex].x} 
@@ -457,7 +487,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
                 />
                 <text 
                   x={points[currentHourIndex].x} 
-                  y={points[currentHourIndex].y - 18} 
+                  y={Math.max(points[currentHourIndex].y - 18, padding + 5)} 
                   fill="white" 
                   fontSize="18" 
                   textAnchor="middle"
@@ -536,7 +566,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     const windRange = getValueRange('wind_m_s');
     const chartWidth = 800;
     const chartHeight = 300;
-    const padding = 20;
+    const padding = 30;
     
     const values = todayHours.map(h => h.wind_m_s || 0);
     const points = generatePathPoints(values, windRange.min, windRange.max, windRange.range, chartWidth, chartHeight, padding);
@@ -544,8 +574,20 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     const futurePath = generateFuturePath(points, currentHourIndex);
     const fillPath = generateFillPath(points, chartHeight, padding);
     
+    // 获取当前值
+    const currentValue = currentHourIndex >= 0 && currentHourIndex < todayHours.length 
+      ? todayHours[currentHourIndex].wind_m_s || 0 
+      : current.wind_m_s || 0;
+    
     return (
       <div className="weather-chart line-chart-container">
+        <div className="chart-header">
+          <div className="current-value-info">
+            <span className="current-value">{currentValue.toFixed(1)}</span>
+            <span className="value-unit">m/s</span>
+          </div>
+        </div>
+        
         <div className="chart-wrapper">
           <svg 
             className="line-chart" 
@@ -582,17 +624,39 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
                 className="chart-line chart-line-future"
               />
             )}
-            {currentHourIndex > 0 && currentHourIndex < points.length && (
-              <line
-                x1={points[currentHourIndex].x}
-                y1={padding}
-                x2={points[currentHourIndex].x}
-                y2={chartHeight - padding}
-                stroke="rgba(255, 255, 255, 0.3)"
-                strokeWidth="1"
-                strokeDasharray="2,2"
-                className="current-time-divider"
-              />
+            {currentHourIndex >= 0 && currentHourIndex < points.length && (
+              <>
+                <line
+                  x1={points[currentHourIndex].x}
+                  y1={padding}
+                  x2={points[currentHourIndex].x}
+                  y2={chartHeight - padding}
+                  stroke="rgba(255, 255, 255, 0.3)"
+                  strokeWidth="1"
+                  strokeDasharray="2,2"
+                  className="current-time-divider"
+                />
+                <g className="current-marker">
+                  <circle 
+                    cx={points[currentHourIndex].x} 
+                    cy={points[currentHourIndex].y} 
+                    r="6" 
+                    fill="white" 
+                    stroke="#64B5F6" 
+                    strokeWidth="2"
+                  />
+                  <text 
+                    x={points[currentHourIndex].x} 
+                    y={Math.max(points[currentHourIndex].y - 18, padding + 5)} 
+                    fill="white" 
+                    fontSize="18" 
+                    textAnchor="middle"
+                    fontWeight="600"
+                  >
+                    {points[currentHourIndex].value.toFixed(1)}
+                  </text>
+                </g>
+              </>
             )}
           </svg>
           
@@ -622,7 +686,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     const uvRange = getValueRange('uv_index');
     const chartWidth = 800;
     const chartHeight = 300;
-    const padding = 20;
+    const padding = 30;
     
     const values = todayHours.map(h => h.uv_index || 0);
     const points = generatePathPoints(values, uvRange.min, uvRange.max, uvRange.range, chartWidth, chartHeight, padding);
@@ -630,8 +694,20 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     const futurePath = generateFuturePath(points, currentHourIndex);
     const fillPath = generateFillPath(points, chartHeight, padding);
     
+    // 获取当前值
+    const currentValue = currentHourIndex >= 0 && currentHourIndex < todayHours.length 
+      ? todayHours[currentHourIndex].uv_index || 0 
+      : current.uv_index || 0;
+    
     return (
       <div className="weather-chart line-chart-container">
+        <div className="chart-header">
+          <div className="current-value-info">
+            <span className="current-value">{Math.round(currentValue)}</span>
+            <span className="value-unit">紫外线指数</span>
+          </div>
+        </div>
+        
         <div className="chart-wrapper">
           <svg 
             className="line-chart" 
@@ -668,17 +744,39 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
                 className="chart-line chart-line-future"
               />
             )}
-            {currentHourIndex > 0 && currentHourIndex < points.length && (
-              <line
-                x1={points[currentHourIndex].x}
-                y1={padding}
-                x2={points[currentHourIndex].x}
-                y2={chartHeight - padding}
-                stroke="rgba(255, 255, 255, 0.3)"
-                strokeWidth="1"
-                strokeDasharray="2,2"
-                className="current-time-divider"
-              />
+            {currentHourIndex >= 0 && currentHourIndex < points.length && (
+              <>
+                <line
+                  x1={points[currentHourIndex].x}
+                  y1={padding}
+                  x2={points[currentHourIndex].x}
+                  y2={chartHeight - padding}
+                  stroke="rgba(255, 255, 255, 0.3)"
+                  strokeWidth="1"
+                  strokeDasharray="2,2"
+                  className="current-time-divider"
+                />
+                <g className="current-marker">
+                  <circle 
+                    cx={points[currentHourIndex].x} 
+                    cy={points[currentHourIndex].y} 
+                    r="6" 
+                    fill="white" 
+                    stroke="#FFC107" 
+                    strokeWidth="2"
+                  />
+                  <text 
+                    x={points[currentHourIndex].x} 
+                    y={Math.max(points[currentHourIndex].y - 18, padding + 5)} 
+                    fill="white" 
+                    fontSize="18" 
+                    textAnchor="middle"
+                    fontWeight="600"
+                  >
+                    {Math.round(points[currentHourIndex].value)}
+                  </text>
+                </g>
+              </>
             )}
           </svg>
           
@@ -708,7 +806,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     const precipRange = getValueRange('precip_prob');
     const chartWidth = 800;
     const chartHeight = 300;
-    const padding = 20;
+    const padding = 30;
     
     const values = todayHours.map(h => h.precip_prob || 0);
     const points = generatePathPoints(values, precipRange.min, precipRange.max, precipRange.range, chartWidth, chartHeight, padding);
@@ -716,8 +814,20 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     const futurePath = generateFuturePath(points, currentHourIndex);
     const fillPath = generateFillPath(points, chartHeight, padding);
     
+    // 获取当前值
+    const currentValue = currentHourIndex >= 0 && currentHourIndex < todayHours.length 
+      ? todayHours[currentHourIndex].precip_prob || 0 
+      : current.precip_prob || 0;
+    
     return (
       <div className="weather-chart line-chart-container">
+        <div className="chart-header">
+          <div className="current-value-info">
+            <span className="current-value">{Math.round(currentValue)}</span>
+            <span className="value-unit">%</span>
+          </div>
+        </div>
+        
         <div className="chart-wrapper">
           <svg 
             className="line-chart" 
@@ -754,17 +864,39 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
                 className="chart-line chart-line-future"
               />
             )}
-            {currentHourIndex > 0 && currentHourIndex < points.length && (
-              <line
-                x1={points[currentHourIndex].x}
-                y1={padding}
-                x2={points[currentHourIndex].x}
-                y2={chartHeight - padding}
-                stroke="rgba(255, 255, 255, 0.3)"
-                strokeWidth="1"
-                strokeDasharray="2,2"
-                className="current-time-divider"
-              />
+            {currentHourIndex >= 0 && currentHourIndex < points.length && (
+              <>
+                <line
+                  x1={points[currentHourIndex].x}
+                  y1={padding}
+                  x2={points[currentHourIndex].x}
+                  y2={chartHeight - padding}
+                  stroke="rgba(255, 255, 255, 0.3)"
+                  strokeWidth="1"
+                  strokeDasharray="2,2"
+                  className="current-time-divider"
+                />
+                <g className="current-marker">
+                  <circle 
+                    cx={points[currentHourIndex].x} 
+                    cy={points[currentHourIndex].y} 
+                    r="6" 
+                    fill="white" 
+                    stroke="#2196F3" 
+                    strokeWidth="2"
+                  />
+                  <text 
+                    x={points[currentHourIndex].x} 
+                    y={Math.max(points[currentHourIndex].y - 18, padding + 5)} 
+                    fill="white" 
+                    fontSize="18" 
+                    textAnchor="middle"
+                    fontWeight="600"
+                  >
+                    {Math.round(points[currentHourIndex].value)}%
+                  </text>
+                </g>
+              </>
             )}
           </svg>
           
@@ -794,7 +926,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     const humidityRange = getValueRange('relative_humidity');
     const chartWidth = 800;
     const chartHeight = 300;
-    const padding = 20;
+    const padding = 30;
     
     const values = todayHours.map(h => h.relative_humidity);
     const points = generatePathPoints(values, humidityRange.min, humidityRange.max, humidityRange.range, chartWidth, chartHeight, padding);
@@ -802,8 +934,20 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     const futurePath = generateFuturePath(points, currentHourIndex);
     const fillPath = generateFillPath(points, chartHeight, padding);
     
+    // 获取当前值
+    const currentValue = currentHourIndex >= 0 && currentHourIndex < todayHours.length 
+      ? todayHours[currentHourIndex].relative_humidity 
+      : current.relative_humidity;
+    
     return (
       <div className="weather-chart line-chart-container">
+        <div className="chart-header">
+          <div className="current-value-info">
+            <span className="current-value">{Math.round(currentValue)}</span>
+            <span className="value-unit">%</span>
+          </div>
+        </div>
+        
         <div className="chart-wrapper">
           <svg 
             className="line-chart" 
@@ -840,17 +984,39 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
                 className="chart-line chart-line-future"
               />
             )}
-            {currentHourIndex > 0 && currentHourIndex < points.length && (
-              <line
-                x1={points[currentHourIndex].x}
-                y1={padding}
-                x2={points[currentHourIndex].x}
-                y2={chartHeight - padding}
-                stroke="rgba(255, 255, 255, 0.3)"
-                strokeWidth="1"
-                strokeDasharray="2,2"
-                className="current-time-divider"
-              />
+            {currentHourIndex >= 0 && currentHourIndex < points.length && (
+              <>
+                <line
+                  x1={points[currentHourIndex].x}
+                  y1={padding}
+                  x2={points[currentHourIndex].x}
+                  y2={chartHeight - padding}
+                  stroke="rgba(255, 255, 255, 0.3)"
+                  strokeWidth="1"
+                  strokeDasharray="2,2"
+                  className="current-time-divider"
+                />
+                <g className="current-marker">
+                  <circle 
+                    cx={points[currentHourIndex].x} 
+                    cy={points[currentHourIndex].y} 
+                    r="6" 
+                    fill="white" 
+                    stroke="#90CAF9" 
+                    strokeWidth="2"
+                  />
+                  <text 
+                    x={points[currentHourIndex].x} 
+                    y={Math.max(points[currentHourIndex].y - 18, padding + 5)} 
+                    fill="white" 
+                    fontSize="18" 
+                    textAnchor="middle"
+                    fontWeight="600"
+                  >
+                    {Math.round(points[currentHourIndex].value)}%
+                  </text>
+                </g>
+              </>
             )}
           </svg>
           

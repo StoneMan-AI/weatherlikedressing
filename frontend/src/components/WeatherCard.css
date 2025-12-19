@@ -1,18 +1,32 @@
 .weather-card {
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
   background: var(--card-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: var(--border-radius);
-  padding: var(--spacing-xl);
+  padding: var(--spacing-lg);
   border: 1px solid var(--border-color);
 }
 
 .weather-main {
   display: flex;
+  gap: var(--spacing-lg);
+  align-items: flex-start;
+}
+
+.weather-left-column {
+  display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-md);
+  flex: 0 0 auto;
+}
+
+.weather-right-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  flex: 1;
 }
 
 .temperature-display {
@@ -20,30 +34,27 @@
 }
 
 .temperature {
-  font-size: 120px;
+  font-size: 80px;
   font-weight: 200;
   color: var(--text-primary);
   line-height: 1;
-  letter-spacing: -4px;
-}
-
-.weather-details-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--spacing-lg);
-  width: 100%;
-  max-width: 400px;
+  letter-spacing: -2px;
 }
 
 .weather-detail-item {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--spacing-xs);
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm);
   background: rgba(255, 255, 255, 0.05);
   border-radius: var(--border-radius);
   border: 1px solid var(--border-color);
+}
+
+.aqi-item {
+  width: 100%;
+  align-items: center;
 }
 
 .detail-label {
@@ -64,18 +75,30 @@
 }
 
 @media (max-width: 768px) {
-  .temperature {
-    font-size: 96px;
-    letter-spacing: -3px;
+  .weather-main {
+    flex-direction: column;
+    align-items: center;
   }
   
-  .weather-details-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-md);
+  .weather-left-column,
+  .weather-right-column {
+    width: 100%;
+  }
+  
+  .weather-right-column {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-sm);
+  }
+  
+  .temperature {
+    font-size: 72px;
+    letter-spacing: -2px;
   }
   
   .weather-detail-item {
     padding: var(--spacing-sm);
+    align-items: center;
   }
   
   .detail-value {
@@ -85,10 +108,10 @@
 
 @media (max-width: 480px) {
   .temperature {
-    font-size: 80px;
+    font-size: 64px;
   }
   
-  .weather-details-grid {
+  .weather-right-column {
     grid-template-columns: 1fr;
   }
 }

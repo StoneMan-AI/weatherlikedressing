@@ -45,7 +45,7 @@ const DailyForecast = ({ dailyData }) => {
       </div>
 
       <div className="date-selector">
-        {dailyData.slice(0, 7).map((day, index) => {
+        {dailyData.slice(0, 15).map((day, index) => {
           const dateInfo = index === 0 ? today : formatDate(day.date);
           const isSelected = selectedDay === index;
           

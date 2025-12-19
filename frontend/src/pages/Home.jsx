@@ -26,9 +26,15 @@ const Home = () => {
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState(null);
+  const [currentSlide, setCurrentSlide] = useState(0); // 0: 第一屏, 1: 第二屏
   
   // 用于取消请求的AbortController
   const abortControllerRef = useRef(null);
+  
+  // 滑动相关
+  const swiperRef = useRef(null);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
 
   // 首次打开时获取位置
   useEffect(() => {
@@ -228,69 +234,150 @@ const Home = () => {
     );
   }
 
+  // 处理触摸滑动
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    const diff = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50; // 最小滑动距离
+
+    if (Math.abs(diff) > minSwipeDistance) {
+      if (diff > 0 && currentSlide < 1) {
+        // 向左滑动，切换到第二屏
+        setCurrentSlide(1);
+      } else if (diff < 0 && currentSlide > 0) {
+        // 向右滑动，切换到第一屏
+        setCurrentSlide(0);
+      }
+    }
+  };
+
+  // 鼠标拖动支持（桌面端）
+  const handleMouseDown = (e) => {
+    touchStartX.current = e.clientX;
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleMouseMove = (e) => {
+    touchEndX.current = e.clientX;
+  };
+
+  const handleMouseUp = () => {
+    const diff = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50;
+
+    if (Math.abs(diff) > minSwipeDistance) {
+      if (diff > 0 && currentSlide < 1) {
+        setCurrentSlide(1);
+      } else if (diff < 0 && currentSlide > 0) {
+        setCurrentSlide(0);
+      }
+    }
+
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  };
+
   return (
     <div className="home">
       <LocationSelector />
 
       {currentLocation && (
         <>
-          <div className="settings-panel">
-            <div className="settings-row">
-              <div className="setting-item">
-                <label>活动场景</label>
-                <div className="radio-group">
-                  <label>
-                    <input
-                      type="radio"
-                      value="outdoor"
-                      checked={isOutdoor}
-                      onChange={() => setIsOutdoor(true)}
-                    />
-                    户外
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="indoor"
-                      checked={!isOutdoor}
-                      onChange={() => setIsOutdoor(false)}
-                    />
-                    室内
-                  </label>
+          <div 
+            className={`swiper-container ${currentSlide === 1 ? 'slide-2-active' : ''}`}
+            ref={swiperRef}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onMouseDown={handleMouseDown}
+          >
+            {/* 第一屏 */}
+            <div className="swiper-slide slide-1">
+              {weatherData && (
+                <>
+                  <WeatherCard weather={weatherData} location={currentLocation} />
+                  <WeatherDetail weatherData={weatherData} timezone={currentLocation.timezone || 'Asia/Shanghai'} />
+                </>
+              )}
+
+              {recommendation && (
+                <>
+                  <RecommendationCard recommendation={recommendation.recommendation} />
+                  {recommendation.recommendation.health_messages &&
+                    recommendation.recommendation.health_messages.length > 0 && (
+                      <HealthAlerts messages={recommendation.recommendation.health_messages} />
+                    )}
+                </>
+              )}
+            </div>
+
+            {/* 第二屏 */}
+            <div className="swiper-slide slide-2">
+              <div className="settings-panel">
+                <div className="settings-row">
+                  <div className="setting-item">
+                    <label>活动场景</label>
+                    <div className="radio-group">
+                      <label>
+                        <input
+                          type="radio"
+                          value="outdoor"
+                          checked={isOutdoor}
+                          onChange={() => setIsOutdoor(true)}
+                        />
+                        户外
+                      </label>
+                      <label>
+                        <input
+                          type="radio"
+                          value="indoor"
+                          checked={!isOutdoor}
+                          onChange={() => setIsOutdoor(false)}
+                        />
+                        室内
+                      </label>
+                    </div>
+                  </div>
+                  <div className="setting-item">
+                    <label>活动强度</label>
+                    <select
+                      value={activityLevel}
+                      onChange={(e) => setActivityLevel(e.target.value)}
+                      className="input"
+                    >
+                      <option value="low">低（静坐/慢走）</option>
+                      <option value="moderate">中（正常步行/轻运动）</option>
+                      <option value="high">高（跑步/剧烈运动）</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-              <div className="setting-item">
-                <label>活动强度</label>
-                <select
-                  value={activityLevel}
-                  onChange={(e) => setActivityLevel(e.target.value)}
-                  className="input"
-                >
-                  <option value="low">低（静坐/慢走）</option>
-                  <option value="moderate">中（正常步行/轻运动）</option>
-                  <option value="high">高（跑步/剧烈运动）</option>
-                </select>
-              </div>
+
+              {weatherData && (
+                <DailyForecast dailyData={weatherData.daily} />
+              )}
             </div>
           </div>
 
-          {weatherData && (
-            <>
-              <WeatherCard weather={weatherData} location={currentLocation} />
-              <WeatherDetail weatherData={weatherData} timezone={currentLocation.timezone || 'Asia/Shanghai'} />
-              <DailyForecast dailyData={weatherData.daily} />
-            </>
-          )}
-
-          {recommendation && (
-            <>
-              <RecommendationCard recommendation={recommendation.recommendation} />
-              {recommendation.recommendation.health_messages &&
-                recommendation.recommendation.health_messages.length > 0 && (
-                  <HealthAlerts messages={recommendation.recommendation.health_messages} />
-                )}
-            </>
-          )}
+          {/* 滑动指示器 */}
+          <div className="swiper-indicator">
+            <div 
+              className={`indicator-dot ${currentSlide === 0 ? 'active' : ''}`}
+              onClick={() => setCurrentSlide(0)}
+            />
+            <div 
+              className={`indicator-dot ${currentSlide === 1 ? 'active' : ''}`}
+              onClick={() => setCurrentSlide(1)}
+            />
+          </div>
 
           {error && (
             <div className="error-message" style={{
