@@ -1,7 +1,5 @@
 .location-selector {
-  position: relative;
   margin-bottom: var(--spacing-xl);
-  z-index: 100;
 }
 
 .location-header {
@@ -11,48 +9,11 @@
   margin-bottom: var(--spacing-md);
 }
 
-.location-current-wrapper {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  flex: 1;
-}
-
 .location-title {
   font-size: 36px;
   font-weight: 300;
   color: var(--text-primary);
   letter-spacing: -0.5px;
-}
-
-.btn-dropdown {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  flex-shrink: 0;
-}
-
-.btn-dropdown:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.1);
-}
-
-.btn-dropdown svg {
-  transition: transform 0.3s ease;
-}
-
-.location-selector.open .btn-dropdown svg {
-  transform: rotate(180deg);
 }
 
 .btn-add-location {
@@ -135,109 +96,71 @@
   cursor: not-allowed;
 }
 
-/* 下拉框样式 */
-.location-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  margin-top: var(--spacing-xs);
+.location-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.location-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
   background: var(--card-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: var(--border-radius);
   border: 1px solid var(--border-color);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.dropdown-item {
-  position: relative;
-  padding: var(--spacing-md);
   cursor: pointer;
   transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-sm);
-  border-bottom: 1px solid var(--border-color);
 }
 
-.dropdown-item:last-child {
-  border-bottom: none;
+.location-item:hover {
+  background: var(--card-bg-hover);
+  transform: translateX(4px);
 }
 
-.dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+.location-item.active {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
-.dropdown-item.active {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.dropdown-item-name {
-  font-size: 16px;
+.location-name {
+  font-size: 18px;
   font-weight: 500;
   color: var(--text-primary);
-  flex: 1;
 }
 
 .default-badge {
-  padding: 2px 6px;
+  margin-left: var(--spacing-sm);
+  padding: 2px 8px;
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  font-size: 11px;
+  border-radius: 8px;
+  font-size: 12px;
   color: var(--text-primary);
-  white-space: nowrap;
 }
 
 .btn-delete-location {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   border: none;
-  background: rgba(158, 158, 158, 0.6);
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 16px;
-  font-weight: 600;
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 300;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
-  padding: 0;
-  flex-shrink: 0;
 }
 
 .btn-delete-location:hover {
-  background: rgba(158, 158, 158, 0.8);
+  background: rgba(255, 0, 0, 0.3);
   transform: scale(1.1);
-}
-
-.delete-icon {
-  display: block;
-  line-height: 1;
-  font-size: 16px;
-}
-
-.max-location-warning {
-  color: var(--text-secondary);
-  font-size: 12px;
-  margin-top: var(--spacing-xs);
-  text-align: center;
-}
-
-.btn-add-location:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-add-location:disabled:hover {
-  transform: none;
-  background: rgba(255, 255, 255, 0.2);
 }
 
 @media (max-width: 768px) {
@@ -247,13 +170,5 @@
   
   .add-location-form {
     flex-direction: column;
-  }
-  
-  .location-dropdown {
-    max-height: 250px;
-  }
-  
-  .dropdown-item {
-    padding: var(--spacing-sm) var(--spacing-md);
   }
 }

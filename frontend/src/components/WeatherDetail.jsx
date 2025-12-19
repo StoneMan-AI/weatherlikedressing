@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import './WeatherDetail.css';
 
-const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
+const WeatherDetail = ({ weatherData }) => {
   const [selectedView, setSelectedView] = useState('temperature'); // temperature, wind, uv, precipitation, humidity
 
   if (!weatherData || !weatherData.hourly) {
@@ -10,536 +10,54 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
 
   const { hourly, daily, current } = weatherData;
 
-  // 获取目标时区今天的0点时间（Date对象，使用本地时间表示）
-  const getTodayStartInTimezone = useMemo(() => {
-    const now = new Date();
-    // 获取目标时区今天的日期字符串（YYYY-MM-DD）
-    const dateStr = now.toLocaleDateString('en-CA', { timeZone: timezone }); // en-CA格式: YYYY-MM-DD
-    const [year, month, day] = dateStr.split('-').map(Number);
-    
-    // 创建一个表示目标时区今天0点的Date对象
-    // 方法：创建一个UTC时间，然后通过格式化来验证
-    const utcDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
-    
-    // 验证这个UTC时间在目标时区是否确实是今天0点
-    const tzDateStr = utcDate.toLocaleDateString('en-CA', { timeZone: timezone });
-    if (tzDateStr === dateStr) {
-      return utcDate;
-    }
-    
-    // 如果不对，尝试调整（可能需要考虑时区偏移）
-    // 简单方法：使用本地时间创建，然后通过格式化验证
-    const localDate = new Date(year, month - 1, day, 0, 0, 0, 0);
-    const localTzDateStr = localDate.toLocaleDateString('en-CA', { timeZone: timezone });
-    if (localTzDateStr === dateStr) {
-      return localDate;
-    }
-    
-    // 如果还是不对，返回UTC时间（至少日期是对的）
-    return utcDate;
-  }, [timezone]);
+  // 获取当天的小时数据（24小时）
+  const todayHours = hourly.slice(0, 24);
 
-  // 获取目标时区的当前时间（Date对象）
-  const getCurrentTimeInTimezone = useMemo(() => {
-    const now = new Date();
-    // 获取目标时区的当前时间组件
-    const tzDateStr = now.toLocaleDateString('en-CA', { timeZone: timezone });
-    const tzTimeStr = now.toLocaleTimeString('en-US', { 
-      timeZone: timezone,
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-    
-    // 解析日期和时间
-    const [year, month, day] = tzDateStr.split('-').map(Number);
-    const [hour, minute, second] = tzTimeStr.split(':').map(Number);
-    
-    // 创建一个Date对象表示这个时间
-    // 注意：这个Date对象在本地时区，但表示的是目标时区的时间
-    // 我们需要用它来比较，所以直接创建本地Date对象即可
-    const date = new Date(year, month - 1, day, hour, minute, second || 0, 0);
-    
-    return date;
-  }, [timezone]);
-
-  // 获取当天0点到24点的小时数据（24小时，0时到23时）
-  const todayHours = useMemo(() => {
-    if (!hourly || hourly.length === 0) return [];
-    
-    const todayStart = getTodayStartInTimezone;
-    const now = new Date();
-    
-    // 获取目标时区今天的日期字符串
-    const todayDateStr = now.toLocaleDateString('en-CA', { timeZone: timezone });
-    
-    // 找到今天0点对应的数据点
-    let startIndex = -1;
-    let minDiff = Infinity;
-    
-    for (let i = 0; i < hourly.length; i++) {
-      const hourTimeStr = hourly[i].timestamp;
-      const hourTime = new Date(hourTimeStr);
-      
-      // 检查是否是今天的数据（在同一天，基于目标时区）
-      const hourDateStr = hourTime.toLocaleDateString('en-CA', { timeZone: timezone });
-      
-      if (hourDateStr === todayDateStr) {
-        // 获取这个数据点在目标时区的小时数
-        const hour = parseInt(hourTime.toLocaleTimeString('en-US', { 
-          timeZone: timezone,
-          hour12: false,
-          hour: '2-digit'
-        }));
-        
-        // 找到0点的数据
-        if (hour === 0) {
-          startIndex = i;
-          break;
-        }
-        
-        // 记录最接近0点的索引（但必须是今天的数据）
-        const diff = Math.abs(hourTime.getTime() - todayStart.getTime());
-        if (diff < minDiff && diff < 24 * 60 * 60 * 1000) { // 必须在24小时内
-          minDiff = diff;
-          startIndex = i;
-        }
-      }
-    }
-    
-    // 如果没找到今天0点的数据，尝试找今天最早的数据点
-    if (startIndex === -1) {
-      for (let i = 0; i < hourly.length; i++) {
-        const hourTime = new Date(hourly[i].timestamp);
-        const hourDateStr = hourTime.toLocaleDateString('en-CA', { timeZone: timezone });
-        
-        if (hourDateStr === todayDateStr) {
-          const diff = Math.abs(hourTime.getTime() - todayStart.getTime());
-          if (diff < minDiff) {
-            minDiff = diff;
-            startIndex = i;
-          }
-        }
-      }
-    }
-    
-    // 如果还是没找到，使用第一个数据点
-    if (startIndex === -1) {
-      startIndex = 0;
-    }
-    
-    // 获取24小时的数据（0时到23时，共24个点）
-    const hours24 = hourly.slice(startIndex, startIndex + 24);
-    
-    // 如果数据不足24个，尝试从前面补充
-    if (hours24.length < 24) {
-      // 如果startIndex前面还有数据，尝试补充
-      if (startIndex > 0) {
-        const needed = 24 - hours24.length;
-        const before = hourly.slice(Math.max(0, startIndex - needed), startIndex);
-        return [...before, ...hours24].slice(-24);
-      }
-    }
-    
-    return hours24.length >= 24 ? hours24.slice(0, 24) : hours24;
-  }, [hourly, getTodayStartInTimezone, timezone]);
-
-  // 获取当前时间索引（在24小时数据中的位置，0-23）
-  const currentHourIndex = useMemo(() => {
-    if (todayHours.length === 0) return 0;
-    
-    const now = new Date();
-    let currentHour = -1;
-    
-    // 遍历数据点，找到当前时间对应的索引
-    for (let i = 0; i < todayHours.length; i++) {
-      const hourTime = new Date(todayHours[i].timestamp);
-      
-      // 获取数据点在目标时区的时间
-      const hourTimeInTz = hourTime.toLocaleString('en-US', { 
-        timeZone: timezone,
-        hour12: false,
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      
-      // 获取当前时间在目标时区的时间
-      const nowInTz = now.toLocaleString('en-US', { 
-        timeZone: timezone,
-        hour12: false,
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      
-      // 比较时间字符串（格式：HH:MM）
-      const [hourH, hourM] = hourTimeInTz.split(':').map(Number);
-      const [nowH, nowM] = nowInTz.split(':').map(Number);
-      
-      // 如果数据点的时间已经超过或等于当前时间，返回前一个索引
-      if (hourH > nowH || (hourH === nowH && hourM > nowM)) {
-        currentHour = Math.max(0, i - 1);
-        break;
-      }
-      
-      // 如果这是最后一个数据点，且时间还没超过当前时间
-      if (i === todayHours.length - 1) {
-        currentHour = i;
-        break;
-      }
-    }
-    
-    // 如果没找到，默认使用第一个数据点
-    if (currentHour === -1) {
-      currentHour = 0;
-    }
-    
-    return currentHour;
-  }, [todayHours, timezone]);
-
-  // 获取最高和最低温度（扩大范围，让波动不那么明显）
+  // 获取最高和最低温度
   const temperatures = todayHours.map(h => h.temperature_c);
   const maxTemp = Math.max(...temperatures);
   const minTemp = Math.min(...temperatures);
-  // 扩大Y轴范围，增加上下各20%的缓冲空间
-  const tempRange = (maxTemp - minTemp) * 1.4 || 1;
-  const adjustedMinTemp = minTemp - (tempRange * 0.2);
-  const adjustedMaxTemp = maxTemp + (tempRange * 0.2);
+  const tempRange = maxTemp - minTemp || 1;
 
-  // 获取当前值范围（扩大范围，让波动不那么明显）
+  // 获取当前值范围
   const getValueRange = (key) => {
     const values = todayHours.map(h => h[key] || 0);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const range = (max - min) * 1.4 || 1; // 增加40%的缓冲空间
     return {
-      min: min - (range * 0.2), // 向下扩展20%
-      max: max + (range * 0.2), // 向上扩展20%
-      range: range
+      min: Math.min(...values),
+      max: Math.max(...values),
+      range: Math.max(...values) - Math.min(...values) || 1
     };
   };
 
-  // 生成SVG路径点
-  const generatePathPoints = (values, min, max, range, width, height, padding = 20) => {
-    const points = [];
-    const stepX = (width - padding * 2) / (values.length - 1);
-    
-    values.forEach((value, index) => {
-      const x = padding + index * stepX;
-      const normalizedY = ((value - min) / range) * (height - padding * 2);
-      const y = height - padding - normalizedY;
-      points.push({ x, y, value });
-    });
-    
-    return points;
-  };
-
-  // 生成平滑曲线路径（支持分段：过去用虚线，未来用实线）
-  const generateSmoothPath = (points, splitIndex = -1) => {
-    if (points.length < 2) return '';
-    
-    let path = `M ${points[0].x} ${points[0].y}`;
-    
-    for (let i = 0; i < points.length - 1; i++) {
-      const current = points[i];
-      const next = points[i + 1];
-      const controlX1 = current.x + (next.x - current.x) / 2;
-      const controlY1 = current.y;
-      const controlX2 = current.x + (next.x - current.x) / 2;
-      const controlY2 = next.y;
-      
-      path += ` C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${next.x} ${next.y}`;
-    }
-    
-    return path;
-  };
-
-  // 生成过去时间的路径（虚线）
-  const generatePastPath = (points, splitIndex) => {
-    if (splitIndex <= 0 || splitIndex >= points.length) return '';
-    if (points.length < 2) return '';
-    
-    // 如果splitIndex为0，没有过去的数据
-    if (splitIndex === 0) return '';
-    
-    let path = `M ${points[0].x} ${points[0].y}`;
-    
-    // 绘制到当前时间点之前的所有点
-    for (let i = 0; i < splitIndex; i++) {
-      if (i + 1 >= points.length) break;
-      
-      const current = points[i];
-      const next = points[i + 1];
-      const controlX1 = current.x + (next.x - current.x) / 2;
-      const controlY1 = current.y;
-      const controlX2 = current.x + (next.x - current.x) / 2;
-      const controlY2 = next.y;
-      
-      path += ` C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${next.x} ${next.y}`;
-    }
-    
-    return path;
-  };
-
-  // 生成未来时间的路径（实线）
-  const generateFuturePath = (points, splitIndex) => {
-    if (splitIndex < 0 || splitIndex >= points.length - 1) {
-      // 如果没有分割点，返回完整路径
-      if (points.length < 2) return '';
-      let path = `M ${points[0].x} ${points[0].y}`;
-      for (let i = 0; i < points.length - 1; i++) {
-        const current = points[i];
-        const next = points[i + 1];
-        const controlX1 = current.x + (next.x - current.x) / 2;
-        const controlY1 = current.y;
-        const controlX2 = current.x + (next.x - current.x) / 2;
-        const controlY2 = next.y;
-        path += ` C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${next.x} ${next.y}`;
-      }
-      return path;
-    }
-    
-    if (points.length < 2) return '';
-    
-    // 从当前时间点开始绘制
-    let path = `M ${points[splitIndex].x} ${points[splitIndex].y}`;
-    
-    // 绘制从当前时间点到未来的所有点
-    for (let i = splitIndex; i < points.length - 1; i++) {
-      const current = points[i];
-      const next = points[i + 1];
-      const controlX1 = current.x + (next.x - current.x) / 2;
-      const controlY1 = current.y;
-      const controlX2 = current.x + (next.x - current.x) / 2;
-      const controlY2 = next.y;
-      
-      path += ` C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${next.x} ${next.y}`;
-    }
-    
-    return path;
-  };
-
-  // 生成填充区域路径
-  const generateFillPath = (points, height, padding = 20) => {
-    if (points.length < 2) return '';
-    
-    const path = generateSmoothPath(points);
-    const firstX = points[0].x;
-    const lastX = points[points.length - 1].x;
-    const bottomY = height - padding;
-    
-    return `${path} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
-  };
-
   const renderTemperatureChart = () => {
-    const chartWidth = 800;
-    const chartHeight = 300;
-    const padding = 30; // 增加内边距，为文字留出空间
-    
-    const values = todayHours.map(h => h.temperature_c);
-    const points = generatePathPoints(values, adjustedMinTemp, adjustedMaxTemp, tempRange, chartWidth, chartHeight, padding);
-    
-    // 分段路径：过去用虚线，未来用实线
-    const pastPath = generatePastPath(points, currentHourIndex);
-    const futurePath = generateFuturePath(points, currentHourIndex);
-    const fullPath = generateSmoothPath(points);
-    const fillPath = generateFillPath(points, chartHeight, padding);
-    
-    // 找到最低和最高点
-    const minPoint = points.reduce((min, p) => p.value < min.value ? p : min, points[0]);
-    const maxPoint = points.reduce((max, p) => p.value > max.value ? p : max, points[0]);
-    
     return (
-      <div className="weather-chart temperature-chart">
-        <div className="chart-header">
-          <div className="current-temp-info">
-            <span className="current-temp">{Math.round(current.temperature_c)}°</span>
-            <div className="temp-range-text">
-              <span className="temp-high">最高{Math.round(maxTemp)}°</span>
-              <span className="temp-low">最低{Math.round(minTemp)}°</span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="chart-wrapper">
-          <svg 
-            className="line-chart" 
-            width="100%" 
-            height={chartHeight}
-            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-            preserveAspectRatio="none"
-          >
-            {/* 渐变定义 */}
-            <defs>
-              <linearGradient id="tempGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="rgba(255, 193, 7, 0.3)" />
-                <stop offset="50%" stopColor="rgba(255, 152, 0, 0.4)" />
-                <stop offset="100%" stopColor="rgba(255, 87, 34, 0.2)" />
-              </linearGradient>
-            </defs>
+      <div className="weather-chart">
+        <div className="chart-container">
+          {todayHours.map((hour, index) => {
+            const time = new Date(hour.timestamp);
+            const hourLabel = time.getHours();
+            const normalizedTemp = ((hour.temperature_c - minTemp) / tempRange) * 100;
             
-            {/* 填充区域 */}
-            <path 
-              d={fillPath} 
-              fill="url(#tempGradient)" 
-              className="chart-fill"
-            />
-            
-            {/* 过去时间曲线（虚线） */}
-            {pastPath && (
-              <path 
-                d={pastPath} 
-                fill="none" 
-                stroke="#FFC107" 
-                strokeWidth="2.5" 
-                strokeDasharray="6,4"
-                className="chart-line chart-line-past"
-                opacity="0.6"
-              />
-            )}
-            
-            {/* 未来时间曲线（实线） */}
-            {futurePath && (
-              <path 
-                d={futurePath} 
-                fill="none" 
-                stroke="#FFC107" 
-                strokeWidth="2.5" 
-                className="chart-line chart-line-future"
-              />
-            )}
-            
-            {/* 当前时间分割线 */}
-            {currentHourIndex > 0 && currentHourIndex < points.length && (
-              <line
-                x1={points[currentHourIndex].x}
-                y1={padding}
-                x2={points[currentHourIndex].x}
-                y2={chartHeight - padding}
-                stroke="rgba(255, 255, 255, 0.3)"
-                strokeWidth="1"
-                strokeDasharray="2,2"
-                className="current-time-divider"
-              />
-            )}
-            
-            {/* 最低点标记 */}
-            <g className="min-marker">
-              <circle cx={minPoint.x} cy={minPoint.y} r="4" fill="#64B5F6" />
-              <text 
-                x={minPoint.x} 
-                y={Math.max(minPoint.y - 10, padding + 5)} 
-                fill="#64B5F6" 
-                fontSize="12" 
-                textAnchor="middle"
-                fontWeight="500"
-              >
-                最低
-              </text>
-              <text 
-                x={minPoint.x} 
-                y={Math.min(minPoint.y + 25, chartHeight - padding - 5)} 
-                fill="rgba(255, 255, 255, 0.85)" 
-                fontSize="16" 
-                textAnchor="middle"
-                fontWeight="500"
-              >
-                {Math.round(minPoint.value)}°
-              </text>
-            </g>
-            
-            {/* 最高点标记 */}
-            <g className="max-marker">
-              <circle cx={maxPoint.x} cy={maxPoint.y} r="4" fill="#FF9800" />
-              <text 
-                x={maxPoint.x} 
-                y={Math.max(maxPoint.y - 10, padding + 5)} 
-                fill="#FF9800" 
-                fontSize="12" 
-                textAnchor="middle"
-                fontWeight="500"
-              >
-                最高
-              </text>
-              <text 
-                x={maxPoint.x} 
-                y={Math.min(maxPoint.y + 25, chartHeight - padding - 5)} 
-                fill="rgba(255, 255, 255, 0.85)" 
-                fontSize="16" 
-                textAnchor="middle"
-                fontWeight="500"
-              >
-                {Math.round(maxPoint.value)}°
-              </text>
-            </g>
-            
-            {/* 当前温度标记 */}
-            {currentHourIndex >= 0 && currentHourIndex < points.length && (
-              <g className="current-marker">
-                <circle 
-                  cx={points[currentHourIndex].x} 
-                  cy={points[currentHourIndex].y} 
-                  r="6" 
-                  fill="white" 
-                  stroke="#FFC107" 
-                  strokeWidth="2"
-                />
-                <text 
-                  x={points[currentHourIndex].x} 
-                  y={Math.max(points[currentHourIndex].y - 18, padding + 5)} 
-                  fill="white" 
-                  fontSize="18" 
-                  textAnchor="middle"
-                  fontWeight="600"
-                >
-                  {Math.round(points[currentHourIndex].value)}°
-                </text>
-              </g>
-            )}
-          </svg>
-          
-          {/* X轴标签（0-24时） */}
-          <div className="chart-x-axis">
-            {[0, 6, 12, 18, 24].map((hour) => {
-              // 计算在24个数据点中的位置
-              const index = hour === 24 ? todayHours.length - 1 : Math.floor((hour / 24) * (todayHours.length - 1));
-              
-              // 获取当前小时（在目标时区）
-              const currentTime = getCurrentTimeInTimezone;
-              const todayStart = getTodayStartInTimezone;
-              const currentHour = Math.floor((currentTime.getTime() - todayStart.getTime()) / (1000 * 60 * 60));
-              const isCurrentHour = hour <= currentHour && hour + 6 > currentHour;
-              
-              return (
-                <span 
-                  key={hour} 
-                  className={`axis-label ${isCurrentHour ? 'current-hour' : ''}`}
-                  style={{ 
-                    left: `${(index / (todayHours.length - 1)) * 100}%`,
-                    transform: 'translateX(-50%)'
-                  }}
-                >
-                  {hour}时
+            return (
+              <div key={index} className="chart-item">
+                <div className="chart-bar-container">
+                  <div 
+                    className="chart-bar temperature-bar"
+                    style={{ height: `${normalizedTemp}%` }}
+                  >
+                    <span className="chart-value">{Math.round(hour.temperature_c)}°</span>
+                  </div>
+                </div>
+                <span className="chart-label">
+                  {hourLabel === 0 ? '0时' : hourLabel === 12 ? '12时' : hourLabel === 6 ? '6时' : ''}
                 </span>
-              );
-            })}
-          </div>
-          
-          {/* Y轴标签 */}
-          <div className="chart-y-axis">
-            {[adjustedMaxTemp, (adjustedMaxTemp + adjustedMinTemp) / 2, adjustedMinTemp].map((temp, index) => (
-              <span 
-                key={index}
-                className="axis-label"
-                style={{ 
-                  top: `${index * 50}%`,
-                  transform: 'translateY(-50%)'
-                }}
-              >
-                {Math.round(temp)}°
-              </span>
-            ))}
-          </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="chart-legend">
+          <span>最低 {Math.round(minTemp)}°</span>
+          <span>最高 {Math.round(maxTemp)}°</span>
         </div>
       </div>
     );
@@ -547,116 +65,30 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
 
   const renderWindChart = () => {
     const windRange = getValueRange('wind_m_s');
-    const chartWidth = 800;
-    const chartHeight = 300;
-    const padding = 30;
-    
-    const values = todayHours.map(h => h.wind_m_s || 0);
-    const points = generatePathPoints(values, windRange.min, windRange.max, windRange.range, chartWidth, chartHeight, padding);
-    const pastPath = generatePastPath(points, currentHourIndex);
-    const futurePath = generateFuturePath(points, currentHourIndex);
-    const fillPath = generateFillPath(points, chartHeight, padding);
-    
-    // 获取当前值
-    const currentValue = currentHourIndex >= 0 && currentHourIndex < todayHours.length 
-      ? todayHours[currentHourIndex].wind_m_s || 0 
-      : current.wind_m_s || 0;
-    
     return (
-      <div className="weather-chart line-chart-container">
-        <div className="chart-header">
-          <div className="current-value-info">
-            <span className="current-value">{currentValue.toFixed(1)}</span>
-            <span className="value-unit">m/s</span>
-          </div>
-        </div>
-        
-        <div className="chart-wrapper">
-          <svg 
-            className="line-chart" 
-            width="100%" 
-            height={chartHeight}
-            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-            preserveAspectRatio="none"
-          >
-            <defs>
-              <linearGradient id="windGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="rgba(100, 181, 246, 0.2)" />
-                <stop offset="100%" stopColor="rgba(33, 150, 243, 0.3)" />
-              </linearGradient>
-            </defs>
+      <div className="weather-chart">
+        <div className="chart-container">
+          {todayHours.map((hour, index) => {
+            const time = new Date(hour.timestamp);
+            const hourLabel = time.getHours();
+            const normalizedWind = ((hour.wind_m_s - windRange.min) / windRange.range) * 100;
             
-            <path d={fillPath} fill="url(#windGradient)" className="chart-fill" />
-            {pastPath && (
-              <path 
-                d={pastPath} 
-                fill="none" 
-                stroke="#64B5F6" 
-                strokeWidth="2.5" 
-                strokeDasharray="6,4"
-                className="chart-line chart-line-past"
-                opacity="0.6"
-              />
-            )}
-            {futurePath && (
-              <path 
-                d={futurePath} 
-                fill="none" 
-                stroke="#64B5F6" 
-                strokeWidth="2.5" 
-                className="chart-line chart-line-future"
-              />
-            )}
-            {currentHourIndex >= 0 && currentHourIndex < points.length && (
-              <>
-                <line
-                  x1={points[currentHourIndex].x}
-                  y1={padding}
-                  x2={points[currentHourIndex].x}
-                  y2={chartHeight - padding}
-                  stroke="rgba(255, 255, 255, 0.3)"
-                  strokeWidth="1"
-                  strokeDasharray="2,2"
-                  className="current-time-divider"
-                />
-                <g className="current-marker">
-                  <circle 
-                    cx={points[currentHourIndex].x} 
-                    cy={points[currentHourIndex].y} 
-                    r="6" 
-                    fill="white" 
-                    stroke="#64B5F6" 
-                    strokeWidth="2"
-                  />
-                  <text 
-                    x={points[currentHourIndex].x} 
-                    y={Math.max(points[currentHourIndex].y - 18, padding + 5)} 
-                    fill="white" 
-                    fontSize="18" 
-                    textAnchor="middle"
-                    fontWeight="600"
+            return (
+              <div key={index} className="chart-item">
+                <div className="chart-bar-container">
+                  <div 
+                    className="chart-bar wind-bar"
+                    style={{ height: `${normalizedWind}%` }}
                   >
-                    {points[currentHourIndex].value.toFixed(1)}
-                  </text>
-                </g>
-              </>
-            )}
-          </svg>
-          
-          <div className="chart-x-axis">
-            {[0, 6, 12, 18, 24].map((hour) => {
-              const index = hour === 24 ? todayHours.length - 1 : Math.floor((hour / 24) * (todayHours.length - 1));
-              return (
-                <span 
-                  key={hour} 
-                  className="axis-label"
-                  style={{ left: `${(index / (todayHours.length - 1)) * 100}%` }}
-                >
-                  {hour}时
+                    <span className="chart-value">{hour.wind_m_s?.toFixed(1)}</span>
+                  </div>
+                </div>
+                <span className="chart-label">
+                  {hourLabel === 0 ? '0时' : hourLabel === 12 ? '12时' : hourLabel === 6 ? '6时' : ''}
                 </span>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
         <div className="chart-legend">
           <span>风速 (m/s)</span>
@@ -667,116 +99,30 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
 
   const renderUVChart = () => {
     const uvRange = getValueRange('uv_index');
-    const chartWidth = 800;
-    const chartHeight = 300;
-    const padding = 30;
-    
-    const values = todayHours.map(h => h.uv_index || 0);
-    const points = generatePathPoints(values, uvRange.min, uvRange.max, uvRange.range, chartWidth, chartHeight, padding);
-    const pastPath = generatePastPath(points, currentHourIndex);
-    const futurePath = generateFuturePath(points, currentHourIndex);
-    const fillPath = generateFillPath(points, chartHeight, padding);
-    
-    // 获取当前值
-    const currentValue = currentHourIndex >= 0 && currentHourIndex < todayHours.length 
-      ? todayHours[currentHourIndex].uv_index || 0 
-      : current.uv_index || 0;
-    
     return (
-      <div className="weather-chart line-chart-container">
-        <div className="chart-header">
-          <div className="current-value-info">
-            <span className="current-value">{Math.round(currentValue)}</span>
-            <span className="value-unit">紫外线指数</span>
-          </div>
-        </div>
-        
-        <div className="chart-wrapper">
-          <svg 
-            className="line-chart" 
-            width="100%" 
-            height={chartHeight}
-            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-            preserveAspectRatio="none"
-          >
-            <defs>
-              <linearGradient id="uvGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="rgba(255, 235, 59, 0.2)" />
-                <stop offset="100%" stopColor="rgba(255, 193, 7, 0.3)" />
-              </linearGradient>
-            </defs>
+      <div className="weather-chart">
+        <div className="chart-container">
+          {todayHours.map((hour, index) => {
+            const time = new Date(hour.timestamp);
+            const hourLabel = time.getHours();
+            const normalizedUV = ((hour.uv_index - uvRange.min) / uvRange.range) * 100;
             
-            <path d={fillPath} fill="url(#uvGradient)" className="chart-fill" />
-            {pastPath && (
-              <path 
-                d={pastPath} 
-                fill="none" 
-                stroke="#FFC107" 
-                strokeWidth="2.5" 
-                strokeDasharray="6,4"
-                className="chart-line chart-line-past"
-                opacity="0.6"
-              />
-            )}
-            {futurePath && (
-              <path 
-                d={futurePath} 
-                fill="none" 
-                stroke="#FFC107" 
-                strokeWidth="2.5" 
-                className="chart-line chart-line-future"
-              />
-            )}
-            {currentHourIndex >= 0 && currentHourIndex < points.length && (
-              <>
-                <line
-                  x1={points[currentHourIndex].x}
-                  y1={padding}
-                  x2={points[currentHourIndex].x}
-                  y2={chartHeight - padding}
-                  stroke="rgba(255, 255, 255, 0.3)"
-                  strokeWidth="1"
-                  strokeDasharray="2,2"
-                  className="current-time-divider"
-                />
-                <g className="current-marker">
-                  <circle 
-                    cx={points[currentHourIndex].x} 
-                    cy={points[currentHourIndex].y} 
-                    r="6" 
-                    fill="white" 
-                    stroke="#FFC107" 
-                    strokeWidth="2"
-                  />
-                  <text 
-                    x={points[currentHourIndex].x} 
-                    y={Math.max(points[currentHourIndex].y - 18, padding + 5)} 
-                    fill="white" 
-                    fontSize="18" 
-                    textAnchor="middle"
-                    fontWeight="600"
+            return (
+              <div key={index} className="chart-item">
+                <div className="chart-bar-container">
+                  <div 
+                    className="chart-bar uv-bar"
+                    style={{ height: `${normalizedUV}%` }}
                   >
-                    {Math.round(points[currentHourIndex].value)}
-                  </text>
-                </g>
-              </>
-            )}
-          </svg>
-          
-          <div className="chart-x-axis">
-            {[0, 6, 12, 18, 24].map((hour) => {
-              const index = hour === 24 ? todayHours.length - 1 : Math.floor((hour / 24) * (todayHours.length - 1));
-              return (
-                <span 
-                  key={hour} 
-                  className="axis-label"
-                  style={{ left: `${(index / (todayHours.length - 1)) * 100}%` }}
-                >
-                  {hour}时
+                    <span className="chart-value">{hour.uv_index || 0}</span>
+                  </div>
+                </div>
+                <span className="chart-label">
+                  {hourLabel === 0 ? '0时' : hourLabel === 12 ? '12时' : hourLabel === 6 ? '6时' : ''}
                 </span>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
         <div className="chart-legend">
           <span>紫外线指数</span>
@@ -787,116 +133,30 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
 
   const renderPrecipitationChart = () => {
     const precipRange = getValueRange('precip_prob');
-    const chartWidth = 800;
-    const chartHeight = 300;
-    const padding = 30;
-    
-    const values = todayHours.map(h => h.precip_prob || 0);
-    const points = generatePathPoints(values, precipRange.min, precipRange.max, precipRange.range, chartWidth, chartHeight, padding);
-    const pastPath = generatePastPath(points, currentHourIndex);
-    const futurePath = generateFuturePath(points, currentHourIndex);
-    const fillPath = generateFillPath(points, chartHeight, padding);
-    
-    // 获取当前值
-    const currentValue = currentHourIndex >= 0 && currentHourIndex < todayHours.length 
-      ? todayHours[currentHourIndex].precip_prob || 0 
-      : current.precip_prob || 0;
-    
     return (
-      <div className="weather-chart line-chart-container">
-        <div className="chart-header">
-          <div className="current-value-info">
-            <span className="current-value">{Math.round(currentValue)}</span>
-            <span className="value-unit">%</span>
-          </div>
-        </div>
-        
-        <div className="chart-wrapper">
-          <svg 
-            className="line-chart" 
-            width="100%" 
-            height={chartHeight}
-            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-            preserveAspectRatio="none"
-          >
-            <defs>
-              <linearGradient id="precipGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="rgba(33, 150, 243, 0.2)" />
-                <stop offset="100%" stopColor="rgba(25, 118, 210, 0.3)" />
-              </linearGradient>
-            </defs>
+      <div className="weather-chart">
+        <div className="chart-container">
+          {todayHours.map((hour, index) => {
+            const time = new Date(hour.timestamp);
+            const hourLabel = time.getHours();
+            const normalizedPrecip = ((hour.precip_prob - precipRange.min) / precipRange.range) * 100;
             
-            <path d={fillPath} fill="url(#precipGradient)" className="chart-fill" />
-            {pastPath && (
-              <path 
-                d={pastPath} 
-                fill="none" 
-                stroke="#2196F3" 
-                strokeWidth="2.5" 
-                strokeDasharray="6,4"
-                className="chart-line chart-line-past"
-                opacity="0.6"
-              />
-            )}
-            {futurePath && (
-              <path 
-                d={futurePath} 
-                fill="none" 
-                stroke="#2196F3" 
-                strokeWidth="2.5" 
-                className="chart-line chart-line-future"
-              />
-            )}
-            {currentHourIndex >= 0 && currentHourIndex < points.length && (
-              <>
-                <line
-                  x1={points[currentHourIndex].x}
-                  y1={padding}
-                  x2={points[currentHourIndex].x}
-                  y2={chartHeight - padding}
-                  stroke="rgba(255, 255, 255, 0.3)"
-                  strokeWidth="1"
-                  strokeDasharray="2,2"
-                  className="current-time-divider"
-                />
-                <g className="current-marker">
-                  <circle 
-                    cx={points[currentHourIndex].x} 
-                    cy={points[currentHourIndex].y} 
-                    r="6" 
-                    fill="white" 
-                    stroke="#2196F3" 
-                    strokeWidth="2"
-                  />
-                  <text 
-                    x={points[currentHourIndex].x} 
-                    y={Math.max(points[currentHourIndex].y - 18, padding + 5)} 
-                    fill="white" 
-                    fontSize="18" 
-                    textAnchor="middle"
-                    fontWeight="600"
+            return (
+              <div key={index} className="chart-item">
+                <div className="chart-bar-container">
+                  <div 
+                    className="chart-bar precipitation-bar"
+                    style={{ height: `${normalizedPrecip}%` }}
                   >
-                    {Math.round(points[currentHourIndex].value)}%
-                  </text>
-                </g>
-              </>
-            )}
-          </svg>
-          
-          <div className="chart-x-axis">
-            {[0, 6, 12, 18, 24].map((hour) => {
-              const index = hour === 24 ? todayHours.length - 1 : Math.floor((hour / 24) * (todayHours.length - 1));
-              return (
-                <span 
-                  key={hour} 
-                  className="axis-label"
-                  style={{ left: `${(index / (todayHours.length - 1)) * 100}%` }}
-                >
-                  {hour}时
+                    <span className="chart-value">{hour.precip_prob || 0}%</span>
+                  </div>
+                </div>
+                <span className="chart-label">
+                  {hourLabel === 0 ? '0时' : hourLabel === 12 ? '12时' : hourLabel === 6 ? '6时' : ''}
                 </span>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
         <div className="chart-legend">
           <span>降水概率 (%)</span>
@@ -907,116 +167,30 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
 
   const renderHumidityChart = () => {
     const humidityRange = getValueRange('relative_humidity');
-    const chartWidth = 800;
-    const chartHeight = 300;
-    const padding = 30;
-    
-    const values = todayHours.map(h => h.relative_humidity);
-    const points = generatePathPoints(values, humidityRange.min, humidityRange.max, humidityRange.range, chartWidth, chartHeight, padding);
-    const pastPath = generatePastPath(points, currentHourIndex);
-    const futurePath = generateFuturePath(points, currentHourIndex);
-    const fillPath = generateFillPath(points, chartHeight, padding);
-    
-    // 获取当前值
-    const currentValue = currentHourIndex >= 0 && currentHourIndex < todayHours.length 
-      ? todayHours[currentHourIndex].relative_humidity 
-      : current.relative_humidity;
-    
     return (
-      <div className="weather-chart line-chart-container">
-        <div className="chart-header">
-          <div className="current-value-info">
-            <span className="current-value">{Math.round(currentValue)}</span>
-            <span className="value-unit">%</span>
-          </div>
-        </div>
-        
-        <div className="chart-wrapper">
-          <svg 
-            className="line-chart" 
-            width="100%" 
-            height={chartHeight}
-            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-            preserveAspectRatio="none"
-          >
-            <defs>
-              <linearGradient id="humidityGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="rgba(144, 202, 249, 0.2)" />
-                <stop offset="100%" stopColor="rgba(66, 165, 245, 0.3)" />
-              </linearGradient>
-            </defs>
+      <div className="weather-chart">
+        <div className="chart-container">
+          {todayHours.map((hour, index) => {
+            const time = new Date(hour.timestamp);
+            const hourLabel = time.getHours();
+            const normalizedHumidity = ((hour.relative_humidity - humidityRange.min) / humidityRange.range) * 100;
             
-            <path d={fillPath} fill="url(#humidityGradient)" className="chart-fill" />
-            {pastPath && (
-              <path 
-                d={pastPath} 
-                fill="none" 
-                stroke="#90CAF9" 
-                strokeWidth="2.5" 
-                strokeDasharray="6,4"
-                className="chart-line chart-line-past"
-                opacity="0.6"
-              />
-            )}
-            {futurePath && (
-              <path 
-                d={futurePath} 
-                fill="none" 
-                stroke="#90CAF9" 
-                strokeWidth="2.5" 
-                className="chart-line chart-line-future"
-              />
-            )}
-            {currentHourIndex >= 0 && currentHourIndex < points.length && (
-              <>
-                <line
-                  x1={points[currentHourIndex].x}
-                  y1={padding}
-                  x2={points[currentHourIndex].x}
-                  y2={chartHeight - padding}
-                  stroke="rgba(255, 255, 255, 0.3)"
-                  strokeWidth="1"
-                  strokeDasharray="2,2"
-                  className="current-time-divider"
-                />
-                <g className="current-marker">
-                  <circle 
-                    cx={points[currentHourIndex].x} 
-                    cy={points[currentHourIndex].y} 
-                    r="6" 
-                    fill="white" 
-                    stroke="#90CAF9" 
-                    strokeWidth="2"
-                  />
-                  <text 
-                    x={points[currentHourIndex].x} 
-                    y={Math.max(points[currentHourIndex].y - 18, padding + 5)} 
-                    fill="white" 
-                    fontSize="18" 
-                    textAnchor="middle"
-                    fontWeight="600"
+            return (
+              <div key={index} className="chart-item">
+                <div className="chart-bar-container">
+                  <div 
+                    className="chart-bar humidity-bar"
+                    style={{ height: `${normalizedHumidity}%` }}
                   >
-                    {Math.round(points[currentHourIndex].value)}%
-                  </text>
-                </g>
-              </>
-            )}
-          </svg>
-          
-          <div className="chart-x-axis">
-            {[0, 6, 12, 18, 24].map((hour) => {
-              const index = hour === 24 ? todayHours.length - 1 : Math.floor((hour / 24) * (todayHours.length - 1));
-              return (
-                <span 
-                  key={hour} 
-                  className="axis-label"
-                  style={{ left: `${(index / (todayHours.length - 1)) * 100}%` }}
-                >
-                  {hour}时
+                    <span className="chart-value">{hour.relative_humidity}%</span>
+                  </div>
+                </div>
+                <span className="chart-label">
+                  {hourLabel === 0 ? '0时' : hourLabel === 12 ? '12时' : hourLabel === 6 ? '6时' : ''}
                 </span>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
         <div className="chart-legend">
           <span>湿度 (%)</span>

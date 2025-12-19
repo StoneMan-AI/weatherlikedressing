@@ -40,13 +40,8 @@ export const LocationProvider = ({ children }) => {
     setLocations(newLocations);
   };
 
-  // 添加位置（最多5个）
+  // 添加位置
   const addLocation = (location) => {
-    // 检查是否已达到最大数量
-    if (locations.length >= 5) {
-      throw new Error('最多只能添加5个地区');
-    }
-
     const newLocation = {
       id: Date.now(),
       name: location.name,

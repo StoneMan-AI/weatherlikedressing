@@ -80,5 +80,4 @@
 .main-content {
   flex: 1;
   padding: var(--spacing-lg) 0;
-  width: 100%;
 }

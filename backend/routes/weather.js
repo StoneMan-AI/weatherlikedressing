@@ -15,7 +15,6 @@ const weatherCacheService = new WeatherCacheService();
 router.get('/current', async (req, res) => {
   try {
     const { latitude, longitude, timezone = 'Asia/Shanghai' } = req.query;
-    const userId = req.anonymousUserId || req.userId;
 
     if (!latitude || !longitude) {
       return res.status(400).json({ error: 'Latitude and longitude are required' });
@@ -25,8 +24,7 @@ router.get('/current', async (req, res) => {
       parseFloat(latitude),
       parseFloat(longitude),
       timezone,
-      15, // 获取15天数据
-      userId
+      15 // 获取15天数据
     );
 
     res.json({
@@ -46,7 +44,6 @@ router.get('/current', async (req, res) => {
 router.get('/forecast', async (req, res) => {
   try {
     const { latitude, longitude, timezone = 'Asia/Shanghai', days = 15 } = req.query;
-    const userId = req.anonymousUserId || req.userId;
 
     if (!latitude || !longitude) {
       return res.status(400).json({ error: 'Latitude and longitude are required' });
@@ -56,8 +53,7 @@ router.get('/forecast', async (req, res) => {
       parseFloat(latitude),
       parseFloat(longitude),
       timezone,
-      parseInt(days) || 15,
-      userId
+      parseInt(days) || 15
     );
 
     res.json({
