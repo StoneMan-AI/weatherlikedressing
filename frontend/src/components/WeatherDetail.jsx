@@ -11,36 +11,65 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
 
   const { hourly, daily, current } = weatherData;
 
-  // 获取目标时区今天的0点时间戳（ISO字符串格式，用于比较）
+  // 获取目标时区今天的0点时间（Date对象，使用本地时间表示）
   const getTodayStartInTimezone = useMemo(() => {
     const now = new Date();
     // 获取目标时区今天的日期字符串（YYYY-MM-DD）
     const dateStr = now.toLocaleDateString('en-CA', { timeZone: timezone }); // en-CA格式: YYYY-MM-DD
-    // 创建目标时区今天0点的ISO字符串
-    return `${dateStr}T00:00:00`;
+    const [year, month, day] = dateStr.split('-').map(Number);
+    
+    // 创建一个表示目标时区今天0点的Date对象
+    // 方法：创建一个UTC时间，然后通过格式化来验证
+    const utcDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    
+    // 验证这个UTC时间在目标时区是否确实是今天0点
+    const tzDateStr = utcDate.toLocaleDateString('en-CA', { timeZone: timezone });
+    if (tzDateStr === dateStr) {
+      return utcDate;
+    }
+    
+    // 如果不对，尝试调整（可能需要考虑时区偏移）
+    // 简单方法：使用本地时间创建，然后通过格式化验证
+    const localDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+    const localTzDateStr = localDate.toLocaleDateString('en-CA', { timeZone: timezone });
+    if (localTzDateStr === dateStr) {
+      return localDate;
+    }
+    
+    // 如果还是不对，返回UTC时间（至少日期是对的）
+    return utcDate;
   }, [timezone]);
 
-  // 获取目标时区的当前时间（ISO字符串格式）
+  // 获取目标时区的当前时间（Date对象）
   const getCurrentTimeInTimezone = useMemo(() => {
     const now = new Date();
-    // 获取目标时区的当前时间字符串
-    const dateStr = now.toLocaleDateString('en-CA', { timeZone: timezone });
-    const timeStr = now.toLocaleTimeString('en-US', { 
+    // 获取目标时区的当前时间组件
+    const tzDateStr = now.toLocaleDateString('en-CA', { timeZone: timezone });
+    const tzTimeStr = now.toLocaleTimeString('en-US', { 
       timeZone: timezone,
       hour12: false,
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit'
     });
-    return `${dateStr}T${timeStr}`;
+    
+    // 解析日期和时间
+    const [year, month, day] = tzDateStr.split('-').map(Number);
+    const [hour, minute, second] = tzTimeStr.split(':').map(Number);
+    
+    // 创建一个Date对象表示这个时间
+    // 注意：这个Date对象在本地时区，但表示的是目标时区的时间
+    // 我们需要用它来比较，所以直接创建本地Date对象即可
+    const date = new Date(year, month - 1, day, hour, minute, second || 0, 0);
+    
+    return date;
   }, [timezone]);
 
   // 获取当天0点到24点的小时数据（24小时，0时到23时）
   const todayHours = useMemo(() => {
     if (!hourly || hourly.length === 0) return [];
     
-    const todayStartStr = getTodayStartInTimezone;
-    const todayStartDate = new Date(todayStartStr);
+    const todayStart = getTodayStartInTimezone;
     
     // 找到今天0点对应的数据点
     let startIndex = -1;
@@ -50,9 +79,9 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
       const hourTimeStr = hourly[i].timestamp;
       const hourTime = new Date(hourTimeStr);
       
-      // 检查是否是今天的数据（在同一天）
+      // 检查是否是今天的数据（在同一天，基于目标时区）
       const hourDateStr = hourTime.toLocaleDateString('en-CA', { timeZone: timezone });
-      const todayDateStr = todayStartDate.toLocaleDateString('en-CA', { timeZone: timezone });
+      const todayDateStr = todayStart.toLocaleDateString('en-CA', { timeZone: timezone });
       
       if (hourDateStr === todayDateStr) {
         // 找到0点的数据
@@ -68,7 +97,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
         }
         
         // 记录最接近0点的索引
-        const diff = Math.abs(hourTime.getTime() - todayStartDate.getTime());
+        const diff = Math.abs(hourTime.getTime() - todayStart.getTime());
         if (diff < minDiff) {
           minDiff = diff;
           startIndex = i;
@@ -80,7 +109,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     if (startIndex === -1) {
       for (let i = 0; i < hourly.length; i++) {
         const hourTime = new Date(hourly[i].timestamp);
-        const diff = Math.abs(hourTime.getTime() - todayStartDate.getTime());
+        const diff = Math.abs(hourTime.getTime() - todayStart.getTime());
         if (diff < minDiff) {
           minDiff = diff;
           startIndex = i;
@@ -113,10 +142,8 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
   const currentHourIndex = useMemo(() => {
     if (todayHours.length === 0) return 0;
     
-    const currentTimeStr = getCurrentTimeInTimezone;
-    const currentTime = new Date(currentTimeStr);
-    const todayStartStr = getTodayStartInTimezone;
-    const todayStart = new Date(todayStartStr);
+    const currentTime = getCurrentTimeInTimezone;
+    const todayStart = getTodayStartInTimezone;
     
     // 计算当前时间距离今天0点的小时数
     const hoursDiff = (currentTime.getTime() - todayStart.getTime()) / (1000 * 60 * 60);
@@ -131,16 +158,6 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     // 验证：检查当前索引对应的数据点是否确实是过去的数据
     if (currentHour < todayHours.length) {
       const hourTime = new Date(todayHours[currentHour].timestamp);
-      const hourTimeStr = hourTime.toLocaleString('en-US', { 
-        timeZone: timezone,
-        hour12: false,
-        hour: '2-digit'
-      });
-      const currentHourStr = currentTime.toLocaleString('en-US', { 
-        timeZone: timezone,
-        hour12: false,
-        hour: '2-digit'
-      });
       
       // 如果数据点的时间已经超过当前时间，向前调整
       if (hourTime > currentTime && currentHour > 0) {
@@ -459,7 +476,9 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
               const index = hour === 24 ? todayHours.length - 1 : Math.floor((hour / 24) * (todayHours.length - 1));
               
               // 获取当前小时（在目标时区）
-              const currentHour = Math.floor((getCurrentTimeInTimezone.getTime() - getTodayStartInTimezone.getTime()) / (1000 * 60 * 60));
+              const currentTime = getCurrentTimeInTimezone;
+              const todayStart = getTodayStartInTimezone;
+              const currentHour = Math.floor((currentTime.getTime() - todayStart.getTime()) / (1000 * 60 * 60));
               const isCurrentHour = hour <= currentHour && hour + 6 > currentHour;
               
               return (
