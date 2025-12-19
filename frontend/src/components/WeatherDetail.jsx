@@ -41,6 +41,11 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
 
   // 获取今天24小时的数据（0时-23时）
   const todayHours = useMemo(() => {
+    if (!hourly || hourly.length === 0) {
+      console.warn('WeatherDetail: No hourly data available');
+      return [];
+    }
+    
     const todayStart = getTodayStartInTimezone;
     const hours = [];
     
@@ -48,15 +53,18 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
       const targetTime = new Date(todayStart);
       targetTime.setHours(i);
       
-      // 找到最接近的小时数据
+      // 找到最接近的小时数据（优先选择未来或当前的数据）
       let closestHour = hourly[0];
       let minDiff = Infinity;
       
       for (const hour of hourly) {
         const hourTime = new Date(hour.timestamp);
-        const diff = Math.abs(hourTime.getTime() - targetTime.getTime());
-        if (diff < minDiff) {
-          minDiff = diff;
+        const diff = hourTime.getTime() - targetTime.getTime();
+        const absDiff = Math.abs(diff);
+        
+        // 优先选择时间差最小的，如果时间差相同，优先选择未来的数据
+        if (absDiff < minDiff || (absDiff === minDiff && diff >= 0)) {
+          minDiff = absDiff;
           closestHour = hour;
         }
       }
@@ -68,13 +76,29 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
       });
     }
     
+    // 调试信息
+    if (hours.length > 0) {
+      console.log('WeatherDetail: Today hours data prepared', {
+        totalHours: hours.length,
+        firstHour: hours[0]?.hour,
+        lastHour: hours[hours.length - 1]?.hour,
+        hourlyDataLength: hourly.length,
+        sampleTemps: hours.slice(0, 5).map(h => ({ hour: h.hour, temp: h.temperature_c }))
+      });
+    }
+    
     return hours;
   }, [hourly, getTodayStartInTimezone]);
 
   // 获取当前小时索引
   const currentHourIndex = useMemo(() => {
     const currentTime = getCurrentTimeInTimezone;
-    return currentTime.getHours();
+    const hour = currentTime.getHours();
+    console.log('WeatherDetail: Current hour index calculated', {
+      currentHour: hour,
+      currentTime: currentTime.toISOString()
+    });
+    return hour;
   }, [getCurrentTimeInTimezone]);
 
   // 获取值范围（扩大范围使曲线更平滑）
@@ -115,7 +139,9 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     const currentPoint = points[safeCurrentHourIndex];
     
     // 分离过去和未来的点
+    // 过去：包含当前时间点及之前的所有点
     const pastPoints = points.slice(0, safeCurrentHourIndex + 1);
+    // 未来：从当前时间点开始到结束的所有点（包含当前时间点，确保曲线连续）
     const futurePoints = points.slice(safeCurrentHourIndex);
 
     let path = '';
@@ -132,8 +158,8 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
         const cp2y = p2.y;
         path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
       }
-    } else if (!isPast && futurePoints.length > 0) {
-      // 未来：实线
+    } else if (!isPast && futurePoints.length > 1) {
+      // 未来：实线（需要至少2个点才能绘制曲线）
       path = `M ${futurePoints[0].x} ${futurePoints[0].y}`;
       for (let i = 1; i < futurePoints.length; i++) {
         const p1 = futurePoints[i - 1];
@@ -144,6 +170,23 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
         const cp2y = p2.y;
         path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
       }
+      
+      // 调试信息
+      if (key === 'temperature_c') {
+        console.log('WeatherDetail: Future path generated', {
+          futurePointsLength: futurePoints.length,
+          pathLength: path.length,
+          lastPoint: futurePoints[futurePoints.length - 1],
+          currentHourIndex: safeCurrentHourIndex
+        });
+      }
+    } else if (!isPast && futurePoints.length === 1) {
+      // 如果只有一个点（当前时间点），至少绘制一个点
+      path = `M ${futurePoints[0].x} ${futurePoints[0].y} L ${futurePoints[0].x} ${futurePoints[0].y}`;
+      console.warn('WeatherDetail: Only one future point available', {
+        currentHourIndex: safeCurrentHourIndex,
+        totalPoints: points.length
+      });
     }
 
     return { path, points, currentPoint, range };
