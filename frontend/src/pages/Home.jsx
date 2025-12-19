@@ -27,6 +27,7 @@ const Home = () => {
   const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0); // 0: 第一屏, 1: 第二屏
+  const [visitedSlides, setVisitedSlides] = useState(new Set([0])); // 记录已访问的屏幕
   
   // 用于取消请求的AbortController
   const abortControllerRef = useRef(null);
@@ -35,6 +36,10 @@ const Home = () => {
   const swiperRef = useRef(null);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+  
+  // 记录每个屏幕的滚动位置
+  const slideScrollPositions = useRef({ 0: 0, 1: 0 });
+  const slideRefs = useRef({ 0: null, 1: null });
 
   // 首次打开时获取位置
   useEffect(() => {
@@ -234,6 +239,46 @@ const Home = () => {
     );
   }
 
+  // 保存当前屏幕的滚动位置
+  const saveCurrentSlideScroll = () => {
+    const currentSlideElement = slideRefs.current[currentSlide];
+    if (currentSlideElement) {
+      slideScrollPositions.current[currentSlide] = currentSlideElement.scrollTop;
+    }
+  };
+
+  // 恢复屏幕的滚动位置
+  const restoreSlideScroll = (slideIndex) => {
+    const slideElement = slideRefs.current[slideIndex];
+    if (slideElement) {
+      // 使用 setTimeout 确保 DOM 更新完成后再滚动
+      setTimeout(() => {
+        if (visitedSlides.has(slideIndex)) {
+          // 如果已访问过，恢复滚动位置
+          slideElement.scrollTop = slideScrollPositions.current[slideIndex];
+        } else {
+          // 如果未访问过，滚动到顶部
+          slideElement.scrollTop = 0;
+          setVisitedSlides(prev => new Set([...prev, slideIndex]));
+        }
+      }, 100);
+    }
+  };
+
+  // 切换屏幕
+  const handleSlideChange = (newSlide) => {
+    if (newSlide === currentSlide) return;
+    
+    // 保存当前屏幕的滚动位置
+    saveCurrentSlideScroll();
+    
+    // 切换屏幕
+    setCurrentSlide(newSlide);
+    
+    // 恢复目标屏幕的滚动位置
+    restoreSlideScroll(newSlide);
+  };
+
   // 处理触摸滑动（只在滑动容器内有效）
   const handleTouchStart = (e) => {
     // 只在滑动容器内触发，不在按钮等交互元素上触发
@@ -257,16 +302,31 @@ const Home = () => {
     if (Math.abs(diff) > minSwipeDistance) {
       if (diff > 0 && currentSlide < 1) {
         // 向左滑动，切换到第二屏
-        setCurrentSlide(1);
+        handleSlideChange(1);
       } else if (diff < 0 && currentSlide > 0) {
         // 向右滑动，切换到第一屏
-        setCurrentSlide(0);
+        handleSlideChange(0);
       }
     }
     
     touchStartX.current = 0;
     touchEndX.current = 0;
   };
+  
+  // 监听屏幕滚动，实时保存滚动位置
+  useEffect(() => {
+    const slideElement = slideRefs.current[currentSlide];
+    if (!slideElement) return;
+
+    const handleScroll = () => {
+      slideScrollPositions.current[currentSlide] = slideElement.scrollTop;
+    };
+
+    slideElement.addEventListener('scroll', handleScroll);
+    return () => {
+      slideElement.removeEventListener('scroll', handleScroll);
+    };
+  }, [currentSlide]);
 
   return (
     <div className="home">
@@ -282,7 +342,10 @@ const Home = () => {
             onTouchEnd={handleTouchEnd}
           >
             {/* 第一屏 */}
-            <div className="swiper-slide slide-1">
+            <div 
+              className="swiper-slide slide-1"
+              ref={(el) => { slideRefs.current[0] = el; }}
+            >
               {weatherData && (
                 <>
                   <WeatherCard weather={weatherData} location={currentLocation} />
@@ -302,7 +365,10 @@ const Home = () => {
             </div>
 
             {/* 第二屏 */}
-            <div className="swiper-slide slide-2">
+            <div 
+              className="swiper-slide slide-2"
+              ref={(el) => { slideRefs.current[1] = el; }}
+            >
               <div className="settings-panel">
                 <div className="settings-row">
                   <div className="setting-item">
@@ -353,11 +419,11 @@ const Home = () => {
           <div className="swiper-indicator">
             <div 
               className={`indicator-dot ${currentSlide === 0 ? 'active' : ''}`}
-              onClick={() => setCurrentSlide(0)}
+              onClick={() => handleSlideChange(0)}
             />
             <div 
               className={`indicator-dot ${currentSlide === 1 ? 'active' : ''}`}
-              onClick={() => setCurrentSlide(1)}
+              onClick={() => handleSlideChange(1)}
             />
           </div>
 

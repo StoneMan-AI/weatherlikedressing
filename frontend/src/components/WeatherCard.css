@@ -9,28 +9,41 @@
 }
 
 .weather-main {
-  display: flex;
-  gap: var(--spacing-lg);
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: var(--spacing-sm);
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
 .weather-left-column {
+  grid-column: 1 / 4;
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: var(--spacing-sm);
+}
+
+.weather-center-column {
+  grid-column: 4 / 6;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--spacing-md);
-  flex: 0 0 auto;
+  justify-content: center;
 }
 
 .weather-right-column {
-  display: flex;
-  flex-direction: column;
+  grid-column: 6 / 9;
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
   gap: var(--spacing-sm);
-  flex: 1;
 }
 
 .temperature-display {
   text-align: center;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .temperature {
@@ -44,16 +57,23 @@
 .weather-detail-item {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
   gap: var(--spacing-xs);
-  padding: var(--spacing-sm);
+  padding: var(--spacing-md);
   background: rgba(255, 255, 255, 0.05);
   border-radius: var(--border-radius);
   border: 1px solid var(--border-color);
+  min-height: 80px;
+  aspect-ratio: 1;
+}
+
+.placeholder-item {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .aqi-item {
-  width: 100%;
   align-items: center;
 }
 
@@ -76,42 +96,63 @@
 
 @media (max-width: 768px) {
   .weather-main {
-    flex-direction: column;
-    align-items: center;
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--spacing-xs);
   }
   
-  .weather-left-column,
-  .weather-right-column {
-    width: 100%;
+  .weather-left-column {
+    grid-column: 1 / 3;
+  }
+  
+  .weather-center-column {
+    grid-column: 3 / 5;
   }
   
   .weather-right-column {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--spacing-sm);
+    grid-column: 5 / 7;
   }
   
   .temperature {
-    font-size: 72px;
+    font-size: 64px;
     letter-spacing: -2px;
   }
   
   .weather-detail-item {
     padding: var(--spacing-sm);
-    align-items: center;
+    min-height: 70px;
   }
   
   .detail-value {
     font-size: 18px;
   }
+  
+  .placeholder-item {
+    display: none; /* 移动端隐藏占位方块 */
+  }
 }
 
 @media (max-width: 480px) {
-  .temperature {
-    font-size: 64px;
+  .weather-main {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .weather-left-column {
+    grid-column: 1 / 2;
+  }
+  
+  .weather-center-column {
+    grid-column: 2 / 4;
   }
   
   .weather-right-column {
-    grid-template-columns: 1fr;
+    grid-column: 4 / 5;
+  }
+  
+  .temperature {
+    font-size: 56px;
+  }
+  
+  .weather-detail-item {
+    min-height: 60px;
   }
 }

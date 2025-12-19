@@ -20,18 +20,8 @@ const WeatherCard = ({ weather, location }) => {
   return (
     <div className="weather-card">
       <div className="weather-main">
+        {/* 左侧3个方块 */}
         <div className="weather-left-column">
-          <div className="temperature-display">
-            <span className="temperature">{Math.round(current.temperature_c)}°</span>
-          </div>
-          <div className="weather-detail-item aqi-item">
-            <span className="detail-label">空气质量</span>
-            <span className="detail-value aqi-value" style={{ color: aqiInfo.color }}>
-              {aqiInfo.label}
-            </span>
-          </div>
-        </div>
-        <div className="weather-right-column">
           <div className="weather-detail-item">
             <span className="detail-label">湿度</span>
             <span className="detail-value">{current.relative_humidity}%</span>
@@ -43,6 +33,29 @@ const WeatherCard = ({ weather, location }) => {
           <div className="weather-detail-item">
             <span className="detail-label">紫外线</span>
             <span className="detail-value">{current.uv_index || 0}</span>
+          </div>
+        </div>
+        
+        {/* 中间：温度（占2个方块） */}
+        <div className="weather-center-column">
+          <div className="temperature-display">
+            <span className="temperature">{Math.round(current.temperature_c)}°</span>
+          </div>
+        </div>
+        
+        {/* 右侧3个方块 */}
+        <div className="weather-right-column">
+          <div className="weather-detail-item aqi-item">
+            <span className="detail-label">空气质量</span>
+            <span className="detail-value aqi-value" style={{ color: aqiInfo.color }}>
+              {aqiInfo.label}
+            </span>
+          </div>
+          <div className="weather-detail-item placeholder-item">
+            {/* 占位方块，保持布局对称 */}
+          </div>
+          <div className="weather-detail-item placeholder-item">
+            {/* 占位方块，保持布局对称 */}
           </div>
         </div>
       </div>
