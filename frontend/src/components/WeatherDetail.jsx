@@ -320,9 +320,9 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
             {/* 最高温度标记 */}
             {maxPoint && (
               <g className="max-temp-marker">
-                <circle cx={maxPoint.x} cy={maxPoint.y} r="3" fill="#FF5722" />
-                <text x={maxPoint.x} y={maxPoint.y - 10} textAnchor="middle" fill="#FF5722" fontSize="12" fontWeight="bold">
-                  最高
+                <circle cx={maxPoint.x} cy={maxPoint.y} r="5" fill="#FF5722" stroke="#FFFFFF" strokeWidth="1.5" />
+                <text x={maxPoint.x} y={Math.max(18, maxPoint.y - 15)} textAnchor="middle" fill="#FF5722" fontSize="20" fontWeight="bold">
+                  最高 {Math.round(maxTemp)}°
                 </text>
               </g>
             )}
@@ -330,9 +330,26 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
             {/* 最低温度标记 */}
             {minPoint && (
               <g className="min-temp-marker">
-                <circle cx={minPoint.x} cy={minPoint.y} r="3" fill="#2196F3" />
-                <text x={minPoint.x} y={minPoint.y + 20} textAnchor="middle" fill="#2196F3" fontSize="12" fontWeight="bold">
-                  最低
+                <circle cx={minPoint.x} cy={minPoint.y} r="5" fill="#2196F3" stroke="#FFFFFF" strokeWidth="1.5" />
+                <text x={minPoint.x} y={Math.min(285, minPoint.y + 28)} textAnchor="middle" fill="#2196F3" fontSize="20" fontWeight="bold">
+                  最低 {Math.round(minTemp)}°
+                </text>
+              </g>
+            )}
+            
+            {/* 当前时间值标注 */}
+            {currentPoint && (
+              <g className="current-value-marker">
+                <text 
+                  x={currentPoint.x} 
+                  y={Math.max(18, currentPoint.y - 15)} 
+                  textAnchor="middle" 
+                  fill="#FFFFFF" 
+                  fontSize="22" 
+                  fontWeight="bold"
+                  className="current-value-label"
+                >
+                  {Math.round(currentPoint.value)}°
                 </text>
               </g>
             )}
@@ -349,7 +366,8 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
                     y={y + 4}
                     textAnchor="end"
                     fill="rgba(255, 255, 255, 0.7)"
-                    fontSize="12"
+                    fontSize="16"
+                    fontWeight="500"
                   >
                     {Math.round(value)}°
                   </text>
@@ -359,8 +377,10 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
             
             {/* X轴标签 */}
             <g className="chart-x-axis">
-              {[0, 6, 12, 18].map((hour) => {
-                const x = 30 + ((hour / 23) * (600 - 30 * 2));
+              {[0, 6, 12, 18, 24].map((hour) => {
+                const x = hour === 24 
+                  ? 30 + ((23 / 23) * (600 - 30 * 2)) // 24时位置在最后一个点
+                  : 30 + ((hour / 23) * (600 - 30 * 2));
                 return (
                   <text
                     key={hour}
@@ -368,7 +388,8 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
                     y="290"
                     textAnchor="middle"
                     fill="rgba(255, 255, 255, 0.7)"
-                    fontSize="12"
+                    fontSize="16"
+                    fontWeight="500"
                   >
                     {hour}时
                   </text>
@@ -471,10 +492,10 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
             {currentPoint && (
               <text
                 x={currentPoint.x}
-                y={Math.max(15, currentPoint.y - 15)}
+                y={Math.max(18, currentPoint.y - 18)}
                 textAnchor="middle"
                 fill="#FFFFFF"
-                fontSize="16"
+                fontSize="22"
                 fontWeight="bold"
                 className="current-value-label"
               >
@@ -494,7 +515,8 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
                     y={y + 4}
                     textAnchor="end"
                     fill="rgba(255, 255, 255, 0.7)"
-                    fontSize="12"
+                    fontSize="16"
+                    fontWeight="500"
                   >
                     {value.toFixed(key === 'wind_m_s' ? 1 : 0)}{unit}
                   </text>
@@ -504,8 +526,10 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
             
             {/* X轴标签 */}
             <g className="chart-x-axis">
-              {[0, 6, 12, 18].map((hour) => {
-                const x = 30 + ((hour / 23) * (600 - 30 * 2));
+              {[0, 6, 12, 18, 24].map((hour) => {
+                const x = hour === 24 
+                  ? 30 + ((23 / 23) * (600 - 30 * 2)) // 24时位置在最后一个点
+                  : 30 + ((hour / 23) * (600 - 30 * 2));
                 return (
                   <text
                     key={hour}
@@ -513,7 +537,8 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
                     y="290"
                     textAnchor="middle"
                     fill="rgba(255, 255, 255, 0.7)"
-                    fontSize="12"
+                    fontSize="16"
+                    fontWeight="500"
                   >
                     {hour}时
                   </text>
