@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import RecommendationCard from '../components/RecommendationCard';
 import WeatherCard from '../components/WeatherCard';
@@ -25,6 +25,10 @@ const Home = () => {
   const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // 用于取消请求的AbortController
+  const abortControllerRef = useRef(null);
 
   // 首次打开时获取位置
   useEffect(() => {
@@ -70,7 +74,7 @@ const Home = () => {
   }, [locationLoading, currentLocation]);
 
   // 获取天气数据
-  const fetchWeatherData = async () => {
+  const fetchWeatherData = async (signal) => {
     if (!currentLocation) {
       return;
     }
@@ -82,21 +86,36 @@ const Home = () => {
           longitude: currentLocation.longitude,
           timezone: currentLocation.timezone || 'Asia/Shanghai',
           days: 15
-        }
+        },
+        signal // 支持请求取消
       });
-      setWeatherData(res.data.data);
+      
+      // 验证数据完整性
+      if (res.data.success && res.data.data && res.data.data.current) {
+        setWeatherData(res.data.data);
+        setError(null);
+      } else {
+        throw new Error('天气数据格式不正确');
+      }
     } catch (error) {
+      // 如果是取消请求，不显示错误
+      if (axios.isCancel(error) || error.name === 'AbortError') {
+        return;
+      }
       console.error('Failed to fetch weather data:', error);
+      setError('获取天气数据失败，请稍后重试');
     }
   };
 
   // 计算推荐
-  const calculateRecommendation = async () => {
+  const calculateRecommendation = async (signal) => {
     if (!currentLocation) {
       return;
     }
 
     setLoading(true);
+    setError(null);
+    
     try {
       const res = await axios.post('/api/recommendations/calculate', {
         latitude: currentLocation.latitude,
@@ -104,31 +123,99 @@ const Home = () => {
         timezone: currentLocation.timezone || 'Asia/Shanghai',
         is_outdoor: isOutdoor,
         activity_level: activityLevel
+      }, {
+        signal // 支持请求取消
       });
-      setRecommendation(res.data.data);
+      
+      // 验证响应数据
+      if (res.data.success && res.data.data && res.data.data.recommendation) {
+        setRecommendation(res.data.data);
+        setError(null);
+      } else {
+        throw new Error('推荐数据格式不正确');
+      }
     } catch (error) {
+      // 如果是取消请求，不显示错误
+      if (axios.isCancel(error) || error.name === 'AbortError') {
+        return;
+      }
+      
       console.error('Failed to calculate recommendation:', error);
-      alert('获取推荐失败，请稍后重试');
+      const errorMessage = error.response?.data?.error || error.message || '获取推荐失败，请稍后重试';
+      setError(errorMessage);
+      
+      // 只在非取消错误时显示提示
+      if (!axios.isCancel(error) && error.name !== 'AbortError') {
+        // 延迟显示错误，避免快速切换时的闪烁
+        setTimeout(() => {
+          if (errorMessage) {
+            alert(errorMessage);
+          }
+        }, 100);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // 当位置改变时获取天气数据
+  // 当位置改变时获取天气数据和推荐
   useEffect(() => {
-    if (currentLocation && !initializing) {
-      fetchWeatherData();
+    if (!currentLocation || initializing) {
+      return;
     }
+
+    // 取消之前的请求
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // 创建新的AbortController
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    // 重置状态
+    setError(null);
+    setWeatherData(null);
+    setRecommendation(null);
+
+    // 获取天气数据
+    fetchWeatherData(abortController.signal);
+
+    // 计算推荐
+    calculateRecommendation(abortController.signal);
+
+    // 清理函数：组件卸载或位置改变时取消请求
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLocation, initializing]);
 
-  // 当位置或参数改变时自动计算推荐
+  // 当活动参数改变时重新计算推荐（不改变位置）
   useEffect(() => {
-    if (currentLocation && !initializing) {
-      calculateRecommendation();
+    if (!currentLocation || initializing) {
+      return;
     }
+
+    // 取消之前的推荐请求
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    calculateRecommendation(abortController.signal);
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentLocation, isOutdoor, activityLevel, initializing]);
+  }, [isOutdoor, activityLevel]);
 
   if (initializing || locationLoading) {
     return (
@@ -203,6 +290,34 @@ const Home = () => {
                   <HealthAlerts messages={recommendation.recommendation.health_messages} />
                 )}
             </>
+          )}
+
+          {error && (
+            <div className="error-message" style={{
+              background: 'rgba(244, 67, 54, 0.1)',
+              border: '1px solid rgba(244, 67, 54, 0.3)',
+              borderRadius: 'var(--border-radius)',
+              padding: 'var(--spacing-md)',
+              marginBottom: 'var(--spacing-lg)',
+              color: 'var(--text-primary)',
+              textAlign: 'center'
+            }}>
+              <p>{error}</p>
+              <button 
+                onClick={() => {
+                  setError(null);
+                  if (currentLocation) {
+                    const abortController = new AbortController();
+                    abortControllerRef.current = abortController;
+                    calculateRecommendation(abortController.signal);
+                  }
+                }}
+                className="btn btn-primary"
+                style={{ marginTop: 'var(--spacing-sm)' }}
+              >
+                重试
+              </button>
+            </div>
           )}
 
           {loading && (

@@ -68,6 +68,13 @@ router.post('/calculate', async (req, res) => {
       15
     );
 
+    // 验证天气数据完整性
+    if (!weatherData || !weatherData.current) {
+      return res.status(500).json({ 
+        error: '天气数据不完整，无法计算推荐' 
+      });
+    }
+
     // 确定使用哪个时间点的天气数据
     let weatherInput;
     if (target_time) {
@@ -79,6 +86,16 @@ router.post('/calculate', async (req, res) => {
     // 确保weatherInput包含所有必需字段
     if (!weatherInput) {
       weatherInput = weatherData.current;
+    }
+
+    // 验证必需字段
+    const requiredFields = ['temperature_c', 'relative_humidity', 'wind_m_s'];
+    const missingFields = requiredFields.filter(field => weatherInput[field] === undefined || weatherInput[field] === null);
+    
+    if (missingFields.length > 0) {
+      return res.status(500).json({ 
+        error: `天气数据缺少必需字段: ${missingFields.join(', ')}` 
+      });
     }
 
     // 获取用户资料（如果已登录且未提供user_profile）

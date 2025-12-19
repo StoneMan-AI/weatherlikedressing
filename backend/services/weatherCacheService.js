@@ -196,6 +196,21 @@ class WeatherCacheService {
         forecastDays
       );
 
+      // 验证数据完整性
+      if (!weatherData || !weatherData.current) {
+        throw new Error('天气API返回的数据不完整');
+      }
+
+      // 验证必需字段
+      const requiredFields = ['temperature_c', 'relative_humidity', 'wind_m_s'];
+      const missingFields = requiredFields.filter(field => 
+        weatherData.current[field] === undefined || weatherData.current[field] === null
+      );
+      
+      if (missingFields.length > 0) {
+        throw new Error(`天气数据缺少必需字段: ${missingFields.join(', ')}`);
+      }
+
       // 尝试保存到缓存（如果表不存在，忽略错误）
       try {
         await this.saveWeatherCache(
@@ -223,7 +238,14 @@ class WeatherCacheService {
       };
     } catch (error) {
       console.error('Error fetching weather from API:', error);
-      throw error;
+      // 提供更详细的错误信息
+      if (error.response) {
+        throw new Error(`天气API请求失败: ${error.response.status} ${error.response.statusText}`);
+      } else if (error.request) {
+        throw new Error('无法连接到天气API服务，请检查网络连接');
+      } else {
+        throw error;
+      }
     }
   }
 
