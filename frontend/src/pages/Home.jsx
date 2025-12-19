@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import RecommendationCard from '../components/RecommendationCard';
 import WeatherCard from '../components/WeatherCard';
+import WeatherDetail from '../components/WeatherDetail';
+import DailyForecast from '../components/DailyForecast';
 import LocationSelector from '../components/LocationSelector';
 import HealthAlerts from '../components/HealthAlerts';
 import { useLocationContext } from '../contexts/LocationContext';
@@ -20,6 +22,7 @@ const Home = () => {
   const [isOutdoor, setIsOutdoor] = useState(true);
   const [activityLevel, setActivityLevel] = useState('low');
   const [recommendation, setRecommendation] = useState(null);
+  const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
@@ -66,6 +69,27 @@ const Home = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationLoading, currentLocation]);
 
+  // 获取天气数据
+  const fetchWeatherData = async () => {
+    if (!currentLocation) {
+      return;
+    }
+
+    try {
+      const res = await axios.get('/api/weather/forecast', {
+        params: {
+          latitude: currentLocation.latitude,
+          longitude: currentLocation.longitude,
+          timezone: currentLocation.timezone || 'Asia/Shanghai',
+          days: 15
+        }
+      });
+      setWeatherData(res.data.data);
+    } catch (error) {
+      console.error('Failed to fetch weather data:', error);
+    }
+  };
+
   // 计算推荐
   const calculateRecommendation = async () => {
     if (!currentLocation) {
@@ -90,7 +114,15 @@ const Home = () => {
     }
   };
 
-  // 当位置或参数改变时自动计算
+  // 当位置改变时获取天气数据
+  useEffect(() => {
+    if (currentLocation && !initializing) {
+      fetchWeatherData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentLocation, initializing]);
+
+  // 当位置或参数改变时自动计算推荐
   useEffect(() => {
     if (currentLocation && !initializing) {
       calculateRecommendation();
@@ -155,9 +187,16 @@ const Home = () => {
             </div>
           </div>
 
+          {weatherData && (
+            <>
+              <WeatherCard weather={weatherData} location={currentLocation} />
+              <WeatherDetail weatherData={weatherData} />
+              <DailyForecast dailyData={weatherData.daily} />
+            </>
+          )}
+
           {recommendation && (
             <>
-              <WeatherCard weather={recommendation.weather} location={currentLocation} />
               <RecommendationCard recommendation={recommendation.recommendation} />
               {recommendation.recommendation.health_messages &&
                 recommendation.recommendation.health_messages.length > 0 && (

@@ -10,6 +10,10 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3300;
 
+// 启动定时任务服务（天气数据更新）
+const SchedulerService = require('./services/schedulerService');
+const scheduler = new SchedulerService();
+
 // 中间件
 app.use(helmet());
 app.use(cors());
@@ -54,6 +58,22 @@ app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Health check: http://localhost:${PORT}/health`);
+  
+  // 启动天气数据更新定时任务
+  scheduler.start();
+});
+
+// 优雅关闭
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  scheduler.stop();
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully...');
+  scheduler.stop();
+  process.exit(0);
 });
 
 module.exports = app;

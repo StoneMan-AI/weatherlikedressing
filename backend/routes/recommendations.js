@@ -58,11 +58,14 @@ router.post('/calculate', async (req, res) => {
       return res.status(400).json({ error: 'Latitude and longitude are required' });
     }
 
-    // 获取天气数据
-    const weatherData = await weatherService.getCompleteWeatherData(
+    // 获取天气数据（使用缓存服务）
+    const WeatherCacheService = require('../services/weatherCacheService');
+    const weatherCacheService = new WeatherCacheService();
+    const weatherData = await weatherCacheService.getWeatherData(
       parseFloat(latitude),
       parseFloat(longitude),
-      timezone
+      timezone,
+      15
     );
 
     // 确定使用哪个时间点的天气数据
@@ -70,6 +73,11 @@ router.post('/calculate', async (req, res) => {
     if (target_time) {
       weatherInput = weatherService.getWeatherAtTime(weatherData, target_time);
     } else {
+      weatherInput = weatherData.current;
+    }
+    
+    // 确保weatherInput包含所有必需字段
+    if (!weatherInput) {
       weatherInput = weatherData.current;
     }
 
