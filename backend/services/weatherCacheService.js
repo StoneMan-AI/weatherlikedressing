@@ -15,8 +15,12 @@ class WeatherCacheService {
 
   /**
    * 记录活跃地区
+   * @param {number} latitude - 纬度
+   * @param {number} longitude - 经度
+   * @param {string} timezone - 时区
+   * @param {string} userId - 用户ID（可选）
    */
-  async recordActiveRegion(latitude, longitude, timezone = 'Asia/Shanghai') {
+  async recordActiveRegion(latitude, longitude, timezone = 'Asia/Shanghai', userId = null) {
     try {
       // 四舍五入到小数点后4位，减少重复数据
       const lat = Math.round(latitude * 10000) / 10000;
@@ -31,6 +35,11 @@ class WeatherCacheService {
            request_count = active_regions.request_count + 1`,
         [lat, lon, timezone]
       );
+      
+      // 如果提供了用户ID，记录用户请求（用于统计）
+      if (userId) {
+        // 这里可以扩展记录用户请求的地区
+      }
     } catch (error) {
       console.error('Error recording active region:', error);
     }
@@ -38,14 +47,24 @@ class WeatherCacheService {
 
   /**
    * 记录天气请求日志
+   * @param {number} latitude - 纬度
+   * @param {number} longitude - 经度
+   * @param {string} timezone - 时区
+   * @param {string} source - 数据来源（cache/api）
+   * @param {string} userId - 用户ID（可选）
    */
-  async logWeatherRequest(latitude, longitude, timezone, source = 'cache') {
+  async logWeatherRequest(latitude, longitude, timezone, source = 'cache', userId = null) {
     try {
       await pool.query(
         `INSERT INTO weather_requests (latitude, longitude, timezone, source)
          VALUES ($1, $2, $3, $4)`,
         [latitude, longitude, timezone, source]
       );
+      
+      // 如果提供了用户ID，可以记录到用户请求表（如果需要）
+      if (userId) {
+        // 可以扩展记录用户级别的请求统计
+      }
     } catch (error) {
       console.error('Error logging weather request:', error);
     }
@@ -155,11 +174,16 @@ class WeatherCacheService {
 
   /**
    * 获取天气数据（优先从缓存，否则从API获取）
+   * @param {number} latitude - 纬度
+   * @param {number} longitude - 经度
+   * @param {string} timezone - 时区
+   * @param {number} forecastDays - 预报天数
+   * @param {string} userId - 用户ID（可选）
    */
-  async getWeatherData(latitude, longitude, timezone = 'Asia/Shanghai', forecastDays = 15) {
+  async getWeatherData(latitude, longitude, timezone = 'Asia/Shanghai', forecastDays = 15, userId = null) {
     // 记录活跃地区（如果失败不影响主流程）
     try {
-      await this.recordActiveRegion(latitude, longitude, timezone);
+      await this.recordActiveRegion(latitude, longitude, timezone, userId);
     } catch (error) {
       console.warn('Failed to record active region (table may not exist):', error.message);
     }
@@ -175,7 +199,7 @@ class WeatherCacheService {
     
     if (cached) {
       try {
-        await this.logWeatherRequest(latitude, longitude, timezone, 'cache');
+        await this.logWeatherRequest(latitude, longitude, timezone, 'cache', userId);
       } catch (error) {
         // 忽略日志记录错误
       }
@@ -227,7 +251,7 @@ class WeatherCacheService {
       }
 
       try {
-        await this.logWeatherRequest(latitude, longitude, timezone, 'api');
+        await this.logWeatherRequest(latitude, longitude, timezone, 'api', userId);
       } catch (error) {
         // 忽略日志记录错误
       }

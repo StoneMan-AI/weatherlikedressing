@@ -10,6 +10,9 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3300;
 
+// 用户ID中间件
+const userIdMiddleware = require('./middleware/userId');
+
 // 启动定时任务服务（天气数据更新）
 const SchedulerService = require('./services/schedulerService');
 const scheduler = new SchedulerService();
@@ -19,6 +22,9 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// 用户ID中间件（在所有路由之前）
+app.use(userIdMiddleware);
 
 // 请求日志中间件
 app.use((req, res, next) => {

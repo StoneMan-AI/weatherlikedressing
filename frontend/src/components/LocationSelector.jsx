@@ -23,6 +23,12 @@ const LocationSelector = () => {
       return;
     }
 
+    // 检查是否已达到最大数量
+    if (locations.length >= 5) {
+      alert('最多只能添加5个地区');
+      return;
+    }
+
     setSearching(true);
     try {
       const location = await searchLocationByCityName(cityName.trim());
@@ -36,7 +42,8 @@ const LocationSelector = () => {
     }
   };
 
-  const handleDeleteLocation = (id) => {
+  const handleDeleteLocation = (id, e) => {
+    e.stopPropagation();
     if (locations.length <= 1) {
       alert('至少需要保留一个位置');
       return;
@@ -53,6 +60,8 @@ const LocationSelector = () => {
         <button
           className="btn-add-location"
           onClick={() => setShowAddForm(!showAddForm)}
+          disabled={locations.length >= 5}
+          title={locations.length >= 5 ? '最多只能添加5个地区' : '添加地区'}
         >
           {showAddForm ? '取消' : '+'}
         </button>
@@ -66,37 +75,38 @@ const LocationSelector = () => {
             placeholder="输入城市名称，如：北京、上海、New York"
             value={cityName}
             onChange={(e) => setCityName(e.target.value)}
-            disabled={searching}
+            disabled={searching || locations.length >= 5}
           />
           <button
             type="submit"
             className="btn-search-city"
-            disabled={searching}
+            disabled={searching || locations.length >= 5}
           >
             {searching ? '搜索中...' : '搜索'}
           </button>
+          {locations.length >= 5 && (
+            <p className="max-location-warning">已达到最大数量（5个）</p>
+          )}
         </form>
       )}
 
-      {locations.length > 1 && (
-        <div className="location-list">
+      {locations.length > 0 && (
+        <div className="location-buttons">
           {locations.map(location => (
             <div
               key={location.id}
-              className={`location-item ${currentLocation?.id === location.id ? 'active' : ''}`}
+              className={`location-button ${currentLocation?.id === location.id ? 'active' : ''}`}
               onClick={() => setCurrentLocation(location)}
             >
-              <span className="location-name">{location.name}</span>
+              <span className="location-button-name">{location.name}</span>
               {location.is_default && <span className="default-badge">默认</span>}
               {locations.length > 1 && (
                 <button
                   className="btn-delete-location"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteLocation(location.id);
-                  }}
+                  onClick={(e) => handleDeleteLocation(location.id, e)}
+                  title="删除地区"
                 >
-                  ×
+                  <span className="delete-icon">×</span>
                 </button>
               )}
             </div>

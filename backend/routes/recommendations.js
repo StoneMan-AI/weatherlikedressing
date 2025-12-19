@@ -58,6 +58,9 @@ router.post('/calculate', async (req, res) => {
       return res.status(400).json({ error: 'Latitude and longitude are required' });
     }
 
+    // 获取用户ID（匿名用户或登录用户）
+    const userId = req.userId || req.anonymousUserId;
+    
     // 获取天气数据（使用缓存服务）
     const WeatherCacheService = require('../services/weatherCacheService');
     const weatherCacheService = new WeatherCacheService();
@@ -65,7 +68,8 @@ router.post('/calculate', async (req, res) => {
       parseFloat(latitude),
       parseFloat(longitude),
       timezone,
-      15
+      15,
+      userId
     );
 
     // 验证天气数据完整性
@@ -100,12 +104,12 @@ router.post('/calculate', async (req, res) => {
 
     // 获取用户资料（如果已登录且未提供user_profile）
     let finalUserProfile = user_profile || {};
-    const userId = req.user?.id;
-    if (userId && !user_profile) {
+    const authenticatedUserId = req.user?.id;
+    if (authenticatedUserId && !user_profile) {
       try {
         const userResult = await pool.query(
           'SELECT profile_json FROM users WHERE id = $1',
-          [userId]
+          [authenticatedUserId]
         );
         if (userResult.rows.length > 0 && userResult.rows[0].profile_json) {
           finalUserProfile = userResult.rows[0].profile_json;
@@ -133,12 +137,13 @@ router.post('/calculate', async (req, res) => {
     // 生成推荐
     const recommendation = ruleEngine.generateRecommendation(inputs);
 
-    // 保存推荐历史（如果提供了user_id）
-    if (userId) {
+    // 保存推荐历史（如果用户已登录）
+    // 注意：匿名用户的推荐历史暂不保存到数据库，可以后续扩展
+    if (authenticatedUserId) {
       // 查找location_id
       const locationResult = await pool.query(
         'SELECT id FROM locations WHERE user_id = $1 AND latitude BETWEEN $2 - 0.001 AND $2 + 0.001 AND longitude BETWEEN $3 - 0.001 AND $3 + 0.001 LIMIT 1',
-        [userId, parseFloat(latitude), parseFloat(longitude)]
+        [authenticatedUserId, parseFloat(latitude), parseFloat(longitude)]
       );
 
       const locationId = locationResult.rows[0]?.id || null;
@@ -147,7 +152,7 @@ router.post('/calculate', async (req, res) => {
         `INSERT INTO recommendations (user_id, location_id, timestamp, input_snapshot, comfort_score, recommendation_json)
          VALUES ($1, $2, $3, $4, $5, $6)`,
         [
-          userId,
+          authenticatedUserId,
           locationId,
           new Date(weatherInput.timestamp),
           JSON.stringify(inputs),
