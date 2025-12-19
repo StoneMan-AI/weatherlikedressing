@@ -1,5 +1,11 @@
 .recommendation-card {
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-xl);
+  border: 1px solid var(--border-color);
 }
 
 .recommendation-header {
@@ -25,39 +31,41 @@
 
 .score-label {
   font-size: 16px;
-  color: var(--text-gray);
+  color: var(--text-secondary);
 }
 
 .score-value {
   font-size: 32px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .score-number {
   font-size: 18px;
-  color: var(--text-gray);
+  color: var(--text-secondary);
 }
 
 .btn-expand {
   padding: var(--spacing-xs) var(--spacing-md);
-  background: var(--primary-light);
-  color: var(--primary-color);
-  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   cursor: pointer;
   font-size: 14px;
   transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .btn-expand:hover {
-  background: var(--primary-color);
-  color: white;
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .recommendation-main h3 {
   font-size: 20px;
   margin-bottom: var(--spacing-md);
-  color: var(--text-dark);
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .layers-list {
@@ -76,32 +84,38 @@
   border-bottom: none;
 }
 
+.layer-item:last-child {
+  border-bottom: none;
+}
+
 .layer-number {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: var(--primary-color);
-  color: white;
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
   border-radius: 50%;
   font-weight: 600;
   font-size: 14px;
   flex-shrink: 0;
+  border: 1px solid var(--border-color);
 }
 
 .layer-text {
   font-size: 16px;
-  color: var(--text-dark);
+  color: var(--text-primary);
 }
 
 .accessories {
   padding: var(--spacing-md);
-  background: var(--primary-light);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: var(--border-radius);
   font-size: 15px;
-  color: var(--text-dark);
+  color: var(--text-primary);
   margin-top: var(--spacing-md);
+  border: 1px solid var(--border-color);
 }
 
 .recommendation-details {
@@ -114,13 +128,13 @@
 .reason-summary {
   margin-top: var(--spacing-sm);
   font-size: 14px;
-  color: var(--text-gray);
+  color: var(--text-secondary);
   line-height: 1.6;
 }
 
 .notes strong,
 .reason-summary strong {
-  color: var(--text-dark);
+  color: var(--text-primary);
 }
 
 .urgency-badge {

@@ -5,52 +5,57 @@
 }
 
 :root {
-  /* 主题色彩 - 明亮卡片式 */
-  --primary-color: #FF7A59;
-  --primary-light: #FFD9CC;
-  --text-dark: #333333;
-  --text-gray: #666666;
-  --text-light: #999999;
-  --bg-light: #FFF5F2;
-  --card-bg: #FFFFFF;
-  --border-color: #E5E5E5;
-  --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  --shadow-hover: 0 4px 20px rgba(255, 122, 89, 0.15);
-  --border-radius: 12px;
+  /* iPhone天气风格色彩 */
+  --primary-color: #1C1C1E;
+  --text-primary: #FFFFFF;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-tertiary: rgba(255, 255, 255, 0.5);
+  --bg-gradient-start: #4A90E2;
+  --bg-gradient-end: #357ABD;
+  --card-bg: rgba(255, 255, 255, 0.1);
+  --card-bg-hover: rgba(255, 255, 255, 0.15);
+  --border-color: rgba(255, 255, 255, 0.2);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  --border-radius: 16px;
   --spacing-xs: 8px;
   --spacing-sm: 12px;
   --spacing-md: 16px;
   --spacing-lg: 24px;
   --spacing-xl: 32px;
+  --spacing-xxl: 48px;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  color: var(--text-dark);
-  background-color: var(--bg-light);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  color: var(--text-primary);
+  background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+  background-attachment: fixed;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
 }
 
 #root {
   min-height: 100vh;
 }
 
-/* 卡片样式 */
+/* 卡片样式 - iPhone风格 */
 .card {
   background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-radius: var(--border-radius);
   padding: var(--spacing-lg);
-  box-shadow: var(--shadow);
-  transition: box-shadow 0.3s ease;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
 }
 
 .card:hover {
-  box-shadow: var(--shadow-hover);
+  background: var(--card-bg-hover);
 }
 
-/* 按钮样式 */
+/* 按钮样式 - iPhone风格 */
 .btn {
   padding: var(--spacing-sm) var(--spacing-lg);
   border: none;
@@ -59,40 +64,53 @@ body {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .btn-primary {
-  background-color: var(--primary-color);
-  color: white;
+  background: rgba(255, 255, 255, 0.25);
+  color: var(--text-primary);
 }
 
 .btn-primary:hover {
-  background-color: #FF6340;
+  background: rgba(255, 255, 255, 0.35);
   transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background-color: var(--primary-light);
-  color: var(--primary-color);
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--text-primary);
 }
 
 .btn-secondary:hover {
-  background-color: #FFE6DC;
+  background: rgba(255, 255, 255, 0.25);
 }
 
-/* 输入框样式 */
+/* 输入框样式 - iPhone风格 */
 .input {
   width: 100%;
   padding: var(--spacing-sm) var(--spacing-md);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   font-size: 16px;
-  transition: border-color 0.3s ease;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.input::placeholder {
+  color: var(--text-tertiary);
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* 布局 */
@@ -128,11 +146,11 @@ body {
 }
 
 .text-primary {
-  color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 .text-gray {
-  color: var(--text-gray);
+  color: var(--text-secondary);
 }
 
 .text-large {

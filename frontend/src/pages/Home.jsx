@@ -1,49 +1,83 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
 import axios from 'axios';
 import RecommendationCard from '../components/RecommendationCard';
 import WeatherCard from '../components/WeatherCard';
 import LocationSelector from '../components/LocationSelector';
 import HealthAlerts from '../components/HealthAlerts';
+import { useLocationContext } from '../contexts/LocationContext';
 import './Home.css';
 
 const Home = () => {
-  const [location, setLocation] = useState(null);
+  const {
+    currentLocation,
+    locations,
+    loading: locationLoading,
+    getLocationByIP,
+    getLocationByGeolocation,
+    addLocation
+  } = useLocationContext();
+
   const [isOutdoor, setIsOutdoor] = useState(true);
   const [activityLevel, setActivityLevel] = useState('low');
   const [recommendation, setRecommendation] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
 
-  // 获取用户地点列表
-  const { data: locationsData } = useQuery({
-    queryKey: ['locations'],
-    queryFn: async () => {
-      const res = await axios.get('/api/locations');
-      return res.data.data;
-    }
-  });
-
-  // 设置默认地点
+  // 首次打开时获取位置
   useEffect(() => {
-    if (locationsData && locationsData.length > 0 && !location) {
-      const defaultLocation = locationsData.find(loc => loc.is_default) || locationsData[0];
-      setLocation(defaultLocation);
-    }
-  }, [locationsData, location]);
+    const initializeLocation = async () => {
+      if (locationLoading) return;
+      
+      // 如果已有位置，不需要初始化
+      if (currentLocation) {
+        setInitializing(false);
+        return;
+      }
+
+      try {
+        // 检测是否为移动设备
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        let location;
+        if (isMobile && navigator.geolocation) {
+          // 移动设备：请求位置权限
+          try {
+            location = await getLocationByGeolocation();
+          } catch (error) {
+            console.warn('地理位置获取失败，尝试IP定位:', error);
+            // 如果用户拒绝或失败，使用IP定位
+            location = await getLocationByIP();
+          }
+        } else {
+          // 浏览器：使用IP定位
+          location = await getLocationByIP();
+        }
+
+        // 添加位置
+        addLocation(location);
+      } catch (error) {
+        console.error('位置初始化失败:', error);
+      } finally {
+        setInitializing(false);
+      }
+    };
+
+    initializeLocation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationLoading, currentLocation]);
 
   // 计算推荐
   const calculateRecommendation = async () => {
-    if (!location) {
-      alert('请先选择地点');
+    if (!currentLocation) {
       return;
     }
 
     setLoading(true);
     try {
       const res = await axios.post('/api/recommendations/calculate', {
-        latitude: location.latitude,
-        longitude: location.longitude,
-        timezone: location.timezone || 'Asia/Shanghai',
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+        timezone: currentLocation.timezone || 'Asia/Shanghai',
         is_outdoor: isOutdoor,
         activity_level: activityLevel
       });
@@ -58,28 +92,30 @@ const Home = () => {
 
   // 当位置或参数改变时自动计算
   useEffect(() => {
-    if (location) {
+    if (currentLocation && !initializing) {
       calculateRecommendation();
     }
-  }, [location, isOutdoor, activityLevel]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentLocation, isOutdoor, activityLevel, initializing]);
+
+  if (initializing || locationLoading) {
+    return (
+      <div className="home container">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p className="text-gray">正在获取位置信息...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="home container">
-      <div className="home-header">
-        <h1 className="text-xl">今日穿衣推荐</h1>
-        <p className="text-gray">根据实时天气为您推荐最适合的穿搭</p>
-      </div>
+    <div className="home">
+      <LocationSelector />
 
-      <LocationSelector
-        locations={locationsData || []}
-        selectedLocation={location}
-        onSelectLocation={setLocation}
-      />
-
-      {location && (
+      {currentLocation && (
         <>
-          <div className="settings-panel card">
-            <h3>活动设置</h3>
+          <div className="settings-panel">
             <div className="settings-row">
               <div className="setting-item">
                 <label>活动场景</label>
@@ -121,7 +157,7 @@ const Home = () => {
 
           {recommendation && (
             <>
-              <WeatherCard weather={recommendation.weather} />
+              <WeatherCard weather={recommendation.weather} location={currentLocation} />
               <RecommendationCard recommendation={recommendation.recommendation} />
               {recommendation.recommendation.health_messages &&
                 recommendation.recommendation.health_messages.length > 0 && (
@@ -131,19 +167,19 @@ const Home = () => {
           )}
 
           {loading && (
-            <div className="card text-center">
-              <p>正在计算推荐...</p>
+            <div className="loading-overlay">
+              <div className="loading-spinner"></div>
             </div>
           )}
         </>
       )}
 
-      {!location && (
-        <div className="card text-center">
-          <p className="text-gray">请先添加一个地点</p>
-          <a href="/settings" className="btn btn-primary mt-md">
-            去设置
-          </a>
+      {!currentLocation && !initializing && (
+        <div className="empty-state">
+          <p className="text-gray">无法获取位置信息</p>
+          <p className="text-gray" style={{ fontSize: '14px', marginTop: '8px' }}>
+            请检查位置权限设置或手动添加位置
+          </p>
         </div>
       )}
     </div>

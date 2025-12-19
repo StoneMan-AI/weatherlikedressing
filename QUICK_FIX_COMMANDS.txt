@@ -1,0 +1,59 @@
+# 🚨 快速修复命令 - 复制粘贴执行
+
+# ============================================
+# 步骤1：备份当前配置
+# ============================================
+sudo cp /etc/nginx/sites-available/weatherlikedressing /etc/nginx/sites-available/weatherlikedressing.backup.$(date +%Y%m%d_%H%M%S)
+
+# ============================================
+# 步骤2：创建必要目录
+# ============================================
+sudo mkdir -p /var/www/certbot
+sudo mkdir -p /var/www/weatherlikedressing/frontend/dist
+sudo chown -R www-data:www-data /var/www/certbot
+sudo chown -R www-data:www-data /var/www/weatherlikedressing
+
+# ============================================
+# 步骤3：创建正确的配置文件
+# ============================================
+# 请将 nginx_minimal.conf 的内容复制到配置文件
+sudo nano /etc/nginx/sites-available/weatherlikedressing
+
+# 或者直接使用以下命令创建（从文件复制）
+# sudo cp nginx_minimal.conf /etc/nginx/sites-available/weatherlikedressing
+
+# ============================================
+# 步骤4：确保配置文件被启用
+# ============================================
+sudo ln -sf /etc/nginx/sites-available/weatherlikedressing /etc/nginx/sites-enabled/weatherlikedressing
+
+# ============================================
+# 步骤5：测试配置
+# ============================================
+sudo nginx -t
+
+# ============================================
+# 步骤6：如果测试通过，重载Nginx
+# ============================================
+sudo systemctl reload nginx
+
+# ============================================
+# 步骤7：验证修复
+# ============================================
+# 测试Let's Encrypt路径（应该返回404，不是重定向）
+curl -I http://adddesigngroup.com/.well-known/acme-challenge/test
+
+# 测试首页
+curl -I http://adddesigngroup.com/
+
+# 查看错误日志
+sudo tail -20 /var/log/nginx/error.log
+
+# ============================================
+# 检查清单
+# ============================================
+# [ ] 路径已改为 /var/www/weatherlikedressing
+# [ ] 端口是 3300
+# [ ] .well-known 路径在最前面
+# [ ] 前端dist目录存在且有内容
+# [ ] 后端服务运行在3300端口

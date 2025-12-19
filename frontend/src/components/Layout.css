@@ -5,8 +5,10 @@
 }
 
 .navbar {
-  background: var(--card-bg);
-  box-shadow: var(--shadow);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-color);
   padding: var(--spacing-md) 0;
   position: sticky;
   top: 0;
@@ -24,8 +26,8 @@
 
 .navbar-brand {
   font-size: 20px;
-  font-weight: 700;
-  color: var(--primary-color);
+  font-weight: 600;
+  color: var(--text-primary);
   text-decoration: none;
 }
 
@@ -36,7 +38,7 @@
 }
 
 .navbar-item {
-  color: var(--text-dark);
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 16px;
   padding: var(--spacing-xs) var(--spacing-md);
@@ -45,13 +47,13 @@
 }
 
 .navbar-item:hover {
-  background-color: var(--primary-light);
-  color: var(--primary-color);
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
 }
 
 .navbar-item.active {
-  background-color: var(--primary-color);
-  color: white;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-primary);
 }
 
 .navbar-user {
