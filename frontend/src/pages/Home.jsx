@@ -39,7 +39,13 @@ const Home = () => {
   
   // 记录每个屏幕的滚动位置
   const slideScrollPositions = useRef({ 0: 0, 1: 0 });
-  const slideRefs = useRef({ 0: null, 1: null });
+  const slideRef0 = useRef(null);
+  const slideRef1 = useRef(null);
+  
+  // 获取当前屏幕的ref
+  const getSlideRef = (index) => {
+    return index === 0 ? slideRef0 : slideRef1;
+  };
 
   // 首次打开时获取位置
   useEffect(() => {
@@ -241,7 +247,8 @@ const Home = () => {
 
   // 保存当前屏幕的滚动位置
   const saveCurrentSlideScroll = () => {
-    const currentSlideElement = slideRefs.current[currentSlide];
+    const currentSlideRef = getSlideRef(currentSlide);
+    const currentSlideElement = currentSlideRef.current;
     if (currentSlideElement) {
       slideScrollPositions.current[currentSlide] = currentSlideElement.scrollTop;
     }
@@ -249,7 +256,8 @@ const Home = () => {
 
   // 恢复屏幕的滚动位置
   const restoreSlideScroll = (slideIndex) => {
-    const slideElement = slideRefs.current[slideIndex];
+    const slideRef = getSlideRef(slideIndex);
+    const slideElement = slideRef.current;
     if (slideElement) {
       // 使用 setTimeout 确保 DOM 更新完成后再滚动
       setTimeout(() => {
@@ -315,7 +323,8 @@ const Home = () => {
   
   // 监听屏幕滚动，实时保存滚动位置
   useEffect(() => {
-    const slideElement = slideRefs.current[currentSlide];
+    const slideRef = getSlideRef(currentSlide);
+    const slideElement = slideRef.current;
     if (!slideElement) return;
 
     const handleScroll = () => {
@@ -344,7 +353,7 @@ const Home = () => {
             {/* 第一屏 */}
             <div 
               className="swiper-slide slide-1"
-              ref={(el) => { slideRefs.current[0] = el; }}
+              ref={slideRef0}
             >
               {weatherData && (
                 <>
@@ -367,7 +376,7 @@ const Home = () => {
             {/* 第二屏 */}
             <div 
               className="swiper-slide slide-2"
-              ref={(el) => { slideRefs.current[1] = el; }}
+              ref={slideRef1}
             >
               <div className="settings-panel">
                 <div className="settings-row">
