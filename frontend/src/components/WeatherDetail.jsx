@@ -3,7 +3,6 @@ import './WeatherDetail.css';
 
 const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
   const [selectedView, setSelectedView] = useState('temperature'); // temperature, wind, uv, precipitation, humidity
-  const [tempType, setTempType] = useState('actual'); // actual or feelsLike
 
   if (!weatherData || !weatherData.hourly) {
     return null;
@@ -541,22 +540,6 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
               </span>
             ))}
           </div>
-        </div>
-        
-        {/* 温度类型切换按钮 */}
-        <div className="temp-type-selector">
-          <button
-            className={`temp-type-btn ${tempType === 'actual' ? 'active' : ''}`}
-            onClick={() => setTempType('actual')}
-          >
-            实际气温
-          </button>
-          <button
-            className={`temp-type-btn ${tempType === 'feelsLike' ? 'active' : ''}`}
-            onClick={() => setTempType('feelsLike')}
-          >
-            体感温度
-          </button>
         </div>
       </div>
     );

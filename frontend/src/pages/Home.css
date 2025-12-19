@@ -2,6 +2,22 @@
   min-height: 100vh;
   padding: var(--spacing-md);
   overflow-x: hidden;
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.location-selector {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: var(--spacing-md);
+  margin: calc(-1 * var(--spacing-md)) calc(-1 * var(--spacing-md)) var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  border-radius: 0;
 }
 
 .swiper-container {
@@ -9,6 +25,7 @@
   width: 200%;
   transition: transform 0.3s ease;
   will-change: transform;
+  touch-action: pan-y; /* 只允许垂直滚动，防止水平滑动误触 */
 }
 
 .swiper-container.slide-2-active {
@@ -192,9 +209,34 @@
   border-radius: 4px;
 }
 
+/* 桌面端样式 */
+@media (min-width: 769px) {
+  .home {
+    max-width: 600px;
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+  
+  .location-selector {
+    border-radius: var(--border-radius);
+    margin: 0 0 var(--spacing-md);
+    padding: var(--spacing-md);
+  }
+  
+  .swiper-slide {
+    padding: 0;
+  }
+}
+
+/* 移动端样式 */
 @media (max-width: 768px) {
   .home {
+    max-width: 100%;
     padding: var(--spacing-sm);
+  }
+  
+  .location-selector {
+    border-radius: 0;
+    margin: calc(-1 * var(--spacing-sm)) calc(-1 * var(--spacing-sm)) var(--spacing-md);
   }
   
   .swiper-slide {

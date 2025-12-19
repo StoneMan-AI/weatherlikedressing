@@ -234,16 +234,23 @@ const Home = () => {
     );
   }
 
-  // 处理触摸滑动
+  // 处理触摸滑动（只在滑动容器内有效）
   const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
+    // 只在滑动容器内触发，不在按钮等交互元素上触发
+    if (e.target.closest('.swiper-slide')) {
+      touchStartX.current = e.touches[0].clientX;
+    }
   };
 
   const handleTouchMove = (e) => {
-    touchEndX.current = e.touches[0].clientX;
+    if (touchStartX.current !== 0) {
+      touchEndX.current = e.touches[0].clientX;
+    }
   };
 
   const handleTouchEnd = () => {
+    if (touchStartX.current === 0) return;
+    
     const diff = touchStartX.current - touchEndX.current;
     const minSwipeDistance = 50; // 最小滑动距离
 
@@ -256,33 +263,9 @@ const Home = () => {
         setCurrentSlide(0);
       }
     }
-  };
-
-  // 鼠标拖动支持（桌面端）
-  const handleMouseDown = (e) => {
-    touchStartX.current = e.clientX;
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  };
-
-  const handleMouseMove = (e) => {
-    touchEndX.current = e.clientX;
-  };
-
-  const handleMouseUp = () => {
-    const diff = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 50;
-
-    if (Math.abs(diff) > minSwipeDistance) {
-      if (diff > 0 && currentSlide < 1) {
-        setCurrentSlide(1);
-      } else if (diff < 0 && currentSlide > 0) {
-        setCurrentSlide(0);
-      }
-    }
-
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
+    
+    touchStartX.current = 0;
+    touchEndX.current = 0;
   };
 
   return (
@@ -297,7 +280,6 @@ const Home = () => {
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
-            onMouseDown={handleMouseDown}
           >
             {/* 第一屏 */}
             <div className="swiper-slide slide-1">
