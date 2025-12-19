@@ -204,6 +204,8 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     const minIndex = temps.indexOf(minTemp);
     const maxPoint = pastPath.points[maxIndex];
     const minPoint = pastPath.points[minIndex];
+    
+    const padding = 30; // SVG内边距
 
     return (
       <div className="weather-chart">
@@ -352,6 +354,8 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     const safeCurrentHourIndex = Math.max(0, Math.min(currentHourIndex, todayHours.length - 1));
     const gradientStopPercent = (safeCurrentHourIndex / 23) * 100;
     const currentValue = todayHours[safeCurrentHourIndex]?.[key] || 0;
+    
+    const padding = 30; // SVG内边距
 
     return (
       <div className="weather-chart">
@@ -397,9 +401,9 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
             {currentPoint && (
               <line
                 x1={currentPoint.x}
-                y1="30"
+                y1={padding}
                 x2={currentPoint.x}
-                y2="270"
+                y2={300 - padding}
                 stroke="rgba(255, 255, 255, 0.5)"
                 strokeWidth="1"
                 strokeDasharray="2 2"
