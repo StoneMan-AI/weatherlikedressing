@@ -277,7 +277,7 @@ const Home = () => {
           {weatherData && (
             <>
               <WeatherCard weather={weatherData} location={currentLocation} />
-              <WeatherDetail weatherData={weatherData} />
+              <WeatherDetail weatherData={weatherData} timezone={currentLocation.timezone || 'Asia/Shanghai'} />
               <DailyForecast dailyData={weatherData.daily} />
             </>
           )}
