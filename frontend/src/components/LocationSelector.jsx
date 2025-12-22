@@ -31,7 +31,11 @@ const LocationSelector = () => {
     setSearching(true);
     try {
       const location = await searchLocationByCityName(cityName.trim());
-      addLocation(location);
+      const newLocation = addLocation(location);
+      // 搜索成功后，自动切换到搜索到的地区
+      if (newLocation) {
+        setCurrentLocation(newLocation);
+      }
       setCityName('');
       setShowAddForm(false);
     } catch (error) {
