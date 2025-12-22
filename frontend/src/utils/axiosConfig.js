@@ -9,7 +9,7 @@ import { getUserIdentifier } from './userId';
 axios.interceptors.request.use(
   (config) => {
     try {
-      // 获取用户标识（添加try-catch防止localStorage未就绪）
+      // 获取用户标识（在拦截器内部调用，避免模块加载时的初始化问题）
       const { userId, sessionId } = getUserIdentifier();
       
       // 在请求头中添加用户标识

@@ -3,6 +3,9 @@
  * 为每个用户（包括未登录用户）生成并管理唯一的匿名session ID
  */
 
+// 确保只在浏览器环境中运行
+const isBrowser = typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+
 const USER_ID_KEY = 'weather_app_user_id';
 const SESSION_ID_KEY = 'weather_app_session_id';
 
@@ -31,6 +34,10 @@ function generateSessionId() {
  * 用户ID在首次访问时创建，之后一直保持不变（除非清除localStorage）
  */
 export function getUserId() {
+  if (!isBrowser) {
+    return generateUserId();
+  }
+  
   try {
     let userId = localStorage.getItem(USER_ID_KEY);
     
@@ -52,6 +59,10 @@ export function getUserId() {
  * 会话ID在每次打开应用时创建，用于跟踪单次会话
  */
 export function getSessionId() {
+  if (!isBrowser) {
+    return generateSessionId();
+  }
+  
   try {
     let sessionId = sessionStorage.getItem(SESSION_ID_KEY);
     
