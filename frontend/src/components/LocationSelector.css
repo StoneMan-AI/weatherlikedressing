@@ -28,11 +28,6 @@
   letter-spacing: -0.5px;
   white-space: nowrap;
   flex-shrink: 0;
-  /* 4个中文字符宽度：36px * 4 = 144px，加上letter-spacing约-0.5px*3 = -1.5px，实际约142px */
-  max-width: 144px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: inline-block;
 }
 
 .btn-add-location {
@@ -115,39 +110,12 @@
   cursor: not-allowed;
 }
 
-.location-list-horizontal {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  flex-wrap: nowrap;
-  flex: 1;
-  min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: var(--spacing-xs);
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+.location-dropdown-wrapper {
+  position: relative;
+  flex-shrink: 0;
 }
 
-.location-list-horizontal::-webkit-scrollbar {
-  height: 4px;
-}
-
-.location-list-horizontal::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.location-list-horizontal::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 2px;
-}
-
-.location-list-horizontal::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
-}
-
-.location-item-horizontal {
+.location-dropdown-trigger {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
@@ -155,53 +123,112 @@
   background: var(--card-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-radius: calc(var(--border-radius) * 0.75);
   border: 1px solid var(--border-color);
+  border-radius: calc(var(--border-radius) * 0.75);
   cursor: pointer;
   transition: all 0.3s ease;
-  white-space: nowrap;
-  flex-shrink: 0;
-  min-width: fit-content;
-}
-
-.location-item-horizontal:hover {
-  background: var(--card-bg-hover);
-  transform: translateY(-2px);
-}
-
-.location-item-horizontal.active {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.5);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.location-name-horizontal {
   font-size: 14px;
-  font-weight: 500;
   color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.location-dropdown-trigger:hover {
+  background: var(--card-bg-hover);
+}
+
+.location-dropdown-text {
+  font-weight: 500;
+}
+
+.location-dropdown-arrow {
+  font-size: 12px;
+  transition: transform 0.2s ease;
+  opacity: 0.7;
+}
+
+.location-dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+.location-dropdown {
+  background: rgba(20, 20, 20, 0.98);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  animation: dropdownFadeIn 0.2s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.location-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  font-size: 14px;
+  min-height: 44px;
+  user-select: none;
+}
+
+.location-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.location-dropdown-item.active {
+  background: rgba(74, 144, 226, 0.9);
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.location-dropdown-name {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.default-badge-small {
+.default-badge-dropdown {
   padding: 1px 6px;
   background: rgba(255, 255, 255, 0.25);
   border-radius: 6px;
   font-size: 10px;
-  color: var(--text-primary);
+  color: inherit;
   font-weight: 500;
   flex-shrink: 0;
 }
 
-.btn-delete-location-small {
-  width: 20px;
-  height: 20px;
+.location-dropdown-item.active .default-badge-dropdown {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.btn-delete-location-dropdown {
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   border: none;
   background: rgba(255, 255, 255, 0.2);
   color: var(--text-primary);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 300;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -211,11 +238,39 @@
   line-height: 1;
   padding: 0;
   flex-shrink: 0;
+  margin-left: var(--spacing-xs);
 }
 
-.btn-delete-location-small:hover {
+.btn-delete-location-dropdown:hover {
   background: rgba(255, 0, 0, 0.3);
   transform: scale(1.15);
+}
+
+.location-dropdown-item.active .btn-delete-location-dropdown {
+  background: rgba(255, 255, 255, 0.3);
+  color: #FFFFFF;
+}
+
+.location-dropdown-item.active .btn-delete-location-dropdown:hover {
+  background: rgba(255, 0, 0, 0.5);
+}
+
+.location-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.location-dropdown::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.location-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.location-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 @media (max-width: 768px) {
@@ -227,26 +282,6 @@
     flex-direction: column;
     align-items: flex-start;
     width: 100%;
-  }
-  
-  .location-list-horizontal {
-    width: 100%;
-    overflow-x: auto;
-    padding-bottom: var(--spacing-xs);
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .location-list-horizontal::-webkit-scrollbar {
-    height: 4px;
-  }
-  
-  .location-list-horizontal::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 2px;
-  }
-  
-  .location-item-horizontal {
-    flex-shrink: 0;
   }
   
   .add-location-form {
