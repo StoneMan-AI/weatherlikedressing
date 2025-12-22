@@ -19,13 +19,26 @@ export const LocationProvider = ({ children }) => {
   // 从localStorage加载位置信息
   useEffect(() => {
     const savedLocations = localStorage.getItem('weather_locations');
+    const savedCurrentLocationId = localStorage.getItem('weather_current_location_id');
+    
     if (savedLocations) {
       try {
         const parsed = JSON.parse(savedLocations);
         setLocations(parsed);
-        const defaultLoc = parsed.find(loc => loc.is_default) || parsed[0];
-        if (defaultLoc) {
-          setCurrentLocation(defaultLoc);
+        
+        // 优先恢复用户最后选择的地区
+        let targetLocation = null;
+        if (savedCurrentLocationId) {
+          targetLocation = parsed.find(loc => loc.id === parseInt(savedCurrentLocationId));
+        }
+        
+        // 如果保存的地区ID不存在，则使用默认地区或第一个地区
+        if (!targetLocation) {
+          targetLocation = parsed.find(loc => loc.is_default) || parsed[0];
+        }
+        
+        if (targetLocation) {
+          setCurrentLocation(targetLocation);
         }
       } catch (error) {
         console.error('Failed to parse saved locations:', error);
@@ -38,6 +51,15 @@ export const LocationProvider = ({ children }) => {
   const saveLocations = (newLocations) => {
     localStorage.setItem('weather_locations', JSON.stringify(newLocations));
     setLocations(newLocations);
+  };
+
+  // 保存当前选择的地区ID
+  const saveCurrentLocationId = (locationId) => {
+    if (locationId) {
+      localStorage.setItem('weather_current_location_id', locationId.toString());
+    } else {
+      localStorage.removeItem('weather_current_location_id');
+    }
   };
 
   // 添加位置
@@ -64,6 +86,7 @@ export const LocationProvider = ({ children }) => {
     
     if (newLocation.is_default || locations.length === 0) {
       setCurrentLocation(newLocation);
+      saveCurrentLocationId(newLocation.id);
     }
 
     return newLocation;
@@ -76,7 +99,13 @@ export const LocationProvider = ({ children }) => {
     
     if (currentLocation?.id === id) {
       const newCurrent = newLocations.find(loc => loc.is_default) || newLocations[0];
-      setCurrentLocation(newCurrent || null);
+      if (newCurrent) {
+        setCurrentLocation(newCurrent);
+        saveCurrentLocationId(newCurrent.id);
+      } else {
+        setCurrentLocation(null);
+        saveCurrentLocationId(null);
+      }
     }
   };
 
@@ -90,6 +119,17 @@ export const LocationProvider = ({ children }) => {
     const newDefault = newLocations.find(loc => loc.id === id);
     if (newDefault) {
       setCurrentLocation(newDefault);
+      saveCurrentLocationId(newDefault.id);
+    }
+  };
+
+  // 设置当前位置（增强版，保存到localStorage）
+  const setCurrentLocationWithSave = (location) => {
+    setCurrentLocation(location);
+    if (location) {
+      saveCurrentLocationId(location.id);
+    } else {
+      saveCurrentLocationId(null);
     }
   };
 
@@ -205,7 +245,7 @@ export const LocationProvider = ({ children }) => {
     addLocation,
     deleteLocation,
     setDefaultLocation,
-    setCurrentLocation,
+    setCurrentLocation: setCurrentLocationWithSave,
     getLocationByIP,
     getLocationByGeolocation,
     searchLocationByCityName
