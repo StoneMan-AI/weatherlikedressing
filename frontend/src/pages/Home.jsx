@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import RecommendationCard from '../components/RecommendationCard';
 import WeatherCard from '../components/WeatherCard';
@@ -25,6 +25,7 @@ const Home = () => {
   const [recommendation, setRecommendation] = useState(null);
   const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [recommendationLoading, setRecommendationLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
   // 首次打开时获取位置
@@ -91,14 +92,17 @@ const Home = () => {
     }
   };
 
-  // 计算推荐（带重试机制）
-  const calculateRecommendation = async (retryCount = 0) => {
+  // 计算推荐（带重试机制）- 优化：只更新推荐，不重新获取天气数据
+  const calculateRecommendation = async (retryCount = 0, skipLoading = false) => {
     if (!currentLocation) {
       return;
     }
 
     const maxRetries = 2;
-    setLoading(true);
+    // 只有在首次调用时才显示 loading（切换活动场景/强度时不显示全屏 loading）
+    if (!skipLoading) {
+      setRecommendationLoading(true);
+    }
     
     try {
       const res = await axios.post('/api/recommendations/calculate', {
@@ -123,7 +127,7 @@ const Home = () => {
         console.log(`Retrying recommendation calculation in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`);
         
         setTimeout(() => {
-          calculateRecommendation(retryCount + 1);
+          calculateRecommendation(retryCount + 1, skipLoading);
         }, delay);
         return; // 不设置loading为false，保持加载状态
       } else {
@@ -141,23 +145,42 @@ const Home = () => {
     } finally {
       // 只在非重试情况下设置loading为false
       if (retryCount === 0 || retryCount >= maxRetries) {
-        setLoading(false);
+        setRecommendationLoading(false);
       }
     }
   };
 
-  // 当位置改变时获取天气数据
+  // 使用 useRef 跟踪是否是首次加载
+  const isFirstLoadRef = useRef(true);
+
+  // 当位置改变时获取天气数据（只在位置变化时调用，不依赖活动场景/强度）
   useEffect(() => {
     if (currentLocation && !initializing) {
       fetchWeatherData();
+      isFirstLoadRef.current = true; // 位置变化时重置首次加载标志
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLocation, initializing]);
 
-  // 当位置或参数改变时自动计算推荐
+  // 当位置或活动参数改变时计算推荐
   useEffect(() => {
-    if (currentLocation && !initializing) {
-      calculateRecommendation();
+    if (!currentLocation || initializing) {
+      return;
+    }
+
+    const isFirstLoad = isFirstLoadRef.current;
+    const isLocationChange = isFirstLoad;
+    
+    // 如果是首次加载（位置变化），显示全屏 loading
+    if (isLocationChange) {
+      setLoading(true);
+      calculateRecommendation(0, false).finally(() => {
+        setLoading(false);
+        isFirstLoadRef.current = false; // 标记首次加载完成
+      });
+    } else {
+      // 如果是切换活动场景/强度，只显示推荐区域的 loading
+      calculateRecommendation(0, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLocation, isOutdoor, activityLevel, initializing]);
@@ -225,6 +248,13 @@ const Home = () => {
               <WeatherDetail weatherData={weatherData} timezone={currentLocation.timezone || 'Asia/Shanghai'} />
               <DailyForecast dailyData={weatherData.daily} />
             </>
+          )}
+
+          {recommendationLoading && !loading && (
+            <div className="recommendation-loading">
+              <div className="loading-spinner"></div>
+              <p className="text-gray" style={{ marginTop: '8px', fontSize: '14px' }}>正在更新推荐...</p>
+            </div>
           )}
 
           {recommendation && (
