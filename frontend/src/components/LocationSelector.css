@@ -7,6 +7,17 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--spacing-md);
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.location-title-section {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .location-title {
@@ -14,6 +25,8 @@
   font-weight: 300;
   color: var(--text-primary);
   letter-spacing: -0.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-add-location {
@@ -96,59 +109,70 @@
   cursor: not-allowed;
 }
 
-.location-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
-
-.location-item {
+.location-list-horizontal {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-md);
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.location-item-horizontal {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
   background: var(--card-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-radius: var(--border-radius);
+  border-radius: calc(var(--border-radius) * 0.75);
   border: 1px solid var(--border-color);
   cursor: pointer;
   transition: all 0.3s ease;
+  white-space: nowrap;
+  max-width: 200px;
+  min-width: fit-content;
 }
 
-.location-item:hover {
+.location-item-horizontal:hover {
   background: var(--card-bg-hover);
-  transform: translateX(4px);
+  transform: translateY(-2px);
 }
 
-.location-item.active {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.4);
+.location-item-horizontal.active {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.location-name {
-  font-size: 18px;
+.location-name-horizontal {
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.default-badge {
-  margin-left: var(--spacing-sm);
-  padding: 2px 8px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  font-size: 12px;
+.default-badge-small {
+  padding: 1px 6px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  font-size: 10px;
   color: var(--text-primary);
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
-.btn-delete-location {
-  width: 28px;
-  height: 28px;
+.btn-delete-location-small {
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   border: none;
   background: rgba(255, 255, 255, 0.2);
   color: var(--text-primary);
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 300;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -156,16 +180,44 @@
   align-items: center;
   justify-content: center;
   line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
 }
 
-.btn-delete-location:hover {
+.btn-delete-location-small:hover {
   background: rgba(255, 0, 0, 0.3);
-  transform: scale(1.1);
+  transform: scale(1.15);
 }
 
 @media (max-width: 768px) {
   .location-title {
     font-size: 28px;
+  }
+  
+  .location-title-section {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+  
+  .location-list-horizontal {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: var(--spacing-xs);
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .location-list-horizontal::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  .location-list-horizontal::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+  }
+  
+  .location-item-horizontal {
+    flex-shrink: 0;
   }
   
   .add-location-form {

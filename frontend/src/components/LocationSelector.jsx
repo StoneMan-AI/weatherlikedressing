@@ -49,10 +49,40 @@ const LocationSelector = () => {
   return (
     <div className="location-selector">
       <div className="location-header">
-        <h2 className="location-title">{currentLocation?.name || '选择位置'}</h2>
+        <div className="location-title-section">
+          <h2 className="location-title">{currentLocation?.name || '选择位置'}</h2>
+          {locations.length > 1 && (
+            <div className="location-list-horizontal">
+              {locations.map(location => (
+                <div
+                  key={location.id}
+                  className={`location-item-horizontal ${currentLocation?.id === location.id ? 'active' : ''}`}
+                  onClick={() => setCurrentLocation(location)}
+                  title={location.name}
+                >
+                  <span className="location-name-horizontal">{location.name}</span>
+                  {location.is_default && <span className="default-badge-small">默认</span>}
+                  {locations.length > 1 && (
+                    <button
+                      className="btn-delete-location-small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteLocation(location.id);
+                      }}
+                      title="删除"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <button
           className="btn-add-location"
           onClick={() => setShowAddForm(!showAddForm)}
+          title={showAddForm ? '取消添加' : '添加位置'}
         >
           {showAddForm ? '取消' : '+'}
         </button>
@@ -76,32 +106,6 @@ const LocationSelector = () => {
             {searching ? '搜索中...' : '搜索'}
           </button>
         </form>
-      )}
-
-      {locations.length > 1 && (
-        <div className="location-list">
-          {locations.map(location => (
-            <div
-              key={location.id}
-              className={`location-item ${currentLocation?.id === location.id ? 'active' : ''}`}
-              onClick={() => setCurrentLocation(location)}
-            >
-              <span className="location-name">{location.name}</span>
-              {location.is_default && <span className="default-badge">默认</span>}
-              {locations.length > 1 && (
-                <button
-                  className="btn-delete-location"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteLocation(location.id);
-                  }}
-                >
-                  ×
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
       )}
     </div>
   );
