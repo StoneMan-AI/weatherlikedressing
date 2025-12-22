@@ -8,6 +8,7 @@ import LocationSelector from '../components/LocationSelector';
 import HealthAlerts from '../components/HealthAlerts';
 import CustomSelect from '../components/CustomSelect';
 import { useLocationContext } from '../contexts/LocationContext';
+import { recalculateRecommendation, canUseLocalCalculation } from '../utils/recommendationCalculator';
 import './Home.css';
 
 const Home = () => {
@@ -162,28 +163,59 @@ const Home = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLocation, initializing]);
 
-  // 当位置或活动参数改变时计算推荐
+  // 当位置改变时计算推荐（首次加载）
   useEffect(() => {
     if (!currentLocation || initializing) {
       return;
     }
 
     const isFirstLoad = isFirstLoadRef.current;
-    const isLocationChange = isFirstLoad;
     
-    // 如果是首次加载（位置变化），显示全屏 loading
-    if (isLocationChange) {
+    // 如果是首次加载（位置变化），显示全屏 loading 并请求后端
+    if (isFirstLoad) {
       setLoading(true);
       calculateRecommendation(0, false).finally(() => {
         setLoading(false);
         isFirstLoadRef.current = false; // 标记首次加载完成
       });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentLocation, initializing]);
+
+  // 当活动场景或活动强度改变时，使用本地计算（不请求后端）
+  useEffect(() => {
+    if (!currentLocation || initializing || isFirstLoadRef.current) {
+      return; // 首次加载时跳过，由上面的 useEffect 处理
+    }
+
+    // 检查是否可以使用本地计算
+    if (canUseLocalCalculation(weatherData, recommendation?.recommendation)) {
+      try {
+        // 使用本地计算重新生成推荐
+        const recalculated = recalculateRecommendation(
+          recommendation.recommendation,
+          weatherData,
+          isOutdoor,
+          activityLevel,
+          {} // userProfile，如果需要可以从用户上下文获取
+        );
+
+        // 更新推荐结果
+        setRecommendation({
+          ...recommendation,
+          recommendation: recalculated
+        });
+      } catch (error) {
+        console.error('Local calculation failed, falling back to API:', error);
+        // 如果本地计算失败，回退到API请求
+        calculateRecommendation(0, true);
+      }
     } else {
-      // 如果是切换活动场景/强度，只显示推荐区域的 loading
+      // 如果没有完整数据，回退到API请求
       calculateRecommendation(0, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentLocation, isOutdoor, activityLevel, initializing]);
+  }, [isOutdoor, activityLevel]);
 
   if (initializing || locationLoading) {
     return (
