@@ -73,7 +73,15 @@ class RuleEngine {
       Gust_score: Math.round(Gust_score * 10) / 10,
       Sun_score: Math.round(Sun_score * 10) / 10,
       Activity_adj,
-      User_adj
+      User_adj,
+      // 添加实际天气值，用于前端显示
+      actual_values: {
+        temperature_c: temperature_c,
+        relative_humidity: relative_humidity,
+        wind_m_s: wind_m_s,
+        gust_m_s: gust_m_s,
+        uv_index: uv_index
+      }
     };
   }
 

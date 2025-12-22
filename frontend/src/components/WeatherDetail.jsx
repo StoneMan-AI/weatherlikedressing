@@ -49,23 +49,32 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     const todayStart = getTodayStartInTimezone;
     const hours = [];
     
+    // 将hourly数据按时间戳排序，确保顺序正确
+    const sortedHourly = [...hourly].sort((a, b) => {
+      return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+    });
+    
     for (let i = 0; i < 24; i++) {
       const targetTime = new Date(todayStart);
       targetTime.setHours(i);
       
-      // 找到最接近的小时数据（优先选择未来或当前的数据）
-      let closestHour = hourly[0];
+      // 找到最接近的小时数据
+      let closestHour = sortedHourly[0];
       let minDiff = Infinity;
       
-      for (const hour of hourly) {
+      for (const hour of sortedHourly) {
         const hourTime = new Date(hour.timestamp);
         const diff = hourTime.getTime() - targetTime.getTime();
         const absDiff = Math.abs(diff);
         
-        // 优先选择时间差最小的，如果时间差相同，优先选择未来的数据
-        if (absDiff < minDiff || (absDiff === minDiff && diff >= 0)) {
+        // 选择时间差最小的数据点
+        if (absDiff < minDiff) {
           minDiff = absDiff;
           closestHour = hour;
+        }
+        // 如果时间差已经很大了（超过1小时），可以提前退出
+        if (absDiff > 3600000) {
+          break;
         }
       }
       
@@ -83,12 +92,20 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
         firstHour: hours[0]?.hour,
         lastHour: hours[hours.length - 1]?.hour,
         hourlyDataLength: hourly.length,
-        sampleTemps: hours.slice(0, 5).map(h => ({ hour: h.hour, temp: h.temperature_c }))
+        sampleTemps: hours.slice(0, 10).map(h => ({ 
+          hour: h.hour, 
+          temp: h.temperature_c,
+          timestamp: new Date(h.timestamp).toLocaleString('zh-CN', { timeZone: timezone })
+        })),
+        pastTemps: hours.slice(0, currentHourIndex + 1).map(h => ({ 
+          hour: h.hour, 
+          temp: h.temperature_c 
+        }))
       });
     }
     
     return hours;
-  }, [hourly, getTodayStartInTimezone]);
+  }, [hourly, getTodayStartInTimezone, timezone, currentHourIndex]);
 
   // 获取当前小时索引
   const currentHourIndex = useMemo(() => {
@@ -330,8 +347,8 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
             {/* 最低温度标记 */}
             {minPoint && (
               <g className="min-temp-marker">
-                <circle cx={minPoint.x} cy={minPoint.y} r="5" fill="#2196F3" stroke="#FFFFFF" strokeWidth="1.5" />
-                <text x={minPoint.x} y={Math.min(285, minPoint.y + 28)} textAnchor="middle" fill="#2196F3" fontSize="20" fontWeight="bold">
+                <circle cx={minPoint.x} cy={minPoint.y} r="5" fill="#FF9800" stroke="#FFFFFF" strokeWidth="1.5" />
+                <text x={minPoint.x} y={Math.min(285, minPoint.y + 28)} textAnchor="middle" fill="#FF9800" fontSize="20" fontWeight="bold">
                   最低 {Math.round(minTemp)}°
                 </text>
               </g>

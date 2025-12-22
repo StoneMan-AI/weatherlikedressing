@@ -90,13 +90,15 @@ const Home = () => {
     }
   };
 
-  // 计算推荐
-  const calculateRecommendation = async () => {
+  // 计算推荐（带重试机制）
+  const calculateRecommendation = async (retryCount = 0) => {
     if (!currentLocation) {
       return;
     }
 
+    const maxRetries = 2;
     setLoading(true);
+    
     try {
       const res = await axios.post('/api/recommendations/calculate', {
         latitude: currentLocation.latitude,
@@ -105,12 +107,41 @@ const Home = () => {
         is_outdoor: isOutdoor,
         activity_level: activityLevel
       });
+      
       setRecommendation(res.data.data);
     } catch (error) {
       console.error('Failed to calculate recommendation:', error);
-      alert('获取推荐失败，请稍后重试');
+      
+      const errorData = error.response?.data;
+      const isRetryable = errorData?.retryable !== false;
+      const shouldRetry = retryCount < maxRetries && isRetryable;
+      
+      if (shouldRetry) {
+        // 指数退避重试：1秒、2秒
+        const delay = Math.pow(2, retryCount) * 1000;
+        console.log(`Retrying recommendation calculation in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`);
+        
+        setTimeout(() => {
+          calculateRecommendation(retryCount + 1);
+        }, delay);
+        return; // 不设置loading为false，保持加载状态
+      } else {
+        // 重试次数用完或错误不可重试，显示错误信息
+        const errorMessage = errorData?.error || error.message || '获取推荐失败，请稍后重试';
+        console.error('Recommendation calculation failed after retries:', errorMessage);
+        
+        // 只在最后一次失败时显示错误提示
+        if (retryCount === 0 || !isRetryable) {
+          // 可以显示更友好的错误提示，而不是alert
+          // 这里暂时保留alert，但可以后续改为Toast组件
+          alert(errorMessage);
+        }
+      }
     } finally {
-      setLoading(false);
+      // 只在非重试情况下设置loading为false
+      if (retryCount === 0 || retryCount >= maxRetries) {
+        setLoading(false);
+      }
     }
   };
 

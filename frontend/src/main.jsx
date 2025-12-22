@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
+import './utils/axiosConfig'; // 导入axios配置，自动添加用户标识
 import './index.css';
 
 const queryClient = new QueryClient({

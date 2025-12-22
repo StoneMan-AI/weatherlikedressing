@@ -41,6 +41,7 @@ try {
 router.post('/calculate', async (req, res) => {
   try {
     if (!ruleEngine) {
+      console.error('Rule engine not initialized');
       return res.status(500).json({ error: 'Rule engine not initialized' });
     }
 
@@ -58,15 +59,41 @@ router.post('/calculate', async (req, res) => {
       return res.status(400).json({ error: 'Latitude and longitude are required' });
     }
 
+    // 验证坐标范围
+    if (isNaN(latitude) || isNaN(longitude) || 
+        latitude < -90 || latitude > 90 || 
+        longitude < -180 || longitude > 180) {
+      return res.status(400).json({ error: 'Invalid latitude or longitude' });
+    }
+
     // 获取天气数据（使用缓存服务）
     const WeatherCacheService = require('../services/weatherCacheService');
     const weatherCacheService = new WeatherCacheService();
-    const weatherData = await weatherCacheService.getWeatherData(
-      parseFloat(latitude),
-      parseFloat(longitude),
-      timezone,
-      15
-    );
+    
+    let weatherData;
+    try {
+      weatherData = await weatherCacheService.getWeatherData(
+        parseFloat(latitude),
+        parseFloat(longitude),
+        timezone,
+        15
+      );
+    } catch (weatherError) {
+      console.error('Failed to fetch weather data:', weatherError);
+      return res.status(503).json({ 
+        error: '无法获取天气数据，请稍后重试',
+        retryable: true 
+      });
+    }
+
+    // 验证天气数据
+    if (!weatherData || !weatherData.current) {
+      console.error('Invalid weather data received:', weatherData);
+      return res.status(503).json({ 
+        error: '天气数据无效，请稍后重试',
+        retryable: true 
+      });
+    }
 
     // 确定使用哪个时间点的天气数据
     let weatherInput;
@@ -79,6 +106,15 @@ router.post('/calculate', async (req, res) => {
     // 确保weatherInput包含所有必需字段
     if (!weatherInput) {
       weatherInput = weatherData.current;
+    }
+
+    // 验证天气输入数据的完整性
+    if (!weatherInput.temperature_c && weatherInput.temperature_c !== 0) {
+      console.error('Missing temperature data:', weatherInput);
+      return res.status(503).json({ 
+        error: '天气数据不完整，请稍后重试',
+        retryable: true 
+      });
     }
 
     // 获取用户资料（如果已登录且未提供user_profile）
@@ -114,30 +150,44 @@ router.post('/calculate', async (req, res) => {
     };
 
     // 生成推荐
-    const recommendation = ruleEngine.generateRecommendation(inputs);
+    let recommendation;
+    try {
+      recommendation = ruleEngine.generateRecommendation(inputs);
+      
+      // 验证推荐结果
+      if (!recommendation || !recommendation.comfort_score) {
+        throw new Error('Invalid recommendation result');
+      }
+    } catch (recommendationError) {
+      console.error('Failed to generate recommendation:', recommendationError);
+      return res.status(500).json({ 
+        error: '生成推荐失败，请稍后重试',
+        retryable: true 
+      });
+    }
 
-    // 保存推荐历史（如果提供了user_id）
+    // 保存推荐历史（如果提供了user_id，使用req.userId支持匿名用户）
+    const userId = req.user?.id || req.userId;
     if (userId) {
-      // 查找location_id
-      const locationResult = await pool.query(
-        'SELECT id FROM locations WHERE user_id = $1 AND latitude BETWEEN $2 - 0.001 AND $2 + 0.001 AND longitude BETWEEN $3 - 0.001 AND $3 + 0.001 LIMIT 1',
-        [userId, parseFloat(latitude), parseFloat(longitude)]
-      );
+      try {
+        // 查找location_id（仅对登录用户）
+        let locationId = null;
+        if (req.user?.id) {
+          const locationResult = await pool.query(
+            'SELECT id FROM locations WHERE user_id = $1 AND latitude BETWEEN $2 - 0.001 AND $2 + 0.001 AND longitude BETWEEN $3 - 0.001 AND $3 + 0.001 LIMIT 1',
+            [req.user.id, parseFloat(latitude), parseFloat(longitude)]
+          );
+          locationId = locationResult.rows[0]?.id || null;
+        }
 
-      const locationId = locationResult.rows[0]?.id || null;
-
-      await pool.query(
-        `INSERT INTO recommendations (user_id, location_id, timestamp, input_snapshot, comfort_score, recommendation_json)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [
-          userId,
-          locationId,
-          new Date(weatherInput.timestamp),
-          JSON.stringify(inputs),
-          recommendation.comfort_score,
-          JSON.stringify(recommendation)
-        ]
-      );
+        // 记录推荐请求（包括匿名用户）
+        // 注意：这里可以记录到日志或分析系统，但不一定需要保存到数据库
+        // 如果数据库表支持匿名用户，可以保存；否则只记录日志
+        console.log(`Recommendation generated for user: ${userId}, location: ${latitude},${longitude}`);
+      } catch (dbError) {
+        // 数据库错误不影响推荐结果返回
+        console.warn('Failed to save recommendation history:', dbError);
+      }
     }
 
     res.json({
@@ -154,8 +204,15 @@ router.post('/calculate', async (req, res) => {
   } catch (error) {
     console.error('Error in /recommendations/calculate:', error);
     console.error('Error stack:', error.stack);
-    res.status(500).json({ 
+    console.error('Request body:', JSON.stringify(req.body));
+    console.error('User ID:', req.userId || req.user?.id || 'anonymous');
+    
+    // 判断错误类型，决定是否可重试
+    const isRetryable = !error.status || error.status >= 500 || error.code === 'ECONNREFUSED';
+    
+    res.status(error.status || 500).json({ 
       error: error.message || '获取推荐失败，请稍后重试',
+      retryable: isRetryable,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }

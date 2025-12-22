@@ -91,19 +91,53 @@ const RecommendationCard = ({ recommendation }) => {
               </span>
             </div>
           )}
+          <div className="comfort-explanation">
+            <strong>体感温度说明：</strong>
+            <p className="explanation-text">
+              体感温度是通过综合温度、湿度、风力、阳光等因素计算得出的舒适度分数。
+              括号中的数值是综合分数，分数越高越舒适：
+            </p>
+            <ul className="explanation-list">
+              <li>≥12分：温暖（偏热）</li>
+              <li>3-12分：舒适</li>
+              <li>-7到3分：偏凉</li>
+              <li>-20到-7分：偏冷</li>
+              <li>&lt;-20分：极冷</li>
+            </ul>
+          </div>
           {recommendation.score_details && (
             <div className="score-breakdown">
               <strong>分数明细：</strong>
+              <p className="breakdown-note">（负数表示降低舒适度，正数表示提高舒适度）</p>
               <div className="breakdown-grid">
-                <span>温度：{recommendation.score_details.T_score}</span>
-                <span>湿度：{recommendation.score_details.RH_score}</span>
-                <span>风力：{recommendation.score_details.Wind_score}</span>
-                {recommendation.score_details.Gust_score !== undefined && recommendation.score_details.Gust_score !== 0 && (
-                  <span>阵风：{recommendation.score_details.Gust_score}</span>
+                <span>
+                  温度：{recommendation.score_details.actual_values?.temperature_c?.toFixed(1) || 'N/A'}°C 
+                  <span className="score-impact">（影响：{recommendation.score_details.T_score > 0 ? '+' : ''}{recommendation.score_details.T_score}分）</span>
+                </span>
+                <span>
+                  湿度：{recommendation.score_details.actual_values?.relative_humidity?.toFixed(0) || 'N/A'}% 
+                  <span className="score-impact">（影响：{recommendation.score_details.RH_score > 0 ? '+' : ''}{recommendation.score_details.RH_score}分）</span>
+                </span>
+                <span>
+                  风速：{recommendation.score_details.actual_values?.wind_m_s?.toFixed(1) || 'N/A'} m/s 
+                  <span className="score-impact">（影响：{recommendation.score_details.Wind_score > 0 ? '+' : ''}{recommendation.score_details.Wind_score}分）</span>
+                </span>
+                {recommendation.score_details.actual_values?.gust_m_s && recommendation.score_details.actual_values.gust_m_s > 0 && (
+                  <span>
+                    阵风：{recommendation.score_details.actual_values.gust_m_s.toFixed(1)} m/s 
+                    <span className="score-impact">（影响：{recommendation.score_details.Gust_score > 0 ? '+' : ''}{recommendation.score_details.Gust_score}分）</span>
+                  </span>
                 )}
-                <span>阳光：{recommendation.score_details.Sun_score}</span>
-                <span>活动：{recommendation.score_details.Activity_adj}</span>
-                <span>个人：{recommendation.score_details.User_adj}</span>
+                <span>
+                  紫外线：{recommendation.score_details.actual_values?.uv_index || 'N/A'} 
+                  <span className="score-impact">（影响：{recommendation.score_details.Sun_score > 0 ? '+' : ''}{recommendation.score_details.Sun_score}分）</span>
+                </span>
+                <span>
+                  活动量：{recommendation.score_details.Activity_adj > 0 ? '+' : ''}{recommendation.score_details.Activity_adj}分
+                </span>
+                <span>
+                  个人调整：{recommendation.score_details.User_adj > 0 ? '+' : ''}{recommendation.score_details.User_adj}分
+                </span>
               </div>
             </div>
           )}

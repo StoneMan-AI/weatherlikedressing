@@ -45,7 +45,8 @@ class WeatherService {
           'wind_gusts_10m_max',
           'uv_index_max'
         ].join(','),
-        forecast_days: maxDays
+        forecast_days: maxDays,
+        past_days: 1 // 获取过去1天的数据，以确保包含今天0时之前的数据
       };
 
       const response = await axios.get(this.openMeteoBaseUrl, { params });
@@ -60,14 +61,42 @@ class WeatherService {
       const hourly = data.hourly;
       const timeArray = hourly.time || [];
       
-      // 找到当前时间对应的索引
-      let currentIndex = 0;
+      // 计算今天0时在指定时区的时间
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric'
+      });
+      const dateStr = formatter.format(now);
+      const [month, day, year] = dateStr.split('/');
+      const todayStart = new Date(year, month - 1, day, 0, 0, 0);
+      const todayEnd = new Date(year, month - 1, day, 23, 59, 59);
+      
+      // 找到今天0时对应的索引（最接近的数据点）
+      let todayStartIndex = 0;
+      let minStartDiff = Infinity;
       for (let i = 0; i < timeArray.length; i++) {
+        const time = new Date(timeArray[i]);
+        const diff = Math.abs(time.getTime() - todayStart.getTime());
+        if (diff < minStartDiff) {
+          minStartDiff = diff;
+          todayStartIndex = i;
+        }
+      }
+      
+      // 找到当前时间对应的索引
+      let currentIndex = todayStartIndex;
+      for (let i = todayStartIndex; i < timeArray.length; i++) {
         const time = new Date(timeArray[i]);
         if (time >= now) {
           currentIndex = i;
           break;
         }
+      }
+      // 如果当前时间已经超过今天，使用最后一个数据点
+      if (currentIndex === todayStartIndex && new Date(timeArray[todayStartIndex]) > now) {
+        currentIndex = todayStartIndex;
       }
 
       // 提取当前天气数据
@@ -82,10 +111,11 @@ class WeatherService {
         precipitation: hourly.precipitation[currentIndex] || 0
       };
 
-      // 提取未来24小时数据（用于当天详情展示）
+      // 提取今天24小时数据（从0时到23时，包含过去和未来数据）
       const hourlyForecast = [];
-      const hoursToShow = Math.min(24, timeArray.length - currentIndex);
-      for (let i = currentIndex; i < currentIndex + hoursToShow; i++) {
+      // 从今天0时开始，提取24小时的数据
+      const endIndex = Math.min(todayStartIndex + 24, timeArray.length);
+      for (let i = todayStartIndex; i < endIndex; i++) {
         hourlyForecast.push({
           timestamp: timeArray[i],
           temperature_c: hourly.temperature_2m[i],
@@ -95,6 +125,17 @@ class WeatherService {
           uv_index: hourly.uv_index[i] || 0,
           precip_prob: hourly.precipitation_probability[i] || 0,
           precipitation: hourly.precipitation[i] || 0
+        });
+      }
+      
+      // 如果数据不足24小时，用最后一个数据点填充
+      while (hourlyForecast.length < 24 && hourlyForecast.length > 0) {
+        const lastData = hourlyForecast[hourlyForecast.length - 1];
+        const lastTime = new Date(lastData.timestamp);
+        const nextTime = new Date(lastTime.getTime() + 3600000); // 加1小时
+        hourlyForecast.push({
+          ...lastData,
+          timestamp: nextTime.toISOString()
         });
       }
 
