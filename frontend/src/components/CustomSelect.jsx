@@ -10,12 +10,44 @@ const CustomSelect = ({ value, onChange, options, className = '' }) => {
   // 计算下拉框位置
   useEffect(() => {
     if (isOpen && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setDropdownStyle({
-        top: `${rect.bottom + window.scrollY + 4}px`,
-        left: `${rect.left + window.scrollX}px`,
-        width: `${rect.width}px`
-      });
+      const updatePosition = () => {
+        if (triggerRef.current) {
+          const rect = triggerRef.current.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          const dropdownHeight = 200; // max-height
+          const gap = 4; // 间距
+          
+          // position: fixed 是相对于视口的，不需要加 scrollY/scrollX
+          let top = rect.bottom + gap;
+          let bottom = null;
+          
+          // 如果下拉框会超出视口底部，则向上展开
+          if (rect.bottom + dropdownHeight + gap > viewportHeight) {
+            // 向上展开
+            bottom = viewportHeight - rect.top + gap;
+            top = null;
+          }
+          
+          setDropdownStyle({
+            ...(top !== null ? { top: `${top}px` } : {}),
+            ...(bottom !== null ? { bottom: `${bottom}px` } : {}),
+            left: `${rect.left}px`,
+            width: `${rect.width}px`
+          });
+        }
+      };
+
+      // 立即更新位置
+      updatePosition();
+
+      // 监听窗口大小变化和滚动，实时更新位置
+      window.addEventListener('resize', updatePosition);
+      window.addEventListener('scroll', updatePosition, true);
+
+      return () => {
+        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('scroll', updatePosition, true);
+      };
     }
   }, [isOpen]);
 

@@ -202,6 +202,21 @@ const Home = () => {
 
       {currentLocation && (
         <>
+          {weatherData && (
+            <>
+              <WeatherCard weather={weatherData} location={currentLocation} />
+              <WeatherDetail weatherData={weatherData} timezone={currentLocation.timezone || 'Asia/Shanghai'} />
+              <DailyForecast dailyData={weatherData.daily} />
+            </>
+          )}
+
+          {recommendationLoading && !loading && (
+            <div className="recommendation-loading">
+              <div className="loading-spinner"></div>
+              <p className="text-gray" style={{ marginTop: '8px', fontSize: '14px' }}>正在更新推荐...</p>
+            </div>
+          )}
+
           <div className="settings-panel">
             <div className="settings-row">
               <div className="setting-item">
@@ -241,21 +256,6 @@ const Home = () => {
               </div>
             </div>
           </div>
-
-          {weatherData && (
-            <>
-              <WeatherCard weather={weatherData} location={currentLocation} />
-              <WeatherDetail weatherData={weatherData} timezone={currentLocation.timezone || 'Asia/Shanghai'} />
-              <DailyForecast dailyData={weatherData.daily} />
-            </>
-          )}
-
-          {recommendationLoading && !loading && (
-            <div className="recommendation-loading">
-              <div className="loading-spinner"></div>
-              <p className="text-gray" style={{ marginTop: '8px', fontSize: '14px' }}>正在更新推荐...</p>
-            </div>
-          )}
 
           {recommendation && (
             <>
