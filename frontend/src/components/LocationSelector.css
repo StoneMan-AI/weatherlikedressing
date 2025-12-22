@@ -28,9 +28,11 @@
   letter-spacing: -0.5px;
   white-space: nowrap;
   flex-shrink: 0;
-  max-width: 2.5em; /* 约4个中文字符宽度（36px字体） */
+  /* 4个中文字符宽度：36px * 4 = 144px，加上letter-spacing约-0.5px*3 = -1.5px，实际约142px */
+  max-width: 144px;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: inline-block;
 }
 
 .btn-add-location {
