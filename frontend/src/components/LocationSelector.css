@@ -17,7 +17,8 @@
   gap: var(--spacing-md);
   flex: 1;
   min-width: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .location-title {
@@ -27,6 +28,9 @@
   letter-spacing: -0.5px;
   white-space: nowrap;
   flex-shrink: 0;
+  max-width: 2.5em; /* 约4个中文字符宽度（36px字体） */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .btn-add-location {
@@ -113,9 +117,32 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   flex: 1;
   min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: var(--spacing-xs);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.location-list-horizontal::-webkit-scrollbar {
+  height: 4px;
+}
+
+.location-list-horizontal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.location-list-horizontal::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.location-list-horizontal::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .location-item-horizontal {
@@ -131,7 +158,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
-  max-width: 200px;
+  flex-shrink: 0;
   min-width: fit-content;
 }
 

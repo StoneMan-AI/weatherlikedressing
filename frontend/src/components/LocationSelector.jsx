@@ -46,11 +46,20 @@ const LocationSelector = () => {
     }
   };
 
+  // 限制地区名称显示长度（最多4个中文字）
+  const truncateLocationName = (name, maxLength = 4) => {
+    if (!name) return '选择位置';
+    if (name.length <= maxLength) return name;
+    return name.substring(0, maxLength) + '...';
+  };
+
   return (
     <div className="location-selector">
       <div className="location-header">
         <div className="location-title-section">
-          <h2 className="location-title">{currentLocation?.name || '选择位置'}</h2>
+          <h2 className="location-title" title={currentLocation?.name || '选择位置'}>
+            {truncateLocationName(currentLocation?.name)}
+          </h2>
           {locations.length > 1 && (
             <div className="location-list-horizontal">
               {locations.map(location => (

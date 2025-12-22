@@ -172,7 +172,7 @@
 }
 
 .confidence-value {
-  color: var(--primary-color);
+  color: #FF9800;
   font-weight: 600;
   margin-left: var(--spacing-xs);
 }
