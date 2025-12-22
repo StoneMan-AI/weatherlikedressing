@@ -76,11 +76,11 @@ class RuleEngine {
       User_adj,
       // 添加实际天气值，用于前端显示
       actual_values: {
-        temperature_c: temperature_c,
-        relative_humidity: relative_humidity,
-        wind_m_s: wind_m_s,
-        gust_m_s: gust_m_s,
-        uv_index: uv_index
+        temperature_c: temperature_c != null ? temperature_c : 0,
+        relative_humidity: relative_humidity != null ? relative_humidity : 0,
+        wind_m_s: wind_m_s != null ? wind_m_s : 0,
+        gust_m_s: gust_m_s != null ? gust_m_s : 0,
+        uv_index: uv_index != null ? uv_index : 0
       }
     };
   }
@@ -480,39 +480,50 @@ class RuleEngine {
    * 生成完整的推荐结果（增强版）
    */
   generateRecommendation(inputs) {
-    // 计算舒适度分数
-    const scoreDetails = this.calculateComfortScore(inputs);
+    try {
+      // 计算舒适度分数
+      const scoreDetails = this.calculateComfortScore(inputs);
 
-    // 获取穿衣推荐（增强版，考虑个性化）
-    const userProfile = inputs.user_profile || {};
-    const dressingLayer = this.getDressingRecommendationEnhanced(
-      scoreDetails.ComfortScore,
-      inputs,
-      userProfile
-    );
+      // 验证scoreDetails
+      if (!scoreDetails || typeof scoreDetails.ComfortScore !== 'number') {
+        throw new Error('Invalid scoreDetails from calculateComfortScore');
+      }
 
-    // 检查健康规则（增强版）
-    const healthMessages = this.checkHealthRules(inputs);
+      // 获取穿衣推荐（增强版，考虑个性化）
+      const userProfile = inputs.user_profile || {};
+      const dressingLayer = this.getDressingRecommendationEnhanced(
+        scoreDetails.ComfortScore,
+        inputs,
+        userProfile
+      );
 
-    // 生成详细理由
-    const detailedReason = this.generateDetailedReason(inputs, scoreDetails);
+      // 检查健康规则（增强版）
+      const healthMessages = this.checkHealthRules(inputs);
 
-    // 计算紧急程度和置信度
-    const urgency = this.calculateUrgency(inputs, scoreDetails);
-    const confidence = this.calculateConfidence(inputs);
+      // 生成详细理由
+      const detailedReason = this.generateDetailedReason(inputs, scoreDetails);
 
-    return {
-      comfort_score: scoreDetails.ComfortScore,
-      recommendation_layers: dressingLayer.layers,
-      accessories: dressingLayer.accessories,
-      label: dressingLayer.label,
-      notes: dressingLayer.notes,
-      reason_summary: detailedReason,
-      health_messages: healthMessages,
-      score_details: scoreDetails,
-      urgency: urgency,
-      confidence: confidence
-    };
+      // 计算紧急程度和置信度
+      const urgency = this.calculateUrgency(inputs, scoreDetails);
+      const confidence = this.calculateConfidence(inputs);
+
+      return {
+        comfort_score: scoreDetails.ComfortScore,
+        recommendation_layers: dressingLayer.layers || [],
+        accessories: dressingLayer.accessories || [],
+        label: dressingLayer.label || '',
+        notes: dressingLayer.notes || '',
+        reason_summary: detailedReason || '',
+        health_messages: healthMessages || [],
+        score_details: scoreDetails,
+        urgency: urgency || '低',
+        confidence: confidence || 0.8
+      };
+    } catch (error) {
+      console.error('Error in generateRecommendation:', error);
+      console.error('Inputs:', JSON.stringify(inputs));
+      throw error;
+    }
   }
 }
 
