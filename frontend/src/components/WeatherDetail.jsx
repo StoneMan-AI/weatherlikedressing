@@ -54,48 +54,127 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
       return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
     });
     
+    // 创建一个映射，用于快速查找每个小时的数据
+    const hourDataMap = new Map();
+    for (const hour of sortedHourly) {
+      const hourTime = new Date(hour.timestamp);
+      // 转换为目标时区的小时
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        hour: 'numeric',
+        hour12: false
+      });
+      const hourStr = formatter.format(hourTime);
+      const hourNum = parseInt(hourStr);
+      
+      // 如果这个小时还没有数据，或者这个数据更接近整点，则使用它
+      if (!hourDataMap.has(hourNum)) {
+        hourDataMap.set(hourNum, hour);
+      } else {
+        // 比较哪个更接近整点
+        const existing = hourDataMap.get(hourNum);
+        const existingTime = new Date(existing.timestamp);
+        const currentTime = new Date(hour.timestamp);
+        const targetTime = new Date(todayStart);
+        targetTime.setHours(hourNum);
+        
+        const existingDiff = Math.abs(existingTime.getTime() - targetTime.getTime());
+        const currentDiff = Math.abs(currentTime.getTime() - targetTime.getTime());
+        
+        if (currentDiff < existingDiff) {
+          hourDataMap.set(hourNum, hour);
+        }
+      }
+    }
+    
+    // 为每个小时（0-23）创建数据点
     for (let i = 0; i < 24; i++) {
       const targetTime = new Date(todayStart);
       targetTime.setHours(i);
       
-      // 找到最接近的小时数据
-      let closestHour = sortedHourly[0];
-      let minDiff = Infinity;
+      // 优先使用精确匹配的小时数据
+      let hourData = hourDataMap.get(i);
       
-      for (const hour of sortedHourly) {
-        const hourTime = new Date(hour.timestamp);
-        const diff = hourTime.getTime() - targetTime.getTime();
-        const absDiff = Math.abs(diff);
+      // 如果没有精确匹配，找到最接近的数据点
+      if (!hourData) {
+        let closestHour = null;
+        let minDiff = Infinity;
         
-        // 选择时间差最小的数据点
-        if (absDiff < minDiff) {
-          minDiff = absDiff;
-          closestHour = hour;
+        for (const hour of sortedHourly) {
+          const hourTime = new Date(hour.timestamp);
+          const diff = hourTime.getTime() - targetTime.getTime();
+          const absDiff = Math.abs(diff);
+          
+          // 选择时间差最小的数据点（但优先选择未来的数据）
+          if (absDiff < minDiff || (absDiff === minDiff && diff >= 0)) {
+            minDiff = absDiff;
+            closestHour = hour;
+          }
         }
-        // 如果时间差已经很大了（超过1小时），可以提前退出
-        if (absDiff > 3600000) {
-          break;
-        }
+        
+        hourData = closestHour;
       }
       
-      hours.push({
-        ...closestHour,
-        hour: i,
-        timestamp: targetTime.getTime()
-      });
+      // 确保每个小时都有数据
+      if (hourData) {
+        hours.push({
+          ...hourData,
+          hour: i,
+          timestamp: targetTime.getTime()
+        });
+      } else {
+        // 如果仍然没有数据，使用前一个小时的数据或默认值
+        const prevHour = hours[hours.length - 1];
+        hours.push({
+          timestamp: targetTime.getTime(),
+          hour: i,
+          temperature_c: prevHour?.temperature_c || 0,
+          relative_humidity: prevHour?.relative_humidity || 0,
+          wind_m_s: prevHour?.wind_m_s || 0,
+          gust_m_s: prevHour?.gust_m_s || 0,
+          uv_index: prevHour?.uv_index || 0,
+          precip_prob: prevHour?.precip_prob || 0,
+          precipitation: prevHour?.precipitation || 0
+        });
+      }
     }
     
-    // 调试信息
+    // 调试信息 - 检查数据是否重复
     if (hours.length > 0) {
       // 计算当前小时索引用于调试（不依赖外部的currentHourIndex）
       const currentTime = getCurrentTimeInTimezone;
       const debugCurrentHourIndex = currentTime.getHours();
+      
+      // 检查是否有重复的数据点
+      const uniqueTemps = new Set(hours.map(h => h.temperature_c));
+      const uniqueTimestamps = new Set(hours.map(h => {
+        // 使用原始数据的时间戳，而不是我们设置的目标时间戳
+        const originalHour = sortedHourly.find(h2 => {
+          const h2Time = new Date(h2.timestamp);
+          const targetTime = new Date(todayStart);
+          targetTime.setHours(h.hour);
+          return Math.abs(h2Time.getTime() - targetTime.getTime()) < 30 * 60 * 1000;
+        });
+        return originalHour ? originalHour.timestamp : h.timestamp;
+      }));
       
       console.log('WeatherDetail: Today hours data prepared', {
         totalHours: hours.length,
         firstHour: hours[0]?.hour,
         lastHour: hours[hours.length - 1]?.hour,
         hourlyDataLength: hourly.length,
+        uniqueTempCount: uniqueTemps.size,
+        uniqueTimestampCount: uniqueTimestamps.size,
+        allTemps: hours.map(h => ({ 
+          hour: h.hour, 
+          temp: h.temperature_c,
+          originalTimestamp: sortedHourly.find(h2 => {
+            const h2Time = new Date(h2.timestamp);
+            const targetTime = new Date(todayStart);
+            targetTime.setHours(h.hour);
+            return Math.abs(h2Time.getTime() - targetTime.getTime()) < 30 * 60 * 1000;
+          })?.timestamp || 'N/A'
+        })),
         sampleTemps: hours.slice(0, 10).map(h => ({ 
           hour: h.hour, 
           temp: h.temperature_c,
@@ -106,6 +185,14 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
           temp: h.temperature_c 
         }))
       });
+      
+      // 如果所有温度都相同，发出警告
+      if (uniqueTemps.size <= 2 && hours.length > 2) {
+        console.warn('WeatherDetail: Warning - Most temperatures are the same!', {
+          uniqueTemps: Array.from(uniqueTemps),
+          allTemps: hours.map(h => ({ hour: h.hour, temp: h.temperature_c }))
+        });
+      }
     }
     
     return hours;

@@ -124,23 +124,28 @@ select.input {
   background-size: 12px;
   padding-right: calc(var(--spacing-md) * 2 + 12px);
   cursor: pointer;
-  color: var(--text-primary);
+  color: #FFFFFF !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* 下拉框选项样式 */
+/* 下拉框选项样式 - 确保在所有浏览器中可见 */
 select.input option {
-  background: rgba(30, 30, 30, 0.98);
-  color: var(--text-primary);
+  background: rgba(20, 20, 20, 0.98) !important;
+  color: #FFFFFF !important;
   padding: var(--spacing-sm);
   border: none;
+  font-size: 16px;
+  min-height: 40px;
+  line-height: 1.5;
 }
 
 /* 确保选中项的文字可见 */
 select.input option:checked {
-  background: rgba(74, 144, 226, 0.8);
-  color: var(--text-primary);
+  background: rgba(74, 144, 226, 0.9) !important;
+  color: #FFFFFF !important;
 }
 
+/* 下拉框打开时的样式 */
 select.input:focus {
   outline: none;
   border-color: rgba(255, 255, 255, 0.4);
@@ -151,6 +156,17 @@ select.input:focus {
 /* 下拉框悬停效果 */
 select.input:hover {
   background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* 针对不同浏览器的下拉列表样式 */
+select.input:focus option {
+  background: rgba(20, 20, 20, 0.98) !important;
+  color: #FFFFFF !important;
+}
+
+select.input:focus option:checked {
+  background: rgba(74, 144, 226, 0.9) !important;
+  color: #FFFFFF !important;
 }
 
 /* 布局 */

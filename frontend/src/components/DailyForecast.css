@@ -45,7 +45,7 @@
 }
 
 .date-item {
-  min-width: 60px;
+  min-width: 70px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -55,6 +55,7 @@
   transition: all 0.3s ease;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid transparent;
+  flex-shrink: 0;
 }
 
 .date-item:hover {
@@ -67,9 +68,12 @@
 }
 
 .date-weekday {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-secondary);
   margin-bottom: var(--spacing-xs);
+  white-space: nowrap;
+  text-align: center;
+  width: 100%;
 }
 
 .date-item.active .date-weekday {
@@ -134,8 +138,12 @@
 
 @media (max-width: 768px) {
   .date-item {
-    min-width: 50px;
+    min-width: 65px;
     padding: var(--spacing-xs);
+  }
+  
+  .date-weekday {
+    font-size: 12px;
   }
   
   .date-number {

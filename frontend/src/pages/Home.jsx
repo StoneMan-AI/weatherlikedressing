@@ -6,6 +6,7 @@ import WeatherDetail from '../components/WeatherDetail';
 import DailyForecast from '../components/DailyForecast';
 import LocationSelector from '../components/LocationSelector';
 import HealthAlerts from '../components/HealthAlerts';
+import CustomSelect from '../components/CustomSelect';
 import { useLocationContext } from '../contexts/LocationContext';
 import './Home.css';
 
@@ -205,15 +206,15 @@ const Home = () => {
               </div>
               <div className="setting-item">
                 <label>活动强度</label>
-                <select
+                <CustomSelect
                   value={activityLevel}
                   onChange={(e) => setActivityLevel(e.target.value)}
-                  className="input"
-                >
-                  <option value="low">低（静坐/慢走）</option>
-                  <option value="moderate">中（正常步行/轻运动）</option>
-                  <option value="high">高（跑步/剧烈运动）</option>
-                </select>
+                  options={[
+                    { value: 'low', label: '低（静坐/慢走）' },
+                    { value: 'moderate', label: '中（正常步行/轻运动）' },
+                    { value: 'high', label: '高（跑步/剧烈运动）' }
+                  ]}
+                />
               </div>
             </div>
           </div>
