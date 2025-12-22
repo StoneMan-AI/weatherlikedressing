@@ -113,6 +113,46 @@ body {
   background: rgba(255, 255, 255, 0.15);
 }
 
+/* 下拉框样式 - iPhone风格 */
+select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-md) center;
+  background-size: 12px;
+  padding-right: calc(var(--spacing-md) * 2 + 12px);
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+/* 下拉框选项样式 */
+select.input option {
+  background: rgba(30, 30, 30, 0.98);
+  color: var(--text-primary);
+  padding: var(--spacing-sm);
+  border: none;
+}
+
+/* 确保选中项的文字可见 */
+select.input option:checked {
+  background: rgba(74, 144, 226, 0.8);
+  color: var(--text-primary);
+}
+
+select.input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.4);
+  background-color: rgba(255, 255, 255, 0.15);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 3L11 8H1z'/%3E%3C/svg%3E");
+}
+
+/* 下拉框悬停效果 */
+select.input:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
 /* 布局 */
 .container {
   max-width: 1200px;

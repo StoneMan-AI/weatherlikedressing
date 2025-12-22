@@ -119,12 +119,12 @@ router.post('/calculate', async (req, res) => {
 
     // 获取用户资料（如果已登录且未提供user_profile）
     let finalUserProfile = user_profile || {};
-    const userId = req.user?.id;
-    if (userId && !user_profile) {
+    const loggedInUserId = req.user?.id;
+    if (loggedInUserId && !user_profile) {
       try {
         const userResult = await pool.query(
           'SELECT profile_json FROM users WHERE id = $1',
-          [userId]
+          [loggedInUserId]
         );
         if (userResult.rows.length > 0 && userResult.rows[0].profile_json) {
           finalUserProfile = userResult.rows[0].profile_json;
@@ -167,8 +167,8 @@ router.post('/calculate', async (req, res) => {
     }
 
     // 保存推荐历史（如果提供了user_id，使用req.userId支持匿名用户）
-    const userId = req.user?.id || req.userId;
-    if (userId) {
+    const finalUserId = req.user?.id || req.userId;
+    if (finalUserId) {
       try {
         // 查找location_id（仅对登录用户）
         let locationId = null;
@@ -183,7 +183,7 @@ router.post('/calculate', async (req, res) => {
         // 记录推荐请求（包括匿名用户）
         // 注意：这里可以记录到日志或分析系统，但不一定需要保存到数据库
         // 如果数据库表支持匿名用户，可以保存；否则只记录日志
-        console.log(`Recommendation generated for user: ${userId}, location: ${latitude},${longitude}`);
+        console.log(`Recommendation generated for user: ${finalUserId}, location: ${latitude},${longitude}`);
       } catch (dbError) {
         // 数据库错误不影响推荐结果返回
         console.warn('Failed to save recommendation history:', dbError);
