@@ -87,6 +87,10 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     
     // 调试信息
     if (hours.length > 0) {
+      // 计算当前小时索引用于调试（不依赖外部的currentHourIndex）
+      const currentTime = getCurrentTimeInTimezone;
+      const debugCurrentHourIndex = currentTime.getHours();
+      
       console.log('WeatherDetail: Today hours data prepared', {
         totalHours: hours.length,
         firstHour: hours[0]?.hour,
@@ -97,7 +101,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
           temp: h.temperature_c,
           timestamp: new Date(h.timestamp).toLocaleString('zh-CN', { timeZone: timezone })
         })),
-        pastTemps: hours.slice(0, currentHourIndex + 1).map(h => ({ 
+        pastTemps: hours.slice(0, debugCurrentHourIndex + 1).map(h => ({ 
           hour: h.hour, 
           temp: h.temperature_c 
         }))
@@ -105,7 +109,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     }
     
     return hours;
-  }, [hourly, getTodayStartInTimezone, timezone, currentHourIndex]);
+  }, [hourly, getTodayStartInTimezone, timezone, getCurrentTimeInTimezone]);
 
   // 获取当前小时索引
   const currentHourIndex = useMemo(() => {
