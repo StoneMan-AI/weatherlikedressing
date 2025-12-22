@@ -8,12 +8,21 @@ import { getUserIdentifier } from './userId';
 // 配置axios请求拦截器，自动添加用户标识
 axios.interceptors.request.use(
   (config) => {
-    // 获取用户标识
-    const { userId, sessionId } = getUserIdentifier();
-    
-    // 在请求头中添加用户标识
-    config.headers['X-User-ID'] = userId;
-    config.headers['X-Session-ID'] = sessionId;
+    try {
+      // 获取用户标识（添加try-catch防止localStorage未就绪）
+      const { userId, sessionId } = getUserIdentifier();
+      
+      // 在请求头中添加用户标识
+      if (userId) {
+        config.headers['X-User-ID'] = userId;
+      }
+      if (sessionId) {
+        config.headers['X-Session-ID'] = sessionId;
+      }
+    } catch (error) {
+      // 如果获取用户标识失败，不影响请求继续
+      console.warn('Failed to get user identifier:', error);
+    }
     
     return config;
   },

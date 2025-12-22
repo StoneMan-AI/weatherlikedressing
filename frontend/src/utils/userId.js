@@ -31,14 +31,20 @@ function generateSessionId() {
  * 用户ID在首次访问时创建，之后一直保持不变（除非清除localStorage）
  */
 export function getUserId() {
-  let userId = localStorage.getItem(USER_ID_KEY);
-  
-  if (!userId) {
-    userId = generateUserId();
-    localStorage.setItem(USER_ID_KEY, userId);
+  try {
+    let userId = localStorage.getItem(USER_ID_KEY);
+    
+    if (!userId) {
+      userId = generateUserId();
+      localStorage.setItem(USER_ID_KEY, userId);
+    }
+    
+    return userId;
+  } catch (error) {
+    // 如果localStorage不可用，返回临时ID
+    console.warn('localStorage not available, using temporary ID');
+    return generateUserId();
   }
-  
-  return userId;
 }
 
 /**
@@ -46,14 +52,20 @@ export function getUserId() {
  * 会话ID在每次打开应用时创建，用于跟踪单次会话
  */
 export function getSessionId() {
-  let sessionId = sessionStorage.getItem(SESSION_ID_KEY);
-  
-  if (!sessionId) {
-    sessionId = generateSessionId();
-    sessionStorage.setItem(SESSION_ID_KEY, sessionId);
+  try {
+    let sessionId = sessionStorage.getItem(SESSION_ID_KEY);
+    
+    if (!sessionId) {
+      sessionId = generateSessionId();
+      sessionStorage.setItem(SESSION_ID_KEY, sessionId);
+    }
+    
+    return sessionId;
+  } catch (error) {
+    // 如果sessionStorage不可用，返回临时ID
+    console.warn('sessionStorage not available, using temporary ID');
+    return generateSessionId();
   }
-  
-  return sessionId;
 }
 
 /**
