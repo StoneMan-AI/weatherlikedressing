@@ -112,25 +112,25 @@ const RecommendationCard = ({ recommendation }) => {
               <div className="breakdown-grid">
                 <span>
                   温度：{recommendation.score_details.actual_values?.temperature_c?.toFixed(1) || 'N/A'}°C 
-                  <span className="score-impact">（影响：{recommendation.score_details.T_score > 0 ? '+' : ''}{recommendation.score_details.T_score}分）</span>
+                  <span className="score-impact">（体感值：{recommendation.score_details.T_score > 0 ? '+' : ''}{recommendation.score_details.T_score}分）</span>
                 </span>
                 <span>
                   湿度：{recommendation.score_details.actual_values?.relative_humidity?.toFixed(0) || 'N/A'}% 
-                  <span className="score-impact">（影响：{recommendation.score_details.RH_score > 0 ? '+' : ''}{recommendation.score_details.RH_score}分）</span>
+                  <span className="score-impact">（体感值：{recommendation.score_details.RH_score > 0 ? '+' : ''}{recommendation.score_details.RH_score}分）</span>
                 </span>
                 <span>
                   风速：{recommendation.score_details.actual_values?.wind_m_s?.toFixed(1) || 'N/A'} m/s 
-                  <span className="score-impact">（影响：{recommendation.score_details.Wind_score > 0 ? '+' : ''}{recommendation.score_details.Wind_score}分）</span>
+                  <span className="score-impact">（体感值：{recommendation.score_details.Wind_score > 0 ? '+' : ''}{recommendation.score_details.Wind_score}分）</span>
                 </span>
                 {recommendation.score_details.actual_values?.gust_m_s && recommendation.score_details.actual_values.gust_m_s > 0 && (
                   <span>
                     阵风：{recommendation.score_details.actual_values.gust_m_s.toFixed(1)} m/s 
-                    <span className="score-impact">（影响：{recommendation.score_details.Gust_score > 0 ? '+' : ''}{recommendation.score_details.Gust_score}分）</span>
+                    <span className="score-impact">（体感值：{recommendation.score_details.Gust_score > 0 ? '+' : ''}{recommendation.score_details.Gust_score}分）</span>
                   </span>
                 )}
                 <span>
                   紫外线：{recommendation.score_details.actual_values?.uv_index || 'N/A'} 
-                  <span className="score-impact">（影响：{recommendation.score_details.Sun_score > 0 ? '+' : ''}{recommendation.score_details.Sun_score}分）</span>
+                  <span className="score-impact">（体感值：{recommendation.score_details.Sun_score > 0 ? '+' : ''}{recommendation.score_details.Sun_score}分）</span>
                 </span>
                 <span>
                   活动量：{recommendation.score_details.Activity_adj > 0 ? '+' : ''}{recommendation.score_details.Activity_adj}分

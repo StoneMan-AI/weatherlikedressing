@@ -1,6 +1,7 @@
 .custom-select {
   position: relative;
   width: 100%;
+  z-index: 100;
 }
 
 .select-trigger {
@@ -57,7 +58,7 @@
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
+  z-index: 9999;
   max-height: 200px;
   overflow-y: auto;
   margin-top: 4px;
