@@ -1,30 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import CustomSelect from '../components/CustomSelect';
 import './Settings.css';
 
 const Settings = () => {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
-  const queryClient = useQueryClient();
-  const [locationForm, setLocationForm] = useState({
-    name: '',
-    latitude: '',
-    longitude: '',
-    timezone: 'Asia/Shanghai',
-    is_default: false
+  
+  // 表单状态
+  const [formData, setFormData] = useState({
+    language: 'zh-CN',
+    age_group: 'adult',
+    sensitivity: 'none',
+    conditions: []
   });
 
-  // 获取地点列表
-  const { data: locations } = useQuery({
-    queryKey: ['locations'],
-    queryFn: async () => {
-      const res = await axios.get('/api/locations');
-      return res.data.data;
+  // 当用户数据加载后，初始化表单数据
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        language: user.language || 'zh-CN',
+        age_group: user.profile_json?.age_group || 'adult',
+        sensitivity: user.profile_json?.sensitivity || 'none',
+        conditions: user.profile_json?.conditions || []
+      });
     }
-  });
+  }, [user]);
 
   // 更新用户资料
   const updateProfileMutation = useMutation({
@@ -42,58 +46,34 @@ const Settings = () => {
     }
   });
 
-  // 添加地点
-  const addLocationMutation = useMutation({
-    mutationFn: async (data) => {
-      const res = await axios.post('/api/locations', data);
-      return res.data.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['locations']);
-      setLocationForm({
-        name: '',
-        latitude: '',
-        longitude: '',
-        timezone: 'Asia/Shanghai',
-        is_default: false
-      });
-      alert('地点添加成功');
-    }
-  });
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
-  // 删除地点
-  const deleteLocationMutation = useMutation({
-    mutationFn: async (id) => {
-      await axios.delete(`/api/locations/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['locations']);
-      alert('地点删除成功');
-    }
-  });
-
-  const handleAddLocation = (e) => {
-    e.preventDefault();
-    if (!locationForm.name || !locationForm.latitude || !locationForm.longitude) {
-      alert('请填写完整信息');
-      return;
-    }
-    addLocationMutation.mutate({
-      ...locationForm,
-      latitude: parseFloat(locationForm.latitude),
-      longitude: parseFloat(locationForm.longitude)
+  const handleConditionToggle = (condition) => {
+    setFormData(prev => {
+      const conditions = prev.conditions || [];
+      const newConditions = conditions.includes(condition)
+        ? conditions.filter(c => c !== condition)
+        : [...conditions, condition];
+      return {
+        ...prev,
+        conditions: newConditions
+      };
     });
   };
 
-  const handleProfileUpdate = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
     const profileData = {
-      language: formData.get('language'),
+      language: formData.language,
       profile_json: {
-        age_group: formData.get('age_group'),
-        sensitivity: formData.get('sensitivity'),
-        conditions: formData.getAll('conditions')
+        age_group: formData.age_group,
+        sensitivity: formData.sensitivity,
+        conditions: formData.conditions
       }
     };
     updateProfileMutation.mutate(profileData);
@@ -125,156 +105,114 @@ const Settings = () => {
             <h2>👤 个人资料</h2>
             <span className="section-subtitle">完善您的信息以获得个性化建议</span>
           </div>
-          <form onSubmit={handleProfileUpdate} className="settings-form">
+          <form onSubmit={handleSubmit} className="settings-form">
             <div className="form-group">
               <label>语言</label>
-              <select
-                name="language"
-                className="input"
-                defaultValue={user?.language || 'zh-CN'}
-              >
-                <option value="zh-CN">简体中文</option>
-                <option value="en">English</option>
-              </select>
+              <CustomSelect
+                value={formData.language}
+                onChange={(e) => handleInputChange('language', e.target.value)}
+                options={[
+                  { value: 'zh-CN', label: '简体中文' },
+                  { value: 'en', label: 'English' }
+                ]}
+              />
             </div>
 
             <div className="form-group">
               <label>年龄段</label>
-              <select name="age_group" className="input" defaultValue={user?.profile_json?.age_group || 'adult'}>
-                <option value="child_0_2">0-2岁</option>
-                <option value="child_3_6">3-6岁</option>
-                <option value="child_7_12">7-12岁</option>
-                <option value="adult">成人</option>
-                <option value="elderly_65_plus">65岁以上</option>
-              </select>
+              <CustomSelect
+                value={formData.age_group}
+                onChange={(e) => handleInputChange('age_group', e.target.value)}
+                options={[
+                  { value: 'child_0_2', label: '0-2岁' },
+                  { value: 'child_3_6', label: '3-6岁' },
+                  { value: 'child_7_12', label: '7-12岁' },
+                  { value: 'adult', label: '成人' },
+                  { value: 'elderly_65_plus', label: '65岁以上' }
+                ]}
+              />
             </div>
 
             <div className="form-group">
               <label>温度敏感度</label>
-              <select name="sensitivity" className="input" defaultValue={user?.profile_json?.sensitivity || 'none'}>
-                <option value="none">正常</option>
-                <option value="cold">怕冷</option>
-                <option value="hot">怕热</option>
-              </select>
+              <CustomSelect
+                value={formData.sensitivity}
+                onChange={(e) => handleInputChange('sensitivity', e.target.value)}
+                options={[
+                  { value: 'none', label: '正常' },
+                  { value: 'cold', label: '怕冷' },
+                  { value: 'hot', label: '怕热' }
+                ]}
+              />
             </div>
 
             <div className="form-group">
               <label>健康状况</label>
               <div className="checkbox-group">
-                <label>
+                <p className="checkbox-hint">请选择您受天气影响较大的健康状况（可多选）</p>
+                <label className="checkbox-item">
                   <input
                     type="checkbox"
-                    name="conditions"
-                    value="rheumatism"
-                    defaultChecked={user?.profile_json?.conditions?.includes('rheumatism')}
+                    checked={formData.conditions.includes('rheumatism')}
+                    onChange={() => handleConditionToggle('rheumatism')}
                   />
-                  风湿/关节不适
+                  <span>风湿/关节不适</span>
                 </label>
-                <label>
+                <label className="checkbox-item">
                   <input
                     type="checkbox"
-                    name="conditions"
-                    value="asthma"
-                    defaultChecked={user?.profile_json?.conditions?.includes('asthma')}
+                    checked={formData.conditions.includes('asthma')}
+                    onChange={() => handleConditionToggle('asthma')}
                   />
-                  哮喘
+                  <span>哮喘</span>
+                </label>
+                <label className="checkbox-item">
+                  <input
+                    type="checkbox"
+                    checked={formData.conditions.includes('cardiovascular')}
+                    onChange={() => handleConditionToggle('cardiovascular')}
+                  />
+                  <span>心血管疾病（高血压、心脏病等）</span>
+                </label>
+                <label className="checkbox-item">
+                  <input
+                    type="checkbox"
+                    checked={formData.conditions.includes('copd')}
+                    onChange={() => handleConditionToggle('copd')}
+                  />
+                  <span>慢性阻塞性肺疾病（COPD）</span>
+                </label>
+                <label className="checkbox-item">
+                  <input
+                    type="checkbox"
+                    checked={formData.conditions.includes('migraine')}
+                    onChange={() => handleConditionToggle('migraine')}
+                  />
+                  <span>偏头痛</span>
+                </label>
+                <label className="checkbox-item">
+                  <input
+                    type="checkbox"
+                    checked={formData.conditions.includes('skin_disease')}
+                    onChange={() => handleConditionToggle('skin_disease')}
+                  />
+                  <span>皮肤病（湿疹、银屑病等）</span>
+                </label>
+                <label className="checkbox-item">
+                  <input
+                    type="checkbox"
+                    checked={formData.conditions.includes('allergy')}
+                    onChange={() => handleConditionToggle('allergy')}
+                  />
+                  <span>过敏性疾病（过敏性鼻炎等）</span>
                 </label>
               </div>
             </div>
 
-            <button type="submit" className="btn btn-primary">
-              保存设置
+            <button type="submit" className="btn btn-primary" disabled={updateProfileMutation.isLoading}>
+              {updateProfileMutation.isLoading ? '保存中...' : '保存设置'}
             </button>
           </form>
-        </section>
-
-        {/* 地点管理 */}
-        <section className="settings-section card">
-          <h2>地点管理</h2>
-
-          <form onSubmit={handleAddLocation} className="settings-form">
-            <div className="form-row">
-              <div className="form-group">
-                <label>地点名称</label>
-                <input
-                  type="text"
-                  className="input"
-                  value={locationForm.name}
-                  onChange={(e) => setLocationForm({ ...locationForm, name: e.target.value })}
-                  placeholder="如：家、公司"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>设为默认</label>
-                <input
-                  type="checkbox"
-                  checked={locationForm.is_default}
-                  onChange={(e) => setLocationForm({ ...locationForm, is_default: e.target.checked })}
-                />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>纬度</label>
-                <input
-                  type="number"
-                  step="0.000001"
-                  className="input"
-                  value={locationForm.latitude}
-                  onChange={(e) => setLocationForm({ ...locationForm, latitude: e.target.value })}
-                  placeholder="31.2304"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>经度</label>
-                <input
-                  type="number"
-                  step="0.000001"
-                  className="input"
-                  value={locationForm.longitude}
-                  onChange={(e) => setLocationForm({ ...locationForm, longitude: e.target.value })}
-                  placeholder="121.4737"
-                  required
-                />
-              </div>
-            </div>
-
-            <button type="submit" className="btn btn-primary">
-              添加地点
-            </button>
-          </form>
-
-          <div className="locations-list">
-            <h3>已保存的地点</h3>
-            {locations && locations.length > 0 ? (
-              locations.map(location => (
-                <div key={location.id} className="location-item">
-                  <div>
-                    <strong>{location.name}</strong>
-                    {location.is_default && <span className="default-badge">默认</span>}
-                    <div className="location-coords">
-                      {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (confirm('确定要删除这个地点吗？')) {
-                        deleteLocationMutation.mutate(location.id);
-                      }
-                    }}
-                    className="btn btn-secondary"
-                  >
-                    删除
-                  </button>
-                </div>
-              ))
-            ) : (
-              <p className="text-gray">暂无地点</p>
-            )}
-          </div>
         </section>
       </div>
     </div>
