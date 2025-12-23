@@ -6,11 +6,24 @@
   margin-bottom: var(--spacing-lg);
 }
 
+.travel-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
 .travel-header h3 {
   font-size: 24px;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: var(--spacing-xs);
+  margin: 0;
+}
+
+.travel-location-hint {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 400;
 }
 
 .travel-subtitle {

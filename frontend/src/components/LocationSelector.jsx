@@ -181,13 +181,27 @@ const LocationSelector = () => {
             </div>
           )}
         </div>
-        <button
-          className="btn-add-location"
-          onClick={() => setShowAddForm(!showAddForm)}
-          title={showAddForm ? '取消添加' : '添加位置'}
-        >
-          {showAddForm ? '取消' : '+'}
-        </button>
+        <div className="location-actions">
+          <button
+            className="btn-travel-guide"
+            onClick={() => {
+              const travelSection = document.getElementById('travel-recommendation-section');
+              if (travelSection) {
+                travelSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }}
+            title="旅行指南"
+          >
+            旅行指南
+          </button>
+          <button
+            className="btn-add-location"
+            onClick={() => setShowAddForm(!showAddForm)}
+            title={showAddForm ? '取消添加' : '添加位置'}
+          >
+            {showAddForm ? '取消' : '+'}
+          </button>
+        </div>
       </div>
 
       {showAddForm && (
