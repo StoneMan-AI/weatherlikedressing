@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LocationProvider } from './contexts/LocationContext';
+import { AuthProvider } from './contexts/AuthContext';
 import Home from './pages/Home';
 import Layout from './components/Layout';
 import './App.css';
@@ -15,23 +16,25 @@ import './App.css';
  */
 function App() {
   return (
-    <LocationProvider>
-      <Router>
-        <Routes>
-          {/* 主页路由 - 无需登录，直接访问 */}
-          <Route
-            path="/"
-            element={
-              <Layout>
-                <Home />
-              </Layout>
-            }
-          />
-          {/* 所有其他路由重定向到首页 */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
-    </LocationProvider>
+    <AuthProvider>
+      <LocationProvider>
+        <Router>
+          <Routes>
+            {/* 主页路由 - 无需登录，直接访问 */}
+            <Route
+              path="/"
+              element={
+                <Layout>
+                  <Home />
+                </Layout>
+              }
+            />
+            {/* 所有其他路由重定向到首页 */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </LocationProvider>
+    </AuthProvider>
   );
 }
 

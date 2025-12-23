@@ -7,7 +7,9 @@ import DailyForecast from '../components/DailyForecast';
 import LocationSelector from '../components/LocationSelector';
 import HealthAlerts from '../components/HealthAlerts';
 import CustomSelect from '../components/CustomSelect';
+import TravelRecommendation from '../components/TravelRecommendation';
 import { useLocationContext } from '../contexts/LocationContext';
+import { useAuth } from '../contexts/AuthContext';
 import { recalculateRecommendation, canUseLocalCalculation } from '../utils/recommendationCalculator';
 import './Home.css';
 
@@ -305,7 +307,7 @@ const Home = () => {
             <TravelRecommendation 
               currentLocation={currentLocation}
               weatherData={weatherData}
-              userProfile={user?.profile_json || {}}
+              userProfile={userProfile}
             />
           )}
 
