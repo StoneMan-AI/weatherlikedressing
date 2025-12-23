@@ -197,6 +197,11 @@
   border-color: rgba(74, 144, 226, 0.3);
 }
 
+.profile-history-item.is-current {
+  background: rgba(74, 144, 226, 0.15);
+  border-color: rgba(74, 144, 226, 0.5);
+}
+
 .history-item-header {
   display: flex;
   justify-content: space-between;
@@ -234,6 +239,42 @@
 .field-value {
   color: var(--text-primary);
   flex: 1;
+}
+
+.history-item-actions {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-apply-history {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: rgba(74, 144, 226, 0.8);
+  border: 1px solid rgba(74, 144, 226, 0.9);
+  border-radius: var(--border-radius);
+  color: #FFFFFF;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-apply-history:hover {
+  background: rgba(74, 144, 226, 1);
+  border-color: rgba(74, 144, 226, 1);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+}
+
+.current-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: rgba(74, 144, 226, 0.8);
+  color: #FFFFFF;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 @media (max-width: 768px) {

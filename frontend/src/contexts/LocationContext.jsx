@@ -44,6 +44,8 @@ export const LocationProvider = ({ children }) => {
         console.error('Failed to parse saved locations:', error);
       }
     }
+    // 如果没有保存的位置，不在这里设置默认位置，让Home组件来处理
+    // 这样可以确保首次打开时能正确初始化
     setLoading(false);
   }, []);
 
@@ -133,84 +135,199 @@ export const LocationProvider = ({ children }) => {
     }
   };
 
-  // 通过IP获取位置
+  // 通过IP获取位置（支持多个IP定位服务，提高可靠性）
   const getLocationByIP = async () => {
-    try {
-      // 使用免费的IP定位服务
-      const response = await axios.get('https://ipapi.co/json/');
-      const data = response.data;
-      
-      if (data.latitude && data.longitude) {
-        const location = {
+    // IP定位服务列表（按优先级排序）
+    const ipServices = [
+      {
+        name: 'ipapi.co',
+        url: 'https://ipapi.co/json/',
+        parser: (data) => ({
           name: data.city || '当前位置',
           latitude: data.latitude,
           longitude: data.longitude,
           timezone: data.timezone || 'Asia/Shanghai',
           is_default: true
-        };
-        
-        return location;
+        })
+      },
+      {
+        name: 'ip-api.com',
+        url: 'http://ip-api.com/json/?fields=status,message,country,regionName,city,lat,lon,timezone',
+        parser: (data) => {
+          if (data.status === 'success') {
+            return {
+              name: data.city || '当前位置',
+              latitude: data.lat,
+              longitude: data.lon,
+              timezone: data.timezone || 'Asia/Shanghai',
+              is_default: true
+            };
+          }
+          throw new Error(data.message || 'IP定位失败');
+        }
+      },
+      {
+        name: 'ipinfo.io',
+        url: 'https://ipinfo.io/json',
+        parser: (data) => {
+          if (data.loc) {
+            const [latitude, longitude] = data.loc.split(',');
+            return {
+              name: data.city || '当前位置',
+              latitude: parseFloat(latitude),
+              longitude: parseFloat(longitude),
+              timezone: data.timezone || 'Asia/Shanghai',
+              is_default: true
+            };
+          }
+          throw new Error('无法解析位置信息');
+        }
       }
-      throw new Error('无法获取位置信息');
+    ];
+
+    // 依次尝试每个IP定位服务
+    for (const service of ipServices) {
+      try {
+        console.log(`尝试使用 ${service.name} 进行IP定位...`);
+        const response = await axios.get(service.url, {
+          timeout: 5000 // 5秒超时
+        });
+        const data = response.data;
+        
+        const location = service.parser(data);
+        if (location.latitude && location.longitude) {
+          console.log(`IP定位成功（${service.name}）:`, location.name);
+          return location;
+        }
+      } catch (error) {
+        console.warn(`${service.name} IP定位失败:`, error.message);
+        // 继续尝试下一个服务
+        continue;
+      }
+    }
+    
+    // 所有IP定位服务都失败
+    throw new Error('所有IP定位服务均失败');
+  };
+
+  // 检查地理位置权限状态
+  const checkGeolocationPermission = () => {
+    if (!navigator.geolocation || !navigator.permissions) {
+      return 'unsupported';
+    }
+    
+    try {
+      // 注意：permissions API在某些浏览器中可能不支持
+      return navigator.permissions.query({ name: 'geolocation' }).then(
+        (result) => result.state,
+        () => 'unknown'
+      );
     } catch (error) {
-      console.error('IP定位失败:', error);
-      throw error;
+      return Promise.resolve('unknown');
     }
   };
 
-  // 通过浏览器API获取位置
-  const getLocationByGeolocation = () => {
+  // 通过浏览器API获取位置（增强版，支持权限检查）
+  const getLocationByGeolocation = (retryCount = 0) => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
         reject(new Error('浏览器不支持地理位置API'));
         return;
       }
 
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          
-          // 尝试通过逆地理编码获取城市名称
-          try {
-            // 使用免费的逆地理编码服务
-            const response = await axios.get(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
-            );
-            const data = response.data;
-            const cityName = data.address?.city || 
-                            data.address?.town || 
-                            data.address?.village ||
-                            data.address?.county ||
-                            '当前位置';
-            
-            resolve({
-              name: cityName,
-              latitude,
-              longitude,
-              timezone: 'Asia/Shanghai', // 可以根据时区API获取
-              is_default: true
-            });
-          } catch (error) {
-            // 如果逆地理编码失败，仍然返回坐标
-            resolve({
-              name: '当前位置',
-              latitude,
-              longitude,
-              timezone: 'Asia/Shanghai',
-              is_default: true
-            });
+      // 检查权限状态（如果支持）
+      if (navigator.permissions) {
+        navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+          if (result.state === 'denied') {
+            reject(new Error('用户已拒绝位置权限'));
+            return;
           }
-        },
-        (error) => {
-          reject(error);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        }
-      );
+          
+          // 如果权限是prompt或granted，继续获取位置
+          attemptGetLocation(resolve, reject, retryCount);
+        }).catch(() => {
+          // 如果权限查询失败，直接尝试获取位置
+          attemptGetLocation(resolve, reject, retryCount);
+        });
+      } else {
+        // 不支持权限API，直接尝试获取位置
+        attemptGetLocation(resolve, reject, retryCount);
+      }
     });
+  };
+
+  // 尝试获取位置的内部函数
+  const attemptGetLocation = (resolve, reject, retryCount) => {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        // 尝试通过逆地理编码获取城市名称
+        try {
+          // 使用免费的逆地理编码服务
+          const response = await axios.get(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
+            {
+              headers: {
+                'User-Agent': 'WeatherApp/1.0'
+              }
+            }
+          );
+          const data = response.data;
+          const cityName = data.address?.city || 
+                          data.address?.town || 
+                          data.address?.village ||
+                          data.address?.county ||
+                          '当前位置';
+          
+          resolve({
+            name: cityName,
+            latitude,
+            longitude,
+            timezone: 'Asia/Shanghai',
+            is_default: true
+          });
+        } catch (error) {
+          // 如果逆地理编码失败，仍然返回坐标
+          resolve({
+            name: '当前位置',
+            latitude,
+            longitude,
+            timezone: 'Asia/Shanghai',
+            is_default: true
+          });
+        }
+      },
+      (error) => {
+        // 如果是权限被拒绝，直接拒绝
+        if (error.code === error.PERMISSION_DENIED) {
+          reject(new Error('用户已拒绝位置权限'));
+        } else if (error.code === error.TIMEOUT && retryCount < 1) {
+          // 超时且未重试过，延迟后重试一次
+          setTimeout(() => {
+            attemptGetLocation(resolve, reject, retryCount + 1);
+          }, 1000);
+        } else {
+          reject(error);
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000, // 增加超时时间到15秒
+        maximumAge: 0
+      }
+    );
+  };
+
+  // 获取默认位置（北京）
+  const getDefaultLocation = () => {
+    return {
+      name: '北京',
+      latitude: 39.9042,
+      longitude: 116.4074,
+      timezone: 'Asia/Shanghai',
+      is_default: true
+    };
   };
 
   // 通过城市名称查询位置
@@ -248,7 +365,8 @@ export const LocationProvider = ({ children }) => {
     setCurrentLocation: setCurrentLocationWithSave,
     getLocationByIP,
     getLocationByGeolocation,
-    searchLocationByCityName
+    searchLocationByCityName,
+    getDefaultLocation
   };
 
   return <LocationContext.Provider value={value}>{children}</LocationContext.Provider>;

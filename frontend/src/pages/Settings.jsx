@@ -132,6 +132,21 @@ const Settings = () => {
     updateProfileMutation.mutate(profileData);
   };
 
+  // 应用历史记录中的用户画像设置
+  const handleApplyHistory = (historyItem) => {
+    setFormData({
+      age_group: historyItem.profile.age_group || 'adult',
+      sensitivity: historyItem.profile.sensitivity || 'none',
+      conditions: historyItem.profile.conditions || []
+    });
+    
+    // 滚动到表单顶部，让用户看到已应用设置
+    const formElement = document.querySelector('.settings-form');
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <div className="settings-page container">
       <div className="settings-header">
@@ -295,10 +310,19 @@ const Settings = () => {
                   'allergy': '过敏性疾病'
                 };
                 
+                // 检查当前表单是否与历史记录匹配
+                const isCurrentProfile = 
+                  formData.age_group === item.profile.age_group &&
+                  formData.sensitivity === item.profile.sensitivity &&
+                  JSON.stringify([...formData.conditions].sort()) === JSON.stringify([...(item.profile.conditions || [])].sort());
+                
                 return (
-                  <div key={item.id} className="profile-history-item">
+                  <div key={item.id} className={`profile-history-item ${isCurrentProfile ? 'is-current' : ''}`}>
                     <div className="history-item-header">
                       <span className="history-item-date">{formattedDate}</span>
+                      {isCurrentProfile && (
+                        <span className="current-badge">当前设置</span>
+                      )}
                     </div>
                     <div className="history-item-content">
                       <div className="history-item-field">
@@ -318,6 +342,17 @@ const Settings = () => {
                         </div>
                       )}
                     </div>
+                    {!isCurrentProfile && (
+                      <div className="history-item-actions">
+                        <button
+                          type="button"
+                          className="btn-apply-history"
+                          onClick={() => handleApplyHistory(item)}
+                        >
+                          应用此设置
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })}

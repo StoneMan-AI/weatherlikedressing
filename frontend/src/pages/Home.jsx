@@ -20,7 +20,8 @@ const Home = () => {
     loading: locationLoading,
     getLocationByIP,
     getLocationByGeolocation,
-    addLocation
+    addLocation,
+    getDefaultLocation
   } = useLocationContext();
   
   const { user } = useAuth();
@@ -34,7 +35,7 @@ const Home = () => {
   const [recommendationLoading, setRecommendationLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
-  // 首次打开时获取位置
+  // 首次打开时获取位置（增强版，支持权限状态监听）
   useEffect(() => {
     const initializeLocation = async () => {
       if (locationLoading) return;
@@ -45,29 +46,112 @@ const Home = () => {
         return;
       }
 
+      // 检测是否为移动设备
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      // 检查地理位置权限状态并设置监听
+      let geolocationPermission = 'unknown';
+      let permissionResult = null;
+      
+      if (navigator.permissions && navigator.geolocation) {
+        try {
+          permissionResult = await navigator.permissions.query({ name: 'geolocation' });
+          geolocationPermission = permissionResult.state;
+          
+          // 监听权限状态变化（当用户操作权限对话框后）
+          permissionResult.onchange = async () => {
+            const newState = permissionResult.state;
+            console.log('地理位置权限状态变化:', newState);
+            
+            if (newState === 'granted') {
+              // 用户刚刚授权，尝试获取地理位置
+              try {
+                console.log('检测到用户授权，尝试获取地理位置...');
+                const location = await getLocationByGeolocation();
+                // 检查是否已有位置，避免重复添加
+                if (!currentLocation) {
+                  addLocation(location);
+                  console.log('用户授权后成功获取地理位置:', location.name);
+                }
+              } catch (error) {
+                console.warn('用户授权后获取地理位置失败:', error.message);
+                // 如果获取失败，尝试IP定位
+                try {
+                  const ipLocation = await getLocationByIP();
+                  if (!currentLocation) {
+                    addLocation(ipLocation);
+                    console.log('使用IP定位作为备选方案');
+                  }
+                } catch (ipError) {
+                  console.warn('IP定位也失败:', ipError.message);
+                }
+              }
+            }
+          };
+        } catch (error) {
+          console.warn('无法查询地理位置权限状态:', error);
+        }
+      }
+
       try {
-        // 检测是否为移动设备
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        
         let location;
+        
+        // 移动设备且有地理位置API支持
         if (isMobile && navigator.geolocation) {
-          // 移动设备：请求位置权限
-          try {
-            location = await getLocationByGeolocation();
-          } catch (error) {
-            console.warn('地理位置获取失败，尝试IP定位:', error);
-            // 如果用户拒绝或失败，使用IP定位
-            location = await getLocationByIP();
+          // 如果权限是prompt（未决定）或granted（已授权），尝试获取地理位置
+          if (geolocationPermission === 'prompt' || geolocationPermission === 'granted' || geolocationPermission === 'unknown') {
+            try {
+              location = await getLocationByGeolocation();
+              console.log('地理位置获取成功');
+            } catch (error) {
+              console.warn('地理位置获取失败，尝试IP定位:', error.message);
+              // 如果用户拒绝或失败，使用IP定位
+              try {
+                location = await getLocationByIP();
+                console.log('IP定位成功');
+              } catch (ipError) {
+                console.warn('IP定位失败:', ipError.message);
+                throw ipError;
+              }
+            }
+          } else if (geolocationPermission === 'denied') {
+            // 用户已明确拒绝，直接使用IP定位
+            console.log('用户已拒绝位置权限，使用IP定位');
+            try {
+              location = await getLocationByIP();
+            } catch (ipError) {
+              console.warn('IP定位失败:', ipError.message);
+              throw ipError;
+            }
+          } else {
+            // 其他情况，尝试IP定位
+            try {
+              location = await getLocationByIP();
+            } catch (ipError) {
+              console.warn('IP定位失败:', ipError.message);
+              throw ipError;
+            }
           }
         } else {
-          // 浏览器：使用IP定位
+          // 非移动设备或浏览器不支持地理位置，使用IP定位
+          console.log('使用IP定位');
           location = await getLocationByIP();
         }
 
         // 添加位置
-        addLocation(location);
+        if (location) {
+          addLocation(location);
+        }
       } catch (error) {
         console.error('位置初始化失败:', error);
+        // 如果所有定位方式都失败，使用默认位置（北京）
+        try {
+          const defaultLocation = getDefaultLocation();
+          addLocation(defaultLocation);
+          console.log('使用默认位置：北京');
+        } catch (defaultError) {
+          console.error('设置默认位置失败:', defaultError);
+        }
       } finally {
         setInitializing(false);
       }
