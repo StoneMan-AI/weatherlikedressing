@@ -42,4 +42,22 @@ export function getUserId() {
  */
 export function clearUserId() {
   localStorage.removeItem('userId');
+  localStorage.removeItem('sessionId');
+}
+
+/**
+ * 获取用户标识（用于axios拦截器）
+ * 返回 { userId, sessionId }
+ */
+export function getUserIdentifier() {
+  const userId = getOrCreateUserId();
+  
+  // 生成或获取会话ID
+  let sessionId = localStorage.getItem('sessionId');
+  if (!sessionId) {
+    sessionId = generateUUID();
+    localStorage.setItem('sessionId', sessionId);
+  }
+  
+  return { userId, sessionId };
 }
