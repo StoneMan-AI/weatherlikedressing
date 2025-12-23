@@ -9,14 +9,13 @@ const TravelRecommendation = ({ currentLocation, weatherData, userProfile }) => 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // 设置默认日期范围（今天+2天 到 今天+4天）
+  // 设置默认日期范围（今天 到 今天+2天）
   useEffect(() => {
     if (!startDate && !endDate) {
       const today = new Date();
       const start = new Date(today);
-      start.setDate(today.getDate() + 2);
       const end = new Date(today);
-      end.setDate(today.getDate() + 4);
+      end.setDate(today.getDate() + 2);
       
       setStartDate(formatDate(start));
       setEndDate(formatDate(end));
@@ -32,7 +31,7 @@ const TravelRecommendation = ({ currentLocation, weatherData, userProfile }) => 
 
   const getMinDate = () => {
     const today = new Date();
-    today.setDate(today.getDate() + 2); // 至少2天后
+    // 允许从今天开始选择
     return formatDate(today);
   };
 
@@ -58,8 +57,8 @@ const TravelRecommendation = ({ currentLocation, weatherData, userProfile }) => 
     }
 
     const days = calculateDays();
-    if (days < 2) {
-      setError('旅行时间至少需要2天');
+    if (days < 1) {
+      setError('请选择有效的日期范围');
       return;
     }
 
@@ -343,26 +342,15 @@ const ItemCard = ({ item, type }) => {
   const icon = typeof item === 'string' ? getItemIcon(item) : getItemIcon(item.name || item);
   const name = typeof item === 'string' ? item : (item.name || item);
 
-  const [showDetails, setShowDetails] = useState(false);
-  const hasDetails = typeof item === 'object' && (item.reason || item.details);
-
   return (
-    <div 
-      className={`item-card item-card-${type} ${hasDetails ? 'has-details' : ''}`}
-      onClick={() => hasDetails && setShowDetails(!showDetails)}
-    >
+    <div className={`item-card item-card-${type}`}>
       <div className="item-icon">{icon}</div>
       <div className="item-name">{name}</div>
       {typeof item === 'object' && item.reason && (
         <div className="item-reason">{item.reason}</div>
       )}
-      {typeof item === 'object' && item.details && showDetails && (
+      {typeof item === 'object' && item.details && (
         <div className="item-details">{item.details}</div>
-      )}
-      {hasDetails && (
-        <div className="item-details-toggle">
-          {showDetails ? '收起详情' : '查看详情'}
-        </div>
       )}
     </div>
   );

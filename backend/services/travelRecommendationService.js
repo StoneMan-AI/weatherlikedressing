@@ -256,18 +256,28 @@ class TravelRecommendationService {
       });
     });
 
-    // 添加配饰
+    // 添加配饰（过滤掉不适合旅行的建议）
     const allAccessories = new Set([
       ...(coldRecommendation.accessories || []),
       ...(hotRecommendation.accessories || [])
     ]);
 
     allAccessories.forEach(accessory => {
-      recommendations.push({
-        name: accessory,
-        reason: this.getDetailedAccessoryReason(accessory, weatherAnalysis, dailyRecommendations, userProfile),
-        details: this.getAccessoryDetails(accessory, weatherAnalysis)
-      });
+      // 过滤掉"尽量不出门"等不适合旅行的建议
+      if (accessory.includes('尽量不出门')) {
+        // 替换为适合旅行的建议
+        recommendations.push({
+          name: '紧急保暖包',
+          reason: `极端寒冷天气（最低温${weatherAnalysis.min_temp.toFixed(1)}°C），建议携带紧急保暖装备`,
+          details: '建议携带暖宝宝、热水袋、保温杯等保暖用品，以备不时之需'
+        });
+      } else {
+        recommendations.push({
+          name: accessory,
+          reason: this.getDetailedAccessoryReason(accessory, weatherAnalysis, dailyRecommendations, userProfile),
+          details: this.getAccessoryDetails(accessory, weatherAnalysis)
+        });
+      }
     });
 
     // 根据温度范围添加详细建议

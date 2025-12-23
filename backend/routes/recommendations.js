@@ -255,14 +255,13 @@ router.post('/travel', async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const minDate = new Date(today);
-    minDate.setDate(today.getDate() + 2); // 至少2天后
+    const minDate = new Date(today); // 允许从今天开始
     
     const maxDate = new Date(today);
     maxDate.setDate(today.getDate() + 15); // 最多15天后
 
     if (start < minDate) {
-      return res.status(400).json({ error: '出发日期至少需要2天后' });
+      return res.status(400).json({ error: '出发日期不能早于今天' });
     }
 
     if (end > maxDate) {
@@ -274,8 +273,8 @@ router.post('/travel', async (req, res) => {
     }
 
     const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-    if (days < 2) {
-      return res.status(400).json({ error: '旅行时间至少需要2天' });
+    if (days < 1) {
+      return res.status(400).json({ error: '请选择有效的日期范围' });
     }
 
     // 获取用户资料（如果已登录且未提供user_profile）

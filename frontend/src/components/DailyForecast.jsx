@@ -40,7 +40,7 @@ const DailyForecast = ({ dailyData }) => {
       <div className="forecast-header">
         <h3>15天预报</h3>
         <div className="selected-date">
-          {selectedDay === 0 ? today.fullDate : formatDate(dailyData[selectedDay]?.date).fullDate}
+          {selectedDay === 0 ? `${today.month}月${today.day}日` : formatDate(dailyData[selectedDay]?.date).fullDate}
         </div>
       </div>
 
