@@ -23,7 +23,7 @@ const WeatherCard = ({ weather, location }) => {
         <div className="temperature-display">
           <span className="temperature">{Math.round(current.temperature_c)}°</span>
         </div>
-        <div className="weather-details-grid">
+        <div className="weather-details-row">
           <div className="weather-detail-item">
             <span className="detail-label">湿度</span>
             <span className="detail-value">{current.relative_humidity}%</span>

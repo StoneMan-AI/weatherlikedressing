@@ -9,7 +9,7 @@ const DailyForecast = ({ dailyData }) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-    const weekday = weekdays[date.getDay()];
+    const weekday = `星期${weekdays[date.getDay()]}`;
     
     return {
       weekday,
