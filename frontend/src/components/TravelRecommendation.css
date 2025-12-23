@@ -208,6 +208,110 @@
   line-height: 1.3;
 }
 
+.item-card.has-details {
+  cursor: pointer;
+}
+
+.item-card.has-details:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.item-details {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: var(--spacing-xs);
+  padding-top: var(--spacing-xs);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  line-height: 1.4;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.item-details-toggle {
+  font-size: 11px;
+  color: rgba(74, 144, 226, 0.8);
+  margin-top: var(--spacing-xs);
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.item-details-toggle:hover {
+  color: rgba(74, 144, 226, 1);
+}
+
+.weather-category {
+  margin-bottom: var(--spacing-md);
+}
+
+.weather-category:last-child {
+  margin-bottom: 0;
+}
+
+.category-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.category-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  padding-left: var(--spacing-md);
+}
+
+.category-items li {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-xs);
+  position: relative;
+}
+
+.category-items li::before {
+  content: '•';
+  position: absolute;
+  left: calc(-1 * var(--spacing-md));
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.plan-change-alert {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: rgba(255, 152, 0, 0.15);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  border-radius: var(--border-radius);
+}
+
+.alert-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FF9800;
+  margin-bottom: var(--spacing-sm);
+}
+
+.alert-reasons {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  padding-left: var(--spacing-md);
+}
+
+.alert-reasons li {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-xs);
+  position: relative;
+}
+
+.alert-reasons li::before {
+  content: '⚠️';
+  position: absolute;
+  left: calc(-1 * var(--spacing-md));
+}
+
 .weather-summary-section,
 .special-notes-section {
   margin-bottom: var(--spacing-lg);
