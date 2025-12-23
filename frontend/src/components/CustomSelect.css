@@ -60,10 +60,15 @@
   border-radius: var(--border-radius);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   max-height: 200px;
+  height: auto;
   overflow-y: auto;
   overflow-x: hidden;
   animation: dropdownFadeIn 0.2s ease-out;
-  padding-bottom: 4px; /* 添加底部内边距，确保最后一项可以完全滚动显示 */
+  padding-bottom: 8px; /* 增加底部内边距，确保最后一项可以完全滚动显示 */
+  padding-top: 4px; /* 添加顶部内边距，确保第一项显示完整 */
+  /* 确保滚动条可见且可用 */
+  -webkit-overflow-scrolling: touch; /* iOS平滑滚动 */
+  overscroll-behavior: contain; /* 防止滚动链 */
 }
 
 @keyframes dropdownFadeIn {
@@ -110,23 +115,31 @@
   margin-bottom: 0; /* 确保最后一项没有额外的底部边距 */
 }
 
-/* 滚动条样式 */
+/* 滚动条样式 - 确保滚动条始终可见 */
 .custom-select-dropdown::-webkit-scrollbar {
-  width: 6px;
+  width: 8px; /* 增加滚动条宽度，更容易操作 */
 }
 
 .custom-select-dropdown::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  border-radius: 4px;
+  margin: 4px 0; /* 添加上下边距 */
 }
 
 .custom-select-dropdown::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  min-height: 20px; /* 确保滚动条滑块最小高度 */
 }
 
 .custom-select-dropdown::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* Firefox滚动条样式 */
+.custom-select-dropdown {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.4) rgba(255, 255, 255, 0.1);
 }
 
 @media (max-width: 768px) {

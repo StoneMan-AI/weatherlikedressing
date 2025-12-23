@@ -61,16 +61,24 @@ const CustomSelect = ({ value, onChange, options, className = '' }) => {
       
       // 监听窗口变化
       const handleResize = () => updatePosition();
-      const handleScroll = () => {
+      
+      // 只监听页面滚动，不监听下拉框内的滚动
+      const handleScroll = (e) => {
+        // 如果滚动事件发生在下拉框内部，不关闭下拉框
+        if (dropdownRef.current && dropdownRef.current.contains(e.target)) {
+          return;
+        }
+        // 只有页面滚动时才关闭下拉框
         setIsOpen(false);
       };
       
       window.addEventListener('resize', handleResize);
-      window.addEventListener('scroll', handleScroll, true);
+      // 使用 capture: false，避免捕获下拉框内的滚动事件
+      window.addEventListener('scroll', handleScroll, false);
       
       return () => {
         window.removeEventListener('resize', handleResize);
-        window.removeEventListener('scroll', handleScroll, true);
+        window.removeEventListener('scroll', handleScroll, false);
       };
     }
   }, [isOpen]);
@@ -144,6 +152,14 @@ const CustomSelect = ({ value, onChange, options, className = '' }) => {
             left: `${position.left}px`,
             width: `${position.width}px`,
             zIndex: 99999
+          }}
+          onWheel={(e) => {
+            // 阻止滚动事件冒泡到window，避免关闭下拉框
+            e.stopPropagation();
+          }}
+          onTouchMove={(e) => {
+            // 阻止触摸滚动事件冒泡
+            e.stopPropagation();
           }}
         >
           {options.map((option) => (

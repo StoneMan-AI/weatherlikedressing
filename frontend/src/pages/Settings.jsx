@@ -8,7 +8,10 @@ import './Settings.css';
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, token } = useAuth();
+  
+  // 用户画像记录（最多2条）
+  const [profileHistory, setProfileHistory] = useState([]);
   
   // 表单状态
   const [formData, setFormData] = useState({
@@ -16,6 +19,18 @@ const Settings = () => {
     sensitivity: 'none',
     conditions: []
   });
+
+  // 从localStorage加载用户画像记录
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('profileHistory');
+    if (savedHistory) {
+      try {
+        setProfileHistory(JSON.parse(savedHistory));
+      } catch (e) {
+        console.error('Failed to load profile history:', e);
+      }
+    }
+  }, []);
 
   // 当用户数据加载后，初始化表单数据
   useEffect(() => {
@@ -31,16 +46,47 @@ const Settings = () => {
   // 更新用户资料
   const updateProfileMutation = useMutation({
     mutationFn: async (data) => {
-      const res = await axios.put('/api/users/profile', data);
+      // 确保请求包含token
+      const config = token ? {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      } : {};
+      const res = await axios.put('/api/users/profile', data, config);
       return res.data.data;
     },
     onSuccess: (data) => {
       updateUser(data);
+      
+      // 添加用户画像历史记录
+      const newHistoryItem = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        profile: {
+          age_group: formData.age_group,
+          sensitivity: formData.sensitivity,
+          conditions: [...formData.conditions]
+        }
+      };
+      
+      // 更新历史记录（最多保留2条）
+      const updatedHistory = [newHistoryItem, ...profileHistory].slice(0, 2);
+      setProfileHistory(updatedHistory);
+      localStorage.setItem('profileHistory', JSON.stringify(updatedHistory));
+      
       alert('用户画像更新成功！系统将根据您的个人属性提供个性化穿衣建议。');
       // 可选：保存后返回首页
       setTimeout(() => {
         navigate('/');
       }, 1000);
+    },
+    onError: (error) => {
+      console.error('Failed to update profile:', error);
+      if (error.response?.status === 401) {
+        alert('认证失败，请重新登录');
+      } else {
+        alert('保存失败，请重试');
+      }
     }
   });
 
@@ -199,6 +245,75 @@ const Settings = () => {
             </button>
           </form>
         </section>
+
+        {/* 用户画像历史记录 */}
+        {profileHistory.length > 0 && (
+          <section className="settings-section card profile-history-section">
+            <div className="section-header">
+              <h2>📋 历史记录</h2>
+              <span className="section-subtitle">最近保存的用户画像（最多2条）</span>
+            </div>
+            <div className="profile-history-list">
+              {profileHistory.map((item) => {
+                const date = new Date(item.timestamp);
+                const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+                
+                // 年龄段标签映射
+                const ageGroupLabels = {
+                  'child_0_2': '0-2岁',
+                  'child_3_6': '3-6岁',
+                  'child_7_12': '7-12岁',
+                  'adult': '成人',
+                  'elderly_65_plus': '65岁以上'
+                };
+                
+                // 敏感度标签映射
+                const sensitivityLabels = {
+                  'none': '正常',
+                  'cold': '怕冷',
+                  'hot': '怕热'
+                };
+                
+                // 健康状况标签映射
+                const conditionLabels = {
+                  'rheumatism': '风湿/关节不适',
+                  'asthma': '哮喘',
+                  'cardiovascular': '心血管疾病',
+                  'copd': 'COPD',
+                  'migraine': '偏头痛',
+                  'skin_disease': '皮肤病',
+                  'allergy': '过敏性疾病'
+                };
+                
+                return (
+                  <div key={item.id} className="profile-history-item">
+                    <div className="history-item-header">
+                      <span className="history-item-date">{formattedDate}</span>
+                    </div>
+                    <div className="history-item-content">
+                      <div className="history-item-field">
+                        <span className="field-label">年龄段：</span>
+                        <span className="field-value">{ageGroupLabels[item.profile.age_group] || item.profile.age_group}</span>
+                      </div>
+                      <div className="history-item-field">
+                        <span className="field-label">温度敏感度：</span>
+                        <span className="field-value">{sensitivityLabels[item.profile.sensitivity] || item.profile.sensitivity}</span>
+                      </div>
+                      {item.profile.conditions && item.profile.conditions.length > 0 && (
+                        <div className="history-item-field">
+                          <span className="field-label">健康状况：</span>
+                          <span className="field-value">
+                            {item.profile.conditions.map(c => conditionLabels[c] || c).join('、')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );
