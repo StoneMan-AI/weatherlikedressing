@@ -185,12 +185,77 @@ router.get('/profile', authenticateToken, async (req, res) => {
 
 /**
  * PUT /api/users/profile
- * 更新用户资料
+ * 更新用户资料（支持匿名用户）
+ * 如果已登录，使用登录用户ID；否则使用X-User-ID创建或更新匿名用户
  */
-router.put('/profile', authenticateToken, async (req, res) => {
+router.put('/profile', async (req, res) => {
   try {
     const { language, country_code, profile_json, push_pref_json } = req.body;
 
+    // 确定用户ID：优先使用登录用户ID，否则使用匿名用户ID
+    let userId;
+    
+    // 尝试从token中获取用户ID（如果已登录）
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        userId = decoded.id;
+      } catch (err) {
+        // Token无效，继续使用匿名用户ID
+        console.warn('Invalid token, using anonymous user ID');
+      }
+    }
+    
+    // 如果没有登录用户ID，使用匿名用户ID（从中间件获取）
+    if (!userId) {
+      const anonymousId = req.userId || req.anonymousUserId;
+      
+      if (!anonymousId) {
+        return res.status(400).json({ error: 'User ID required. Please provide X-User-ID header or login.' });
+      }
+      
+      // 检查匿名用户是否存在（通过profile_json中的anonymous_id字段查找）
+      let existingUser = await pool.query(
+        `SELECT id FROM users WHERE profile_json->>'anonymous_id' = $1`,
+        [anonymousId]
+      );
+      
+      if (existingUser.rows.length === 0) {
+        // 创建匿名用户记录，将anonymous_id存储在profile_json中
+        const initialProfileJson = profile_json ? {
+          ...profile_json,
+          anonymous_id: anonymousId
+        } : {
+          anonymous_id: anonymousId
+        };
+        
+        const createResult = await pool.query(
+          `INSERT INTO users (mobile, email, password_hash, language, country_code, profile_json, created_at)
+           VALUES (NULL, NULL, NULL, $1, NULL, $2::jsonb, NOW())
+           RETURNING id, mobile, email, language, country_code, profile_json, membership_status, push_pref_json`,
+          [language || 'zh-CN', JSON.stringify(initialProfileJson)]
+        );
+        
+        userId = createResult.rows[0].id;
+      } else {
+        userId = existingUser.rows[0].id;
+        
+        // 确保profile_json中包含anonymous_id
+        const userResult = await pool.query('SELECT profile_json FROM users WHERE id = $1', [userId]);
+        const currentProfileJson = userResult.rows[0]?.profile_json || {};
+        if (!currentProfileJson.anonymous_id) {
+          await pool.query(
+            `UPDATE users SET profile_json = jsonb_set(COALESCE(profile_json, '{}'::jsonb), '{anonymous_id}', $1::jsonb) WHERE id = $2`,
+            [JSON.stringify(anonymousId), userId]
+          );
+        }
+      }
+    }
+
+    // 更新用户资料
     const updates = [];
     const values = [];
     let paramCount = 1;
@@ -206,8 +271,18 @@ router.put('/profile', authenticateToken, async (req, res) => {
     }
 
     if (profile_json !== undefined) {
-      updates.push(`profile_json = $${paramCount++}::jsonb`);
-      values.push(JSON.stringify(profile_json));
+      // 如果是匿名用户，确保保留anonymous_id
+      if (!req.user && req.anonymousUserId) {
+        const finalProfileJson = {
+          ...profile_json,
+          anonymous_id: req.anonymousUserId
+        };
+        updates.push(`profile_json = $${paramCount++}::jsonb`);
+        values.push(JSON.stringify(finalProfileJson));
+      } else {
+        updates.push(`profile_json = $${paramCount++}::jsonb`);
+        values.push(JSON.stringify(profile_json));
+      }
     }
 
     if (push_pref_json !== undefined) {
@@ -219,11 +294,15 @@ router.put('/profile', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'No fields to update' });
     }
 
-    values.push(req.user.id);
+    values.push(userId);
     const result = await pool.query(
       `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING id, mobile, email, language, country_code, profile_json, membership_status, push_pref_json`,
       values
     );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
     res.json({
       success: true,

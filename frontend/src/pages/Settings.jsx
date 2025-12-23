@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import CustomSelect from '../components/CustomSelect';
+import { getOrCreateUserId } from '../utils/userId';
 import './Settings.css';
 
 const Settings = () => {
@@ -46,12 +47,21 @@ const Settings = () => {
   // 更新用户资料
   const updateProfileMutation = useMutation({
     mutationFn: async (data) => {
-      // 确保请求包含token
-      const config = token ? {
+      // 获取或创建用户ID（匿名用户）
+      const userId = getOrCreateUserId();
+      
+      // 配置请求头
+      const config = {
         headers: {
-          Authorization: `Bearer ${token}`
+          'X-User-ID': userId
         }
-      } : {};
+      };
+      
+      // 如果有token，也添加到请求头
+      if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const res = await axios.put('/api/users/profile', data, config);
       return res.data.data;
     },
@@ -132,7 +142,7 @@ const Settings = () => {
         >
           ← 返回
         </button>
-        <h1 className="page-title">私人定制 - 用户画像</h1>
+        <h1 className="page-title">私人定制</h1>
       </div>
       
       <div className="profile-intro">
