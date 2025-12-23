@@ -8,6 +8,7 @@ const TravelRecommendation = ({ currentLocation, weatherData, userProfile }) => 
   const [travelRecommendation, setTravelRecommendation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [lastLocationId, setLastLocationId] = useState(null);
 
   // 设置默认日期范围（今天 到 今天+2天）
   useEffect(() => {
@@ -21,6 +22,28 @@ const TravelRecommendation = ({ currentLocation, weatherData, userProfile }) => 
       setEndDate(formatDate(end));
     }
   }, []);
+
+  // 监听地区变化，清空已生成的旅行建议
+  useEffect(() => {
+    if (currentLocation) {
+      const currentLocationId = currentLocation.id || `${currentLocation.latitude}_${currentLocation.longitude}`;
+      
+      // 如果地区发生了变化，清空旅行建议数据
+      if (lastLocationId !== null && lastLocationId !== currentLocationId) {
+        setTravelRecommendation(null);
+        setError(null);
+        // 重置日期为默认值
+        const today = new Date();
+        const start = new Date(today);
+        const end = new Date(today);
+        end.setDate(today.getDate() + 2);
+        setStartDate(formatDate(start));
+        setEndDate(formatDate(end));
+      }
+      
+      setLastLocationId(currentLocationId);
+    }
+  }, [currentLocation, lastLocationId]);
 
   const formatDate = (date) => {
     const year = date.getFullYear();
