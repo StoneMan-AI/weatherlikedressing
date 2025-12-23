@@ -190,9 +190,9 @@ const LocationSelector = () => {
                 travelSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }
             }}
-            title="旅行指南"
+            title="外出旅行"
           >
-            旅行指南
+            外出旅行
           </button>
           <button
             className="btn-add-location"

@@ -7,7 +7,7 @@ const WeatherCard = ({ weather, location }) => {
   const { current, aqi, aqi_status, daily, hourly } = weather;
 
   const getAQIStatus = (aqi) => {
-    if (aqi <= 50) return { label: '优', color: '#4CAF50' };
+    if (aqi <= 50) return { label: '优', color: '#4CAF55' };
     if (aqi <= 100) return { label: '良', color: '#8BC34A' };
     if (aqi <= 150) return { label: '轻度污染', color: '#FFC107' };
     if (aqi <= 200) return { label: '中度污染', color: '#FF9800' };
