@@ -82,10 +82,10 @@ const WeatherCard = ({ weather, location }) => {
       <div className="weather-main">
         <div className="temperature-display">
           <span className="temperature">{currentTemp}°</span>
-          {(displayMaxTemp !== null || displayMinTemp !== null) && (
+          {(maxTemp !== null || minTemp !== null) && (
             <div className="temp-range">
-              {displayMaxTemp !== null && <span className="temp-max">{displayMaxTemp}°</span>}
-              {displayMinTemp !== null && <span className="temp-min">{displayMinTemp}°</span>}
+              {maxTemp !== null && <span className="temp-max">{maxTemp}°</span>}
+              {minTemp !== null && <span className="temp-min">{minTemp}°</span>}
             </div>
           )}
         </div>
