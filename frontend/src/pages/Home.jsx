@@ -24,6 +24,7 @@ const Home = () => {
   } = useLocationContext();
   
   const { user } = useAuth();
+  const userProfile = user?.profile_json || {};
 
   const [isOutdoor, setIsOutdoor] = useState(true);
   const [activityLevel, setActivityLevel] = useState('low');
@@ -201,7 +202,7 @@ const Home = () => {
           weatherData,
           isOutdoor,
           activityLevel,
-          {} // userProfile，如果需要可以从用户上下文获取
+          userProfile
         );
 
         // 更新推荐结果
