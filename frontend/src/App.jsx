@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { LocationProvider } from './contexts/LocationContext';
 import { AuthProvider } from './contexts/AuthContext';
 import Home from './pages/Home';
+import Settings from './pages/Settings';
 import Layout from './components/Layout';
 import './App.css';
 
@@ -26,6 +27,15 @@ function App() {
               element={
                 <Layout>
                   <Home />
+                </Layout>
+              }
+            />
+            {/* 设置页面 - 用户画像设置 */}
+            <Route
+              path="/settings"
+              element={
+                <Layout>
+                  <Settings />
                 </Layout>
               }
             />

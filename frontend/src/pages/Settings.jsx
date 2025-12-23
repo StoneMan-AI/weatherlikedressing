@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import './Settings.css';
 
 const Settings = () => {
+  const navigate = useNavigate();
   const { user, updateUser } = useAuth();
   const queryClient = useQueryClient();
   const [locationForm, setLocationForm] = useState({
@@ -32,7 +34,11 @@ const Settings = () => {
     },
     onSuccess: (data) => {
       updateUser(data);
-      alert('更新成功');
+      alert('用户画像更新成功！系统将根据您的个人属性提供个性化穿衣建议。');
+      // 可选：保存后返回首页
+      setTimeout(() => {
+        navigate('/');
+      }, 1000);
     }
   });
 
@@ -95,12 +101,30 @@ const Settings = () => {
 
   return (
     <div className="settings-page container">
-      <h1 className="page-title">设置</h1>
+      <div className="settings-header">
+        <button 
+          className="btn-back"
+          onClick={() => navigate('/')}
+          title="返回首页"
+        >
+          ← 返回
+        </button>
+        <h1 className="page-title">私人定制 - 用户画像</h1>
+      </div>
+      
+      <div className="profile-intro">
+        <p className="intro-text">
+          💡 设置您的个人属性后，系统将根据您的年龄、身体状态等信息，为您提供更精准的个性化穿衣建议。
+        </p>
+      </div>
 
       <div className="settings-sections">
         {/* 用户资料设置 */}
-        <section className="settings-section card">
-          <h2>个人资料</h2>
+        <section className="settings-section card profile-section">
+          <div className="section-header">
+            <h2>👤 个人资料</h2>
+            <span className="section-subtitle">完善您的信息以获得个性化建议</span>
+          </div>
           <form onSubmit={handleProfileUpdate} className="settings-form">
             <div className="form-group">
               <label>语言</label>

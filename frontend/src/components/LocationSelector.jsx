@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { useLocationContext } from '../contexts/LocationContext';
 import './LocationSelector.css';
 
 const LocationSelector = () => {
+  const navigate = useNavigate();
   const {
     locations,
     currentLocation,
@@ -182,6 +184,13 @@ const LocationSelector = () => {
           )}
         </div>
         <div className="location-actions">
+          <button
+            className="btn-custom-profile"
+            onClick={() => navigate('/settings')}
+            title="私人定制"
+          >
+            私人定制
+          </button>
           <button
             className="btn-travel-guide"
             onClick={() => {

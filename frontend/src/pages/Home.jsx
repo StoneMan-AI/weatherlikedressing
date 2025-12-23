@@ -116,7 +116,8 @@ const Home = () => {
         longitude: currentLocation.longitude,
         timezone: currentLocation.timezone || 'Asia/Shanghai',
         is_outdoor: isOutdoor,
-        activity_level: activityLevel
+        activity_level: activityLevel,
+        user_profile: userProfile // 传递用户画像数据以生成个性化建议
       });
       
       setRecommendation(res.data.data);
