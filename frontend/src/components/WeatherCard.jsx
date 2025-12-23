@@ -4,7 +4,7 @@ import './WeatherCard.css';
 const WeatherCard = ({ weather, location }) => {
   if (!weather) return null;
 
-  const { current, aqi, aqi_status, daily } = weather;
+  const { current, aqi, aqi_status, daily, hourly } = weather;
 
   const getAQIStatus = (aqi) => {
     if (aqi <= 50) return { label: '优', color: '#4CAF50' };
@@ -17,20 +17,75 @@ const WeatherCard = ({ weather, location }) => {
 
   const aqiInfo = getAQIStatus(aqi);
 
-  // 获取今天的最高和最低温度（daily数组的第一项是今天）
-  const todayForecast = daily && daily.length > 0 ? daily[0] : null;
-  const maxTemp = todayForecast ? Math.round(todayForecast.temperature_max) : null;
-  const minTemp = todayForecast ? Math.round(todayForecast.temperature_min) : null;
+  // 获取今天的最高和最低温度
+  // 优先从hourly数据计算（更准确），如果没有则从daily数据获取
+  const getTodayTemps = () => {
+    const currentTemp = Math.round(current.temperature_c);
+    let maxTemp = currentTemp;
+    let minTemp = currentTemp;
+    
+    // 方法1：从hourly数据计算今天的最高最低温度（最准确）
+    if (hourly && hourly.length > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      const todayTemps = [];
+      for (const hour of hourly) {
+        const hourDate = new Date(hour.timestamp);
+        if (hourDate >= today && hourDate < tomorrow) {
+          todayTemps.push(hour.temperature_c);
+        }
+      }
+      
+      if (todayTemps.length > 0) {
+        maxTemp = Math.round(Math.max(...todayTemps));
+        minTemp = Math.round(Math.min(...todayTemps));
+        return { maxTemp, minTemp, currentTemp };
+      }
+    }
+    
+    // 方法2：从daily数据获取（备用方案）
+    if (daily && daily.length > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // 查找今天对应的daily数据
+      for (let i = 0; i < daily.length; i++) {
+        const dayDate = new Date(daily[i].date || daily[i].time);
+        dayDate.setHours(0, 0, 0, 0);
+        
+        if (dayDate.getTime() === today.getTime()) {
+          maxTemp = Math.round(daily[i].temperature_max);
+          minTemp = Math.round(daily[i].temperature_min);
+          break;
+        }
+      }
+    }
+    
+    // 数据验证：确保最高温度 >= 当前温度 >= 最低温度
+    if (maxTemp < currentTemp) {
+      maxTemp = currentTemp;
+    }
+    if (minTemp > currentTemp) {
+      minTemp = currentTemp;
+    }
+    
+    return { maxTemp, minTemp, currentTemp };
+  };
+
+  const { maxTemp, minTemp, currentTemp } = getTodayTemps();
 
   return (
     <div className="weather-card">
       <div className="weather-main">
         <div className="temperature-display">
-          <span className="temperature">{Math.round(current.temperature_c)}°</span>
-          {(maxTemp !== null || minTemp !== null) && (
+          <span className="temperature">{currentTemp}°</span>
+          {(displayMaxTemp !== null || displayMinTemp !== null) && (
             <div className="temp-range">
-              {maxTemp !== null && <span className="temp-max">{maxTemp}°</span>}
-              {minTemp !== null && <span className="temp-min">{minTemp}°</span>}
+              {displayMaxTemp !== null && <span className="temp-max">{displayMaxTemp}°</span>}
+              {displayMinTemp !== null && <span className="temp-min">{displayMinTemp}°</span>}
             </div>
           )}
         </div>
