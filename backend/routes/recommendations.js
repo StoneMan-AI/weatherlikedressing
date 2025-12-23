@@ -6,6 +6,7 @@ const express = require('express');
 const router = express.Router();
 const RuleEngine = require('../services/ruleEngine');
 const WeatherService = require('../services/weatherService');
+const TravelRecommendationService = require('../services/travelRecommendationService');
 const pool = require('../config/database');
 const fs = require('fs');
 const path = require('path');
@@ -13,6 +14,7 @@ const { authenticateToken } = require('./users');
 
 const weatherService = new WeatherService();
 let ruleEngine = null;
+let travelRecommendationService = null;
 
 // 加载规则配置
 function loadRulesConfig() {
@@ -30,6 +32,7 @@ function loadRulesConfig() {
 try {
   const rulesConfig = loadRulesConfig();
   ruleEngine = new RuleEngine(rulesConfig);
+  travelRecommendationService = new TravelRecommendationService(ruleEngine);
 } catch (error) {
   console.error('Failed to initialize rule engine:', error);
 }
@@ -212,6 +215,150 @@ router.post('/calculate', async (req, res) => {
     
     res.status(error.status || 500).json({ 
       error: error.message || '获取推荐失败，请稍后重试',
+      retryable: isRetryable,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+/**
+ * POST /api/recommendations/travel
+ * 生成旅行穿衣建议
+ */
+router.post('/travel', async (req, res) => {
+  try {
+    if (!travelRecommendationService) {
+      console.error('Travel recommendation service not initialized');
+      return res.status(500).json({ error: 'Travel recommendation service not initialized' });
+    }
+
+    const {
+      latitude,
+      longitude,
+      timezone = 'Asia/Shanghai',
+      start_date,
+      end_date,
+      user_profile = null
+    } = req.body;
+
+    if (!latitude || !longitude) {
+      return res.status(400).json({ error: 'Latitude and longitude are required' });
+    }
+
+    if (!start_date || !end_date) {
+      return res.status(400).json({ error: 'Start date and end date are required' });
+    }
+
+    // 验证日期范围
+    const start = new Date(start_date);
+    const end = new Date(end_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const minDate = new Date(today);
+    minDate.setDate(today.getDate() + 2); // 至少2天后
+    
+    const maxDate = new Date(today);
+    maxDate.setDate(today.getDate() + 15); // 最多15天后
+
+    if (start < minDate) {
+      return res.status(400).json({ error: '出发日期至少需要2天后' });
+    }
+
+    if (end > maxDate) {
+      return res.status(400).json({ error: '返回日期不能超过15天后' });
+    }
+
+    if (end < start) {
+      return res.status(400).json({ error: '返回日期不能早于出发日期' });
+    }
+
+    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    if (days < 2) {
+      return res.status(400).json({ error: '旅行时间至少需要2天' });
+    }
+
+    // 获取用户资料（如果已登录且未提供user_profile）
+    let finalUserProfile = user_profile || {};
+    const loggedInUserId = req.user?.id;
+    if (loggedInUserId && !user_profile) {
+      try {
+        const userResult = await pool.query(
+          'SELECT profile_json FROM users WHERE id = $1',
+          [loggedInUserId]
+        );
+        if (userResult.rows.length > 0 && userResult.rows[0].profile_json) {
+          finalUserProfile = userResult.rows[0].profile_json;
+        }
+      } catch (err) {
+        console.warn('Failed to fetch user profile:', err);
+      }
+    }
+
+    // 获取天气数据（使用缓存服务）
+    const WeatherCacheService = require('../services/weatherCacheService');
+    const weatherCacheService = new WeatherCacheService();
+    
+    let weatherData;
+    try {
+      weatherData = await weatherCacheService.getWeatherData(
+        parseFloat(latitude),
+        parseFloat(longitude),
+        timezone,
+        15
+      );
+    } catch (weatherError) {
+      console.error('Failed to fetch weather data:', weatherError);
+      return res.status(503).json({ 
+        error: '无法获取天气数据，请稍后重试',
+        retryable: true 
+      });
+    }
+
+    if (!weatherData || !weatherData.daily || weatherData.daily.length === 0) {
+      return res.status(503).json({ 
+        error: '天气数据不完整，请稍后重试',
+        retryable: true 
+      });
+    }
+
+    // 筛选日期范围内的天气数据
+    const startDateStr = start_date.split('T')[0]; // 只取日期部分
+    const endDateStr = end_date.split('T')[0];
+    
+    const filteredDailyData = weatherData.daily.filter(day => {
+      const dayDateStr = (day.date || day.time || '').split('T')[0];
+      return dayDateStr >= startDateStr && dayDateStr <= endDateStr;
+    });
+
+    if (filteredDailyData.length === 0) {
+      return res.status(400).json({ 
+        error: '所选日期范围内没有天气数据，请选择其他日期' 
+      });
+    }
+
+    // 生成旅行推荐
+    const travelRecommendation = travelRecommendationService.generateTravelRecommendation(
+      {
+        start_date,
+        end_date
+      },
+      filteredDailyData,
+      finalUserProfile
+    );
+
+    res.json({
+      success: true,
+      data: travelRecommendation
+    });
+  } catch (error) {
+    console.error('Error in /recommendations/travel:', error);
+    console.error('Error stack:', error.stack);
+    
+    const isRetryable = !error.status || error.status >= 500 || error.code === 'ECONNREFUSED';
+    
+    res.status(error.status || 500).json({ 
+      error: error.message || '生成旅行建议失败，请稍后重试',
       retryable: isRetryable,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });

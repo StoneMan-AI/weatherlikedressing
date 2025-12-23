@@ -20,6 +20,8 @@ const Home = () => {
     getLocationByGeolocation,
     addLocation
   } = useLocationContext();
+  
+  const { user } = useAuth();
 
   const [isOutdoor, setIsOutdoor] = useState(true);
   const [activityLevel, setActivityLevel] = useState('low');
@@ -297,6 +299,14 @@ const Home = () => {
                   <HealthAlerts messages={recommendation.recommendation.health_messages} />
                 )}
             </>
+          )}
+
+          {weatherData && (
+            <TravelRecommendation 
+              currentLocation={currentLocation}
+              weatherData={weatherData}
+              userProfile={user?.profile_json || {}}
+            />
           )}
 
           {loading && (
