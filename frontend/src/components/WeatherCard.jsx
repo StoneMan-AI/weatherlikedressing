@@ -7,12 +7,12 @@ const WeatherCard = ({ weather, location }) => {
   const { current, aqi, aqi_status, daily, hourly } = weather;
 
   const getAQIStatus = (aqi) => {
-    if (aqi <= 50) return { label: '优', color: '#4CAF50' };
-    if (aqi <= 100) return { label: '良', color: '#8BC34A' };
-    if (aqi <= 150) return { label: '轻度污染', color: '#FFC107' };
-    if (aqi <= 200) return { label: '中度污染', color: '#FF9800' };
-    if (aqi <= 300) return { label: '重度污染', color: '#F44336' };
-    return { label: '严重污染', color: '#D32F2F' };
+    if (aqi <= 50) return { label: '优', color: '#2E7D32', bgColor: 'rgba(46, 125, 50, 0.2)' }; // 深绿色，提高对比度
+    if (aqi <= 100) return { label: '良', color: '#66BB6A', bgColor: 'rgba(102, 187, 106, 0.15)' }; // 稍深的绿色
+    if (aqi <= 150) return { label: '轻度污染', color: '#FFC107', bgColor: 'rgba(255, 193, 7, 0.15)' };
+    if (aqi <= 200) return { label: '中度污染', color: '#FF9800', bgColor: 'rgba(255, 152, 0, 0.15)' };
+    if (aqi <= 300) return { label: '重度污染', color: '#F44336', bgColor: 'rgba(244, 67, 54, 0.15)' };
+    return { label: '严重污染', color: '#D32F2F', bgColor: 'rgba(211, 47, 47, 0.15)' };
   };
 
   const aqiInfo = getAQIStatus(aqi);
@@ -102,7 +102,7 @@ const WeatherCard = ({ weather, location }) => {
             <span className="detail-label">紫外线</span>
             <span className="detail-value">{current.uv_index || 0}</span>
           </div>
-          <div className="weather-detail-item">
+          <div className="weather-detail-item aqi-item" style={{ backgroundColor: aqiInfo.bgColor }}>
             <span className="detail-label">空气质量</span>
             <span className="detail-value aqi-value" style={{ color: aqiInfo.color }}>
               {aqiInfo.label}
