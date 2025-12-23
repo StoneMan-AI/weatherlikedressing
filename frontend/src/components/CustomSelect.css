@@ -63,6 +63,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   animation: dropdownFadeIn 0.2s ease-out;
+  padding-bottom: 4px; /* 添加底部内边距，确保最后一项可以完全滚动显示 */
 }
 
 @keyframes dropdownFadeIn {
@@ -106,6 +107,7 @@
 .custom-select-option:last-child {
   border-bottom-left-radius: var(--border-radius);
   border-bottom-right-radius: var(--border-radius);
+  margin-bottom: 0; /* 确保最后一项没有额外的底部边距 */
 }
 
 /* 滚动条样式 */

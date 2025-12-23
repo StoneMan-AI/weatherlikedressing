@@ -12,7 +12,6 @@ const Settings = () => {
   
   // 表单状态
   const [formData, setFormData] = useState({
-    language: 'zh-CN',
     age_group: 'adult',
     sensitivity: 'none',
     conditions: []
@@ -22,7 +21,6 @@ const Settings = () => {
   useEffect(() => {
     if (user) {
       setFormData({
-        language: user.language || 'zh-CN',
         age_group: user.profile_json?.age_group || 'adult',
         sensitivity: user.profile_json?.sensitivity || 'none',
         conditions: user.profile_json?.conditions || []
@@ -69,7 +67,6 @@ const Settings = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     const profileData = {
-      language: formData.language,
       profile_json: {
         age_group: formData.age_group,
         sensitivity: formData.sensitivity,
@@ -106,18 +103,6 @@ const Settings = () => {
             <span className="section-subtitle">完善您的信息以获得个性化建议</span>
           </div>
           <form onSubmit={handleSubmit} className="settings-form">
-            <div className="form-group">
-              <label>语言</label>
-              <CustomSelect
-                value={formData.language}
-                onChange={(e) => handleInputChange('language', e.target.value)}
-                options={[
-                  { value: 'zh-CN', label: '简体中文' },
-                  { value: 'en', label: 'English' }
-                ]}
-              />
-            </div>
-
             <div className="form-group">
               <label>年龄段</label>
               <CustomSelect
