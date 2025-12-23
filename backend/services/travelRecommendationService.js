@@ -320,6 +320,11 @@ class TravelRecommendationService {
 
   /**
    * 生成常备用品
+   * 
+   * 冲突处理策略：
+   * - 使用Map数据结构避免重复物品
+   * - 如果多个病况需要相同物品，只添加一次，但合并原因说明
+   * - 例如：COPD和心血管疾病都需要保温杯，只添加一次但说明两个原因
    */
   generateEssentialItems(weatherAnalysis, userProfile, days) {
     const items = [];
@@ -358,9 +363,43 @@ class TravelRecommendationService {
       items.push({ name: '保温杯', reason: '老年人建议多喝热水' });
     }
 
+    // 根据健康状况添加常备用品（处理多项病况，合并去重）
+    const conditionItems = new Map(); // 使用Map避免重复
+    
     if (userProfile.conditions?.includes('asthma')) {
-      items.push({ name: '哮喘用药', reason: '根据身体状况携带' });
+      conditionItems.set('哮喘用药', '根据身体状况携带');
     }
+    
+    if (userProfile.conditions?.includes('cardiovascular')) {
+      conditionItems.set('心血管常用药', '根据身体状况携带，建议携带血压计');
+      conditionItems.set('保温杯', '保持水温稳定，避免冷热刺激');
+    }
+    
+    if (userProfile.conditions?.includes('copd')) {
+      conditionItems.set('COPD用药', '根据身体状况携带');
+      conditionItems.set('口罩', '过滤空气中的刺激物');
+      if (!conditionItems.has('保温杯')) {
+        conditionItems.set('保温杯', '保持呼吸道湿润');
+      }
+    }
+    
+    if (userProfile.conditions?.includes('migraine')) {
+      conditionItems.set('偏头痛用药', '根据身体状况携带');
+    }
+    
+    if (userProfile.conditions?.includes('skin_disease')) {
+      conditionItems.set('皮肤护理用品', '根据身体状况携带，建议携带保湿霜和抗过敏药膏');
+    }
+    
+    if (userProfile.conditions?.includes('allergy')) {
+      conditionItems.set('抗过敏药物', '根据身体状况携带');
+      conditionItems.set('口罩', '减少过敏原接触');
+    }
+    
+    // 将病况相关物品添加到列表
+    conditionItems.forEach((reason, name) => {
+      items.push({ name, reason });
+    });
 
     // 根据旅行天数添加
     if (days > 3) {
@@ -372,6 +411,11 @@ class TravelRecommendationService {
 
   /**
    * 生成急需用品（非必须）
+   * 
+   * 冲突处理策略：
+   * - 使用Map数据结构避免重复物品
+   * - 根据天气条件和病况组合，智能合并建议
+   * - 例如：如果多个病况都需要口罩，只添加一次但说明所有相关原因
    */
   generateOptionalItems(weatherAnalysis, userProfile, days) {
     const items = [];
@@ -401,9 +445,53 @@ class TravelRecommendationService {
       items.push({ name: '儿童零食', reason: '防止儿童饥饿' });
     }
 
+    // 根据健康状况添加急需用品（处理多项病况，合并去重）
+    const conditionOptionalItems = new Map();
+    
     if (userProfile.conditions?.includes('rheumatism')) {
-      items.push({ name: '护膝/护腰', reason: '保护关节' });
+      conditionOptionalItems.set('护膝/护腰', '保护关节，减轻不适');
     }
+    
+    if (userProfile.conditions?.includes('cardiovascular')) {
+      conditionOptionalItems.set('便携式血压计', '监测血压变化');
+      if (weatherAnalysis.temp_range > 10) {
+        conditionOptionalItems.set('多层薄衣物', '便于根据温度变化增减，避免温度骤变');
+      }
+    }
+    
+    if (userProfile.conditions?.includes('copd')) {
+      conditionOptionalItems.set('便携式加湿器', '保持空气湿润，缓解呼吸道不适');
+      if (weatherAnalysis.min_temp < 10) {
+        conditionOptionalItems.set('保暖围巾', '保护颈部和呼吸道，避免冷空气刺激');
+      }
+    }
+    
+    if (userProfile.conditions?.includes('migraine')) {
+      conditionOptionalItems.set('眼罩/耳塞', '减少光线和声音刺激');
+      conditionOptionalItems.set('舒缓用品', '如薄荷油、清凉贴等');
+    }
+    
+    if (userProfile.conditions?.includes('skin_disease')) {
+      if (weatherAnalysis.avg_humidity >= 70) {
+        conditionOptionalItems.set('吸湿排汗衣物', '保持皮肤干爽');
+      } else if (weatherAnalysis.avg_humidity <= 40) {
+        conditionOptionalItems.set('保湿喷雾', '保持皮肤湿润');
+      }
+      conditionOptionalItems.set('温和清洁用品', '避免刺激皮肤');
+    }
+    
+    if (userProfile.conditions?.includes('allergy')) {
+      conditionOptionalItems.set('防花粉口罩', '减少过敏原接触');
+      conditionOptionalItems.set('抗过敏湿巾', '清洁面部和手部');
+      if (weatherAnalysis.avg_humidity >= 70) {
+        conditionOptionalItems.set('除湿袋', '减少霉菌等过敏原');
+      }
+    }
+    
+    // 将病况相关物品添加到列表
+    conditionOptionalItems.forEach((reason, name) => {
+      items.push({ name, reason });
+    });
 
     // 根据旅行天数添加
     if (days > 5) {

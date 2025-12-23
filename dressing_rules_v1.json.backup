@@ -43,12 +43,7 @@
     },
     "conditions": {
       "rheumatism": -3,
-      "asthma": 0,
-      "cardiovascular": -2,
-      "copd": -1,
-      "migraine": 0,
-      "skin_disease": -1,
-      "allergy": 0
+      "asthma": 0
     }
   },
   "compute": {
