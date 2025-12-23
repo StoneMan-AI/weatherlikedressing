@@ -242,65 +242,66 @@ const Home = () => {
           {weatherData && (
             <>
               <WeatherCard weather={weatherData} location={currentLocation} />
-              <WeatherDetail weatherData={weatherData} timezone={currentLocation.timezone || 'Asia/Shanghai'} />
-              <DailyForecast dailyData={weatherData.daily} />
-            </>
-          )}
+              
+              {recommendationLoading && !loading && (
+                <div className="recommendation-loading">
+                  <div className="loading-spinner"></div>
+                  <p className="text-gray" style={{ marginTop: '8px', fontSize: '14px' }}>正在更新推荐...</p>
+                </div>
+              )}
 
-          {recommendationLoading && !loading && (
-            <div className="recommendation-loading">
-              <div className="loading-spinner"></div>
-              <p className="text-gray" style={{ marginTop: '8px', fontSize: '14px' }}>正在更新推荐...</p>
-            </div>
-          )}
-
-          <div className="settings-panel">
-            <div className="settings-row">
-              <div className="setting-item">
-                <label>活动场景</label>
-                <div className="radio-group">
-                  <label>
-                    <input
-                      type="radio"
-                      value="outdoor"
-                      checked={isOutdoor}
-                      onChange={() => setIsOutdoor(true)}
+              <div className="settings-panel">
+                <div className="settings-row">
+                  <div className="setting-item">
+                    <label>活动场景</label>
+                    <div className="radio-group">
+                      <label>
+                        <input
+                          type="radio"
+                          value="outdoor"
+                          checked={isOutdoor}
+                          onChange={() => setIsOutdoor(true)}
+                        />
+                        户外
+                      </label>
+                      <label>
+                        <input
+                          type="radio"
+                          value="indoor"
+                          checked={!isOutdoor}
+                          onChange={() => setIsOutdoor(false)}
+                        />
+                        室内
+                      </label>
+                    </div>
+                  </div>
+                  <div className="setting-item">
+                    <label>活动强度</label>
+                    <CustomSelect
+                      value={activityLevel}
+                      onChange={(e) => setActivityLevel(e.target.value)}
+                      options={[
+                        { value: 'low', label: '低（静坐/慢走）' },
+                        { value: 'moderate', label: '中（正常步行/轻运动）' },
+                        { value: 'high', label: '高（跑步/剧烈运动）' }
+                      ]}
                     />
-                    户外
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="indoor"
-                      checked={!isOutdoor}
-                      onChange={() => setIsOutdoor(false)}
-                    />
-                    室内
-                  </label>
+                  </div>
                 </div>
               </div>
-              <div className="setting-item">
-                <label>活动强度</label>
-                <CustomSelect
-                  value={activityLevel}
-                  onChange={(e) => setActivityLevel(e.target.value)}
-                  options={[
-                    { value: 'low', label: '低（静坐/慢走）' },
-                    { value: 'moderate', label: '中（正常步行/轻运动）' },
-                    { value: 'high', label: '高（跑步/剧烈运动）' }
-                  ]}
-                />
-              </div>
-            </div>
-          </div>
 
-          {recommendation && (
-            <>
-              <RecommendationCard recommendation={recommendation.recommendation} />
-              {recommendation.recommendation.health_messages &&
-                recommendation.recommendation.health_messages.length > 0 && (
-                  <HealthAlerts messages={recommendation.recommendation.health_messages} />
-                )}
+              {recommendation && (
+                <>
+                  <RecommendationCard recommendation={recommendation.recommendation} />
+                  {recommendation.recommendation.health_messages &&
+                    recommendation.recommendation.health_messages.length > 0 && (
+                      <HealthAlerts messages={recommendation.recommendation.health_messages} />
+                    )}
+                </>
+              )}
+
+              <WeatherDetail weatherData={weatherData} timezone={currentLocation.timezone || 'Asia/Shanghai'} />
+              <DailyForecast dailyData={weatherData.daily} />
             </>
           )}
 

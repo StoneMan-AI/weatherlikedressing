@@ -18,6 +18,9 @@
 
 .temperature-display {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
 .temperature {
@@ -26,6 +29,26 @@
   color: var(--text-primary);
   line-height: 1;
   letter-spacing: -2px;
+}
+
+.temp-range {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+}
+
+.temp-max,
+.temp-min {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  line-height: 1.2;
+}
+
+.temp-max {
+  color: var(--text-primary);
 }
 
 .weather-details-row {
@@ -79,6 +102,11 @@
     letter-spacing: -1px;
   }
   
+  .temp-max,
+  .temp-min {
+    font-size: 14px;
+  }
+  
   .weather-details-row {
     gap: var(--spacing-sm);
   }
@@ -108,6 +136,11 @@
   
   .temperature {
     font-size: 36px;
+  }
+  
+  .temp-max,
+  .temp-min {
+    font-size: 12px;
   }
   
   .weather-details-row {

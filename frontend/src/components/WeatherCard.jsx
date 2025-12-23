@@ -4,7 +4,7 @@ import './WeatherCard.css';
 const WeatherCard = ({ weather, location }) => {
   if (!weather) return null;
 
-  const { current, aqi, aqi_status } = weather;
+  const { current, aqi, aqi_status, daily } = weather;
 
   const getAQIStatus = (aqi) => {
     if (aqi <= 50) return { label: '优', color: '#4CAF50' };
@@ -17,11 +17,22 @@ const WeatherCard = ({ weather, location }) => {
 
   const aqiInfo = getAQIStatus(aqi);
 
+  // 获取今天的最高和最低温度（daily数组的第一项是今天）
+  const todayForecast = daily && daily.length > 0 ? daily[0] : null;
+  const maxTemp = todayForecast ? Math.round(todayForecast.temperature_max) : null;
+  const minTemp = todayForecast ? Math.round(todayForecast.temperature_min) : null;
+
   return (
     <div className="weather-card">
       <div className="weather-main">
         <div className="temperature-display">
           <span className="temperature">{Math.round(current.temperature_c)}°</span>
+          {(maxTemp !== null || minTemp !== null) && (
+            <div className="temp-range">
+              {maxTemp !== null && <span className="temp-max">{maxTemp}°</span>}
+              {minTemp !== null && <span className="temp-min">{minTemp}°</span>}
+            </div>
+          )}
         </div>
         <div className="weather-details-row">
           <div className="weather-detail-item">
