@@ -5,8 +5,11 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
-const { body, validationResult } = require('express-validator');
+const { body, query, validationResult } = require('express-validator');
 const { authenticateToken } = require('./users');
+const CityGeocodingService = require('../services/cityGeocodingService');
+
+const cityGeocodingService = new CityGeocodingService();
 
 /**
  * GET /api/locations
@@ -174,6 +177,49 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error in /locations/:id DELETE:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/locations/search
+ * 搜索城市（支持缓存和模糊匹配）
+ * 无需认证，支持匿名用户
+ */
+router.get('/search', [
+  query('city').notEmpty().withMessage('City name is required'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { city } = req.query;
+    
+    if (!city || !city.trim()) {
+      return res.status(400).json({ error: '城市名称不能为空' });
+    }
+
+    const result = await cityGeocodingService.searchCity(city.trim());
+    
+    // 如果返回的是单个结果
+    if (!result.multiple) {
+      return res.json({
+        success: true,
+        data: result,
+        multiple: false
+      });
+    }
+    
+    // 如果返回的是多个结果
+    return res.json({
+      success: true,
+      data: result.results,
+      multiple: true
+    });
+  } catch (error) {
+    console.error('Error in /locations/search:', error);
+    res.status(500).json({ error: error.message || '搜索失败' });
   }
 });
 

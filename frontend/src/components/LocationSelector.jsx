@@ -19,6 +19,7 @@ const LocationSelector = () => {
   const [cityName, setCityName] = useState('');
   const [searching, setSearching] = useState(false);
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState(null); // 存储多个搜索结果
   const locationDropdownRef = useRef(null);
   const locationTriggerRef = useRef(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
@@ -31,20 +32,49 @@ const LocationSelector = () => {
     }
 
     setSearching(true);
+    setSearchResults(null); // 清空之前的搜索结果
     try {
-      const location = await searchLocationByCityName(cityName.trim());
-      const newLocation = addLocation(location);
-      // 搜索成功后，自动切换到搜索到的地区
+      const result = await searchLocationByCityName(cityName.trim());
+      
+      // 如果返回多个结果，显示选择列表
+      if (result.multiple && result.results && result.results.length > 0) {
+        setSearchResults(result.results);
+        return; // 不关闭表单，让用户选择
+      }
+      
+      // 单个结果，直接添加
+      const newLocation = addLocation(result);
       if (newLocation) {
         setCurrentLocation(newLocation);
       }
       setCityName('');
       setShowAddForm(false);
+      setSearchResults(null);
     } catch (error) {
       alert('未找到该城市，请检查城市名称是否正确');
+      setSearchResults(null);
     } finally {
       setSearching(false);
     }
+  };
+
+  // 处理用户选择搜索结果
+  const handleSelectSearchResult = (result) => {
+    const location = {
+      name: result.name,
+      latitude: result.latitude,
+      longitude: result.longitude,
+      timezone: result.timezone || 'Asia/Shanghai',
+      is_default: false
+    };
+    
+    const newLocation = addLocation(location);
+    if (newLocation) {
+      setCurrentLocation(newLocation);
+    }
+    setCityName('');
+    setShowAddForm(false);
+    setSearchResults(null);
   };
 
   const handleDeleteLocation = (id) => {
@@ -214,23 +244,55 @@ const LocationSelector = () => {
       </div>
 
       {showAddForm && (
-        <form onSubmit={handleSearchCity} className="add-location-form">
-          <input
-            type="text"
-            className="city-search-input"
-            placeholder="输入城市名称，如：北京、上海、New York"
-            value={cityName}
-            onChange={(e) => setCityName(e.target.value)}
-            disabled={searching}
-          />
-          <button
-            type="submit"
-            className="btn-search-city"
-            disabled={searching}
-          >
-            {searching ? '搜索中...' : '搜索'}
-          </button>
-        </form>
+        <div className="add-location-form-wrapper">
+          <form onSubmit={handleSearchCity} className="add-location-form">
+            <input
+              type="text"
+              className="city-search-input"
+              placeholder="输入城市名称，如：北京、上海、New York"
+              value={cityName}
+              onChange={(e) => {
+                setCityName(e.target.value);
+                setSearchResults(null); // 输入时清空搜索结果
+              }}
+              disabled={searching}
+            />
+            <button
+              type="submit"
+              className="btn-search-city"
+              disabled={searching}
+            >
+              {searching ? '搜索中...' : '搜索'}
+            </button>
+          </form>
+          
+          {/* 显示多个搜索结果 */}
+          {searchResults && searchResults.length > 0 && (
+            <div className="search-results-list">
+              <div className="search-results-header">
+                <span>找到 {searchResults.length} 个匹配结果，请选择：</span>
+              </div>
+              {searchResults.map((result, index) => (
+                <div
+                  key={result.id || index}
+                  className="search-result-item"
+                  onClick={() => handleSelectSearchResult(result)}
+                >
+                  <div className="result-name">{result.name}</div>
+                  {result.display_name && result.display_name !== result.name && (
+                    <div className="result-display-name">{result.display_name}</div>
+                  )}
+                  {result.state && (
+                    <div className="result-location">
+                      {result.state}
+                      {result.country_name && `, ${result.country_name}`}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

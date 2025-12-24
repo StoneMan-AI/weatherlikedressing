@@ -330,25 +330,46 @@ export const LocationProvider = ({ children }) => {
     };
   };
 
-  // 通过城市名称查询位置
+  // 通过城市名称查询位置（通过后端API，支持缓存和模糊匹配）
   const searchLocationByCityName = async (cityName) => {
     try {
-      // 使用OpenStreetMap Nominatim API进行地理编码
-      const response = await axios.get(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&limit=1&addressdetails=1`
-      );
+      // 调用后端API进行城市搜索
+      const response = await axios.get('/api/locations/search', {
+        params: { city: cityName }
+      });
       
-      if (response.data && response.data.length > 0) {
-        const result = response.data[0];
+      if (response.data.success) {
+        // 如果返回多个结果，需要用户选择
+        if (response.data.multiple) {
+          return {
+            multiple: true,
+            results: response.data.data.map(item => ({
+              id: item.id,
+              name: item.name,
+              display_name: item.display_name,
+              latitude: item.latitude,
+              longitude: item.longitude,
+              timezone: item.timezone || 'Asia/Shanghai',
+              country_code: item.country_code,
+              country_name: item.country_name,
+              state: item.state,
+              is_default: false
+            }))
+          };
+        }
+        
+        // 单个结果，直接返回
+        const item = response.data.data;
         return {
-          name: result.display_name.split(',')[0] || cityName,
-          latitude: parseFloat(result.lat),
-          longitude: parseFloat(result.lon),
-          timezone: 'Asia/Shanghai', // 可以根据时区API获取
+          name: item.name,
+          latitude: item.latitude,
+          longitude: item.longitude,
+          timezone: item.timezone || 'Asia/Shanghai',
           is_default: false
         };
       }
-      throw new Error('未找到该城市');
+      
+      throw new Error('搜索失败');
     } catch (error) {
       console.error('城市查询失败:', error);
       throw error;
