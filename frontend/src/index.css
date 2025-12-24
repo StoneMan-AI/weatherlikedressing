@@ -26,16 +26,16 @@ textarea {
   -webkit-appearance: none !important;
   appearance: none !important;
   -moz-appearance: none !important;
-  /* 强制设置背景色，防止 Safari 默认白色背景 */
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  /* 强制设置文字颜色 */
+  /* 强制设置背景色，防止 Safari 默认白色背景 - 使用更深的背景色 */
+  background-color: rgba(74, 144, 226, 0.3) !important;
+  background: rgba(74, 144, 226, 0.3) !important;
+  /* 强制设置文字颜色 - 使用白色确保可见 */
   color: #FFFFFF !important;
   /* 防止 Safari 覆盖背景色 */
   -webkit-backface-visibility: hidden !important;
   -webkit-transform: translateZ(0) !important;
   /* 确保边框 */
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
   /* 重置所有可能影响显示的属性 */
   box-shadow: none !important;
   outline: none !important;
@@ -54,18 +54,19 @@ select:active,
 textarea:hover,
 textarea:focus,
 textarea:active {
-  background-color: rgba(255, 255, 255, 0.15) !important;
-  background: rgba(255, 255, 255, 0.15) !important;
+  background-color: rgba(74, 144, 226, 0.4) !important;
+  background: rgba(74, 144, 226, 0.4) !important;
   color: #FFFFFF !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
 }
 
 button:disabled,
 input:disabled,
 select:disabled,
 textarea:disabled {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  background: rgba(255, 255, 255, 0.05) !important;
-  color: rgba(255, 255, 255, 0.5) !important;
+  background-color: rgba(74, 144, 226, 0.15) !important;
+  background: rgba(74, 144, 226, 0.15) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -152,15 +153,15 @@ body {
 .btn,
 button {
   padding: var(--spacing-sm) var(--spacing-lg);
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
   border-radius: var(--border-radius);
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  /* Safari兼容性：必须同时设置 background-color 和 background */
-  background-color: rgba(255, 255, 255, 0.2) !important;
-  background: rgba(255, 255, 255, 0.2) !important;
+  /* Safari兼容性：使用蓝色背景，确保可见 */
+  background-color: rgba(74, 144, 226, 0.4) !important;
+  background: rgba(74, 144, 226, 0.4) !important;
   color: #FFFFFF !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -177,26 +178,26 @@ button {
 }
 
 .btn-primary {
-  background-color: rgba(255, 255, 255, 0.25) !important;
-  background: rgba(255, 255, 255, 0.25) !important;
-  color: var(--text-primary) !important;
+  background-color: rgba(74, 144, 226, 0.5) !important;
+  background: rgba(74, 144, 226, 0.5) !important;
+  color: #FFFFFF !important;
 }
 
 .btn-primary:hover {
-  background-color: rgba(255, 255, 255, 0.35) !important;
-  background: rgba(255, 255, 255, 0.35) !important;
+  background-color: rgba(74, 144, 226, 0.6) !important;
+  background: rgba(74, 144, 226, 0.6) !important;
   transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background-color: rgba(255, 255, 255, 0.15) !important;
-  background: rgba(255, 255, 255, 0.15) !important;
-  color: var(--text-primary) !important;
+  background-color: rgba(74, 144, 226, 0.3) !important;
+  background: rgba(74, 144, 226, 0.3) !important;
+  color: #FFFFFF !important;
 }
 
 .btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.25) !important;
-  background: rgba(255, 255, 255, 0.25) !important;
+  background-color: rgba(74, 144, 226, 0.4) !important;
+  background: rgba(74, 144, 226, 0.4) !important;
 }
 
 /* 输入框样式 - iPhone风格 */
@@ -212,13 +213,13 @@ input[type="radio"],
 textarea {
   width: 100%;
   padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
   border-radius: var(--border-radius);
   font-size: 16px;
   transition: all 0.3s ease;
-  /* Safari兼容性：必须同时设置 background-color 和 background */
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  background: rgba(255, 255, 255, 0.1) !important;
+  /* Safari兼容性：使用蓝色背景，确保可见 */
+  background-color: rgba(74, 144, 226, 0.3) !important;
+  background: rgba(74, 144, 226, 0.3) !important;
   color: #FFFFFF !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -254,9 +255,9 @@ input[type="radio"] {
 input:focus,
 textarea:focus {
   outline: none !important;
-  border-color: rgba(255, 255, 255, 0.4) !important;
-  background-color: rgba(255, 255, 255, 0.15) !important;
-  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background-color: rgba(74, 144, 226, 0.4) !important;
+  background: rgba(74, 144, 226, 0.4) !important;
   color: #FFFFFF !important;
 }
 
@@ -267,19 +268,19 @@ select {
   -webkit-appearance: none !important;
   appearance: none !important;
   -moz-appearance: none !important;
-  /* Safari兼容性：必须同时设置 background-color 和 background，并且必须在最前面 */
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  background: rgba(255, 255, 255, 0.1) !important;
+  /* Safari兼容性：使用蓝色背景，确保可见 */
+  background-color: rgba(74, 144, 226, 0.3) !important;
+  background: rgba(74, 144, 226, 0.3) !important;
   /* 下拉箭头图标 - 使用多重背景，确保背景色和图标都显示 */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important,
-                    linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)) !important;
+                    linear-gradient(rgba(74, 144, 226, 0.3), rgba(74, 144, 226, 0.3)) !important;
   background-repeat: no-repeat, repeat !important;
   background-position: right var(--spacing-md) center, 0 0 !important;
   background-size: 12px, 100% 100% !important;
   /* 确保背景色不被背景图片覆盖 */
   background-clip: padding-box, padding-box !important;
   /* 边框和圆角 */
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
   border-radius: var(--border-radius);
   /* 尺寸和间距 */
   width: 100%;
@@ -300,17 +301,17 @@ select {
 /* 确保 select 在 focus 状态也保持背景色 */
 select.input:focus,
 select:focus {
-  background-color: rgba(255, 255, 255, 0.15) !important;
-  background: rgba(255, 255, 255, 0.15) !important;
-  border-color: rgba(255, 255, 255, 0.4) !important;
+  background-color: rgba(74, 144, 226, 0.4) !important;
+  background: rgba(74, 144, 226, 0.4) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
   outline: none !important;
 }
 
 /* 确保 select 在 disabled 状态也保持背景色 */
 select.input:disabled,
 select:disabled {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  background: rgba(255, 255, 255, 0.05) !important;
+  background-color: rgba(74, 144, 226, 0.15) !important;
+  background: rgba(74, 144, 226, 0.15) !important;
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -343,8 +344,8 @@ select.input option:checked {
 /* 下拉框悬停效果 */
 select.input:hover,
 select:hover {
-  background-color: rgba(255, 255, 255, 0.15) !important;
-  background: rgba(255, 255, 255, 0.15) !important;
+  background-color: rgba(74, 144, 226, 0.4) !important;
+  background: rgba(74, 144, 226, 0.4) !important;
 }
 
 /* 针对不同浏览器的下拉列表样式 */
