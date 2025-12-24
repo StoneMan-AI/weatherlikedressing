@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLocationContext } from '../contexts/LocationContext';
 import './LocationSelector.css';
@@ -18,11 +17,7 @@ const LocationSelector = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [cityName, setCityName] = useState('');
   const [searching, setSearching] = useState(false);
-  const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
   const [searchResults, setSearchResults] = useState(null); // 存储多个搜索结果
-  const locationDropdownRef = useRef(null);
-  const locationTriggerRef = useRef(null);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
 
   const handleSearchCity = async (e) => {
     e.preventDefault();
@@ -87,89 +82,13 @@ const LocationSelector = () => {
     }
   };
 
-  // 计算下拉框位置
-  useEffect(() => {
-    if (isLocationDropdownOpen && locationTriggerRef.current) {
-      const updatePosition = () => {
-        if (locationTriggerRef.current) {
-          const rect = locationTriggerRef.current.getBoundingClientRect();
-          const viewportHeight = window.innerHeight;
-          const viewportWidth = window.innerWidth;
-          const dropdownMaxHeight = 200;
-          const gap = 4;
-          
-          let top = rect.bottom + gap;
-          let left = rect.left;
-          let width = Math.min(rect.width, viewportWidth - 20); // 确保不超过视口宽度
-          
-          // 确保下拉框不会超出右边界
-          if (left + width > viewportWidth - 10) {
-            left = viewportWidth - width - 10;
-          }
-          
-          // 确保下拉框不会超出左边界
-          if (left < 10) {
-            left = 10;
-            width = Math.min(rect.width, viewportWidth - 20);
-          }
-          
-          const spaceBelow = viewportHeight - rect.bottom - gap;
-          const spaceAbove = rect.top - gap;
-          
-          if (spaceBelow < dropdownMaxHeight && spaceAbove > spaceBelow) {
-            top = rect.top - dropdownMaxHeight - gap;
-            if (top < 10) {
-              top = 10;
-            }
-          } else {
-            // 确保下拉框不会超出底部
-            if (top + dropdownMaxHeight > viewportHeight - 10) {
-              top = viewportHeight - dropdownMaxHeight - 10;
-            }
-          }
-          
-          setDropdownPosition({ top, left, width });
-        }
-      };
-
-      // 延迟一帧确保DOM已更新
-      requestAnimationFrame(() => {
-        updatePosition();
-      });
-      
-      window.addEventListener('resize', updatePosition);
-      window.addEventListener('scroll', updatePosition, true);
-
-      return () => {
-        window.removeEventListener('resize', updatePosition);
-        window.removeEventListener('scroll', updatePosition, true);
-      };
+  const handleLocationChange = (e) => {
+    const selectedLocationId = parseInt(e.target.value);
+    const selectedLocation = locations.find(loc => loc.id === selectedLocationId);
+    if (selectedLocation) {
+      setCurrentLocation(selectedLocation);
     }
-  }, [isLocationDropdownOpen]);
-
-  // 点击外部关闭下拉框
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        locationTriggerRef.current &&
-        !locationTriggerRef.current.contains(event.target) &&
-        locationDropdownRef.current &&
-        !locationDropdownRef.current.contains(event.target)
-      ) {
-        setIsLocationDropdownOpen(false);
-      }
-    };
-
-    if (isLocationDropdownOpen) {
-      setTimeout(() => {
-        document.addEventListener('mousedown', handleClickOutside);
-      }, 0);
-      
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
-  }, [isLocationDropdownOpen]);
+  };
 
   return (
     <div className="location-selector">
@@ -180,59 +99,17 @@ const LocationSelector = () => {
           </h2>
           {locations.length > 1 && (
             <div className="location-dropdown-wrapper">
-              <div
-                ref={locationTriggerRef}
-                className="location-dropdown-trigger"
-                onClick={() => setIsLocationDropdownOpen(!isLocationDropdownOpen)}
+              <select
+                className="location-select"
+                value={currentLocation?.id || ''}
+                onChange={handleLocationChange}
               >
-                <span className="location-dropdown-text">切换地区</span>
-                <span className={`location-dropdown-arrow ${isLocationDropdownOpen ? 'open' : ''}`}>▼</span>
-              </div>
-              {isLocationDropdownOpen && createPortal(
-                <div
-                  ref={locationDropdownRef}
-                  className="location-dropdown"
-                  style={{
-                    position: 'fixed',
-                    top: `${dropdownPosition.top}px`,
-                    left: `${dropdownPosition.left}px`,
-                    width: `${dropdownPosition.width}px`,
-                    zIndex: 99999,
-                    WebkitBackfaceVisibility: 'hidden',
-                    WebkitTransform: 'translateZ(0)'
-                  }}
-                >
-                  {locations.map(location => (
-                    <div
-                      key={location.id}
-                      className={`location-dropdown-item ${currentLocation?.id === location.id ? 'active' : ''}`}
-                      onClick={() => {
-                        setCurrentLocation(location);
-                        setIsLocationDropdownOpen(false);
-                      }}
-                    >
-                      <span className="location-dropdown-name">
-                        {location.name}
-                        {location.is_default && <span className="default-badge-dropdown">默认</span>}
-                      </span>
-                      {locations.length > 1 && (
-                        <button
-                          className="btn-delete-location-dropdown"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteLocation(location.id);
-                            setIsLocationDropdownOpen(false);
-                          }}
-                          title="删除"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>,
-                document.body
-              )}
+                {locations.map(location => (
+                  <option key={location.id} value={location.id}>
+                    {location.name}{location.is_default ? ' (默认)' : ''}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
         </div>
