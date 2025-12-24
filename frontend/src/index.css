@@ -21,6 +21,23 @@ textarea {
   /* 移除 Safari 的默认样式，确保自定义背景色可以显示 */
 }
 
+/* 特别针对 select 元素的全局重置 - 防止 Safari 默认白色背景 */
+select {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  -moz-appearance: none !important;
+  /* 强制设置背景色，防止 Safari 默认白色背景 - 必须在全局级别设置 */
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #FFFFFF !important;
+  /* 确保边框和基本样式 */
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 16px !important;
+  /* 防止 Safari 覆盖背景色 */
+  -webkit-backface-visibility: hidden !important;
+  -webkit-transform: translateZ(0) !important;
+}
+
 /* Safari特定修复：确保半透明背景正确显示 */
 @supports (-webkit-appearance: none) {
   /* Safari浏览器 */
@@ -193,31 +210,59 @@ select {
   -webkit-appearance: none !important;
   appearance: none !important;
   -moz-appearance: none !important;
-  /* Safari兼容性：必须同时设置 background-color 和 background */
+  /* Safari兼容性：必须同时设置 background-color 和 background，并且必须在最前面 */
   background-color: rgba(255, 255, 255, 0.1) !important;
   background: rgba(255, 255, 255, 0.1) !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right var(--spacing-md) center;
-  background-size: 12px;
-  padding-right: calc(var(--spacing-md) * 2 + 12px);
-  cursor: pointer;
-  color: #FFFFFF !important;
-  /* 防止 Safari 覆盖背景色 */
-  -webkit-backface-visibility: hidden;
-  -webkit-transform: translateZ(0);
-  /* 确保边框和圆角 */
-  border: 1px solid var(--border-color);
+  /* 下拉箭头图标 */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right var(--spacing-md) center !important;
+  background-size: 12px !important;
+  /* 确保背景色不被背景图片覆盖 */
+  background-clip: padding-box !important;
+  /* 边框和圆角 */
+  border: 1px solid var(--border-color) !important;
   border-radius: var(--border-radius);
+  /* 尺寸和间距 */
   width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) calc(var(--spacing-md) * 2 + 12px) var(--spacing-sm) var(--spacing-md) !important;
   font-size: 16px;
+  /* 文字颜色 */
+  color: #FFFFFF !important;
+  /* 光标样式 */
+  cursor: pointer;
+  /* 防止 Safari 覆盖背景色 */
+  -webkit-backface-visibility: hidden !important;
+  -webkit-transform: translateZ(0) !important;
+  /* 确保不继承其他样式 */
+  box-shadow: none !important;
+  outline: none !important;
 }
 
+/* 确保 select 在 focus 状态也保持背景色 */
+select.input:focus,
+select:focus {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  outline: none !important;
+}
+
+/* 确保 select 在 disabled 状态也保持背景色 */
+select.input:disabled,
+select:disabled {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 下拉选项样式 */
 select.input option,
 select option {
   background-color: rgba(20, 20, 20, 0.98) !important;
   color: #FFFFFF !important;
+  padding: var(--spacing-sm);
 }
 
 /* 下拉框选项样式 - 确保在所有浏览器中可见 */
@@ -237,17 +282,11 @@ select.input option:checked {
   color: #FFFFFF !important;
 }
 
-/* 下拉框打开时的样式 */
-select.input:focus {
-  outline: none;
-  border-color: rgba(255, 255, 255, 0.4);
-  background-color: rgba(255, 255, 255, 0.15);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 3L11 8H1z'/%3E%3C/svg%3E");
-}
-
 /* 下拉框悬停效果 */
-select.input:hover {
-  background-color: rgba(255, 255, 255, 0.15);
+select.input:hover,
+select:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
 }
 
 /* 针对不同浏览器的下拉列表样式 */
