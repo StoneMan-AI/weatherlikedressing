@@ -63,8 +63,13 @@ class CityGeocodingService {
         };
       }
     } catch (error) {
-      console.error('OpenStreetMap API调用失败:', error);
-      throw new Error(`搜索失败: ${error.message}`);
+      console.error('外部API调用失败:', error);
+      // 如果错误信息已经包含详细说明，直接抛出
+      if (error.message.includes('无法搜索城市')) {
+        throw error;
+      }
+      // 否则提供通用错误信息
+      throw new Error(`搜索城市"${searchTerm}"失败: ${error.message}。请检查网络连接或稍后重试。`);
     }
   }
 
@@ -228,10 +233,11 @@ class CityGeocodingService {
             state: properties.state || properties.region
           };
         }
-      }
+      },
     ];
 
     // 依次尝试每个服务
+    const failedServices = [];
     for (const service of geocodingServices) {
       try {
         console.log(`尝试使用 ${service.name} 搜索城市: ${cityName}`);
@@ -255,14 +261,21 @@ class CityGeocodingService {
           }
         }
       } catch (error) {
-        console.warn(`${service.name} 搜索失败:`, error.message);
+        const errorMsg = error.response?.status 
+          ? `HTTP ${error.response.status}: ${error.message}`
+          : error.message;
+        console.warn(`${service.name} 搜索失败:`, errorMsg);
+        failedServices.push(`${service.name} (${errorMsg})`);
         // 继续尝试下一个服务
         continue;
       }
     }
     
-    // 所有服务都失败
-    throw new Error('所有地理编码服务均无法访问，请检查网络连接或稍后重试');
+    // 所有服务都失败，提供详细的错误信息
+    const errorDetails = failedServices.length > 0 
+      ? `失败的服务: ${failedServices.join('; ')}`
+      : '所有服务均无响应';
+    throw new Error(`无法搜索城市"${cityName}"。${errorDetails}。请检查网络连接或稍后重试。`);
   }
 
 
