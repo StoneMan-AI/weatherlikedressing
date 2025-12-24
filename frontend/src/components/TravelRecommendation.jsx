@@ -46,6 +46,7 @@ const TravelRecommendation = ({ currentLocation, weatherData, userProfile }) => 
   }, [currentLocation, lastLocationId]);
 
   const formatDate = (date) => {
+    // 使用本地时区，确保日期正确
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -53,15 +54,42 @@ const TravelRecommendation = ({ currentLocation, weatherData, userProfile }) => 
   };
 
   const getMinDate = () => {
+    // 获取本地时区的今天日期，确保时区正确
     const today = new Date();
-    // 允许从今天开始选择
-    return formatDate(today);
+    const localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return formatDate(localDate);
   };
 
   const getMaxDate = () => {
+    // 获取本地时区的今天日期，然后加15天
     const today = new Date();
-    today.setDate(today.getDate() + 15); // 最多15天后
-    return formatDate(today);
+    const localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    localDate.setDate(localDate.getDate() + 15); // 最多15天后
+    return formatDate(localDate);
+  };
+
+  // 验证日期是否有效（不能是过去的日期）
+  const validateDate = (dateString, isStartDate = true) => {
+    if (!dateString) return true; // 空值允许
+    
+    const selectedDate = new Date(dateString);
+    const today = new Date();
+    const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const selectedLocal = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+    
+    // 不能选择过去的日期
+    if (selectedLocal < todayLocal) {
+      return false;
+    }
+    
+    // 不能超过15天
+    const maxDate = new Date(todayLocal);
+    maxDate.setDate(maxDate.getDate() + 15);
+    if (selectedLocal > maxDate) {
+      return false;
+    }
+    
+    return true;
   };
 
   const calculateDays = () => {
@@ -135,10 +163,28 @@ const TravelRecommendation = ({ currentLocation, weatherData, userProfile }) => 
           <input
             type="date"
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            onChange={(e) => {
+              const newDate = e.target.value;
+              if (validateDate(newDate, true)) {
+                setStartDate(newDate);
+                // 如果结束日期早于新的开始日期，自动调整结束日期
+                if (endDate && newDate > endDate) {
+                  const newEndDate = new Date(newDate);
+                  newEndDate.setDate(newEndDate.getDate() + 2);
+                  const maxDate = getMaxDate();
+                  setEndDate(newEndDate.toISOString().split('T')[0] > maxDate ? maxDate : newEndDate.toISOString().split('T')[0]);
+                }
+              } else {
+                // 如果日期无效，显示错误提示
+                setError('出发日期不能是过去的日期，且不能超过15天');
+                // 恢复为今天
+                setStartDate(getMinDate());
+              }
+            }}
             min={getMinDate()}
             max={getMaxDate()}
             className="date-input"
+            required
           />
         </div>
         <div className="date-input-group">
@@ -146,10 +192,29 @@ const TravelRecommendation = ({ currentLocation, weatherData, userProfile }) => 
           <input
             type="date"
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            onChange={(e) => {
+              const newDate = e.target.value;
+              if (validateDate(newDate, false)) {
+                // 确保结束日期不早于开始日期
+                if (startDate && newDate < startDate) {
+                  setError('返回日期不能早于出发日期');
+                  return;
+                }
+                setEndDate(newDate);
+              } else {
+                setError('返回日期不能是过去的日期，且不能超过15天');
+                // 恢复为开始日期+2天或今天+2天
+                const baseDate = startDate || getMinDate();
+                const newEndDate = new Date(baseDate);
+                newEndDate.setDate(newEndDate.getDate() + 2);
+                const maxDate = getMaxDate();
+                setEndDate(newEndDate.toISOString().split('T')[0] > maxDate ? maxDate : newEndDate.toISOString().split('T')[0]);
+              }
+            }}
             min={startDate || getMinDate()}
             max={getMaxDate()}
             className="date-input"
+            required
           />
         </div>
         <button
