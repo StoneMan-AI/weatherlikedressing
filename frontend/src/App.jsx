@@ -19,30 +19,30 @@ function App() {
   return (
     <AuthProvider>
       <LocationProvider>
-        <Router>
-          <Routes>
+      <Router>
+        <Routes>
             {/* 主页路由 - 无需登录，直接访问 */}
-            <Route
-              path="/"
-              element={
+          <Route
+            path="/"
+            element={
                 <Layout>
                   <Home />
                 </Layout>
-              }
-            />
+            }
+          />
             {/* 用户画像设置页面 */}
-            <Route
-              path="/settings"
-              element={
+          <Route
+            path="/settings"
+            element={
                 <Layout>
                   <Settings />
                 </Layout>
-              }
-            />
+            }
+          />
             {/* 所有其他路由重定向到首页 */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Router>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
       </LocationProvider>
     </AuthProvider>
   );

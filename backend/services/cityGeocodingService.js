@@ -65,15 +65,18 @@ class CityGeocodingService {
 
   /**
    * 在缓存中搜索城市（模糊匹配）
+   * 包括预置数据和用户搜索过的缓存数据
    * @param {string} searchTerm - 搜索关键词
    * @returns {Promise<Array>} - 匹配的城市列表
    */
   async searchInCache(searchTerm) {
     try {
       const searchTermLower = searchTerm.toLowerCase();
+      const searchPattern = `%${searchTermLower}%`;
       
       // 使用ILIKE进行不区分大小写的模糊匹配
-      // 支持部分匹配：城市名称包含搜索关键词，或搜索关键词包含城市名称
+      // 查询所有缓存数据（包括预置数据和用户搜索过的数据）
+      // 支持匹配：城市名称、显示名称、州/省名称
       const result = await pool.query(
         `SELECT 
           id,
@@ -90,22 +93,24 @@ class CityGeocodingService {
         WHERE 
           LOWER(city_name) LIKE $1 
           OR LOWER(display_name) LIKE $1
-          OR LOWER(city_name) LIKE $2
+          OR LOWER(state) LIKE $1
+          OR LOWER(city_name) = $2
+          OR LOWER(city_name) = $2 || '市'
+          OR LOWER(city_name) = $2 || '省'
         ORDER BY 
           CASE 
-            WHEN LOWER(city_name) = $3 THEN 1
-            WHEN LOWER(city_name) LIKE $4 THEN 2
-            WHEN LOWER(display_name) LIKE $1 THEN 3
-            ELSE 4
+            WHEN LOWER(city_name) = $2 THEN 1
+            WHEN LOWER(city_name) = $2 || '市' THEN 2
+            WHEN LOWER(city_name) LIKE $2 || '%' THEN 3
+            WHEN LOWER(display_name) LIKE $1 THEN 4
+            ELSE 5
           END,
           search_count DESC,
           last_searched_at DESC
-        LIMIT 10`,
+        LIMIT 20`,
         [
-          `%${searchTermLower}%`,  // 城市名称或显示名称包含搜索关键词
-          `${searchTermLower}%`,   // 城市名称以搜索关键词开头
-          searchTermLower,         // 完全匹配（优先级最高）
-          `${searchTermLower}%`    // 以搜索关键词开头
+          searchPattern,  // 模糊匹配模式
+          searchTermLower // 精确匹配
         ]
       );
       
@@ -207,14 +212,6 @@ class CityGeocodingService {
             state: properties.state || properties.region
           };
         }
-      },
-      {
-        name: 'REST Countries + 预置数据',
-        search: async () => {
-          // 作为最后备选，使用预置的常用城市数据
-          return this.searchInPresetCities(cityName);
-        },
-        parser: (item) => item // 预置数据已经是正确格式
       }
     ];
 
@@ -252,67 +249,6 @@ class CityGeocodingService {
     throw new Error('所有地理编码服务均无法访问，请检查网络连接或稍后重试');
   }
 
-  /**
-   * 在预置的常用城市数据中搜索（最后备选方案）
-   * 从数据库中读取预置城市数据（search_count >= 100 表示预置数据）
-   * @param {string} cityName - 城市名称
-   * @returns {Promise<Array>} - 搜索结果列表
-   */
-  async searchInPresetCities(cityName) {
-    try {
-      const searchTermLower = cityName.toLowerCase().trim();
-      const searchPattern = `%${cityName}%`;
-      
-      // 从数据库查询预置城市数据（search_count >= 100 表示预置数据）
-      const result = await pool.query(
-        `SELECT 
-          id, city_name, display_name, latitude, longitude, timezone, 
-          country_code, country_name, state, search_count
-        FROM city_geocoding_cache
-        WHERE search_count >= 100
-          AND (
-            LOWER(city_name) LIKE LOWER($1)
-            OR LOWER(display_name) LIKE LOWER($1)
-            OR LOWER(state) LIKE LOWER($1)
-            OR LOWER(city_name) = LOWER($2)
-            OR LOWER(city_name) = LOWER($2 || '市')
-            OR LOWER(city_name) = LOWER($2 || '省')
-          )
-        ORDER BY 
-          CASE 
-            WHEN LOWER(city_name) = LOWER($2) THEN 1
-            WHEN LOWER(city_name) = LOWER($2 || '市') THEN 2
-            WHEN LOWER(city_name) LIKE LOWER($2 || '%') THEN 3
-            ELSE 4
-          END,
-          search_count DESC
-        LIMIT 20`,
-        [searchPattern, cityName]
-      );
-      
-      if (result.rows.length === 0) {
-        return [];
-      }
-      
-      // 转换为统一格式
-      return result.rows.map(row => ({
-        id: row.id,
-        name: row.city_name,
-        display_name: row.display_name,
-        latitude: parseFloat(row.latitude),
-        longitude: parseFloat(row.longitude),
-        timezone: row.timezone || 'Asia/Shanghai',
-        country_code: row.country_code,
-        country_name: row.country_name,
-        state: row.state,
-        search_count: row.search_count
-      }));
-    } catch (error) {
-      console.error('查询预置城市数据失败:', error);
-      // 如果数据库查询失败，返回空数组，让上层继续处理
-      return [];
-    }
-  }
 
   /**
    * 保存搜索结果到缓存
