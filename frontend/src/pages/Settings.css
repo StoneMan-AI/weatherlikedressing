@@ -137,6 +137,28 @@
   height: 18px;
   cursor: pointer;
   accent-color: rgba(74, 144, 226, 0.8);
+  /* Safari兼容性：移除默认样式，确保自定义样式生效 */
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  /* Safari兼容性：设置背景色 */
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  /* Safari兼容性：确保渲染优化 */
+  -webkit-backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+}
+
+.checkbox-item input[type="checkbox"]:checked {
+  background-color: rgba(74, 144, 226, 0.8) !important;
+  background: rgba(74, 144, 226, 0.8) !important;
+  border-color: rgba(74, 144, 226, 0.9);
+  /* 添加勾选标记 */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M10 3L4.5 8.5 2 6l1.5-1.5L4.5 7 8.5 3z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 10px;
 }
 
 .checkbox-item span {

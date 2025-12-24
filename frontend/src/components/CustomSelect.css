@@ -9,9 +9,11 @@
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   font-size: 16px;
+  /* Safari兼容性：必须先设置背景色，再设置backdrop-filter */
   background-color: rgba(255, 255, 255, 0.1) !important;
   background: rgba(255, 255, 255, 0.1) !important;
   color: var(--text-primary) !important;
+  /* Safari兼容性：backdrop-filter必须在background-color之后 */
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   cursor: pointer;
@@ -21,6 +23,12 @@
   min-height: 44px;
   transition: all 0.2s ease;
   user-select: none;
+  /* Safari兼容性：确保渲染优化 */
+  -webkit-backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+  /* 确保不是表单控件 */
+  -webkit-appearance: none !important;
+  appearance: none !important;
 }
 
 .custom-select-trigger:hover {
@@ -56,8 +64,10 @@
 }
 
 .custom-select-dropdown {
-  background: rgba(20, 20, 20, 0.98);
-  background-color: rgba(20, 20, 20, 0.98); /* Safari兼容性 */
+  /* Safari兼容性：必须先设置背景色，再设置backdrop-filter */
+  background-color: rgba(20, 20, 20, 0.98) !important;
+  background: rgba(20, 20, 20, 0.98) !important;
+  /* Safari兼容性：backdrop-filter必须在background-color之后 */
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border-color);
@@ -73,6 +83,12 @@
   /* 确保滚动条可见且可用 */
   -webkit-overflow-scrolling: touch; /* iOS平滑滚动 */
   overscroll-behavior: contain; /* 防止滚动链 */
+  /* Safari兼容性：确保渲染优化 */
+  -webkit-backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+  /* 确保不是表单控件 */
+  -webkit-appearance: none !important;
+  appearance: none !important;
 }
 
 @keyframes dropdownFadeIn {
