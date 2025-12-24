@@ -262,6 +262,7 @@
   margin-bottom: var(--spacing-xs);
   padding-bottom: var(--spacing-xs);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  gap: var(--spacing-xs);
 }
 
 .history-item-date {
@@ -302,7 +303,8 @@
   padding-top: var(--spacing-xs);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  align-items: center;
 }
 
 .btn-apply-history {

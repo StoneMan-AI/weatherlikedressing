@@ -84,10 +84,7 @@ const Settings = () => {
       localStorage.setItem('profileHistory', JSON.stringify(updatedHistory));
       
       alert('用户画像更新成功！系统将根据您的个人属性提供个性化穿衣建议。');
-      // 可选：保存后返回首页
-      setTimeout(() => {
-        navigate('/');
-      }, 1000);
+      // 停留在当前页面，不跳转
     },
     onError: (error) => {
       console.error('Failed to update profile:', error);
@@ -319,8 +316,14 @@ const Settings = () => {
                   <div key={item.id} className={`profile-history-item ${isCurrentProfile ? 'is-current' : ''}`}>
                     <div className="history-item-header">
                       <span className="history-item-date">{formattedDate}</span>
-                      {isCurrentProfile && (
-                        <span className="current-badge">当前设置</span>
+                      {!isCurrentProfile && (
+                        <button
+                          type="button"
+                          className="btn-apply-history"
+                          onClick={() => handleApplyHistory(item)}
+                        >
+                          应用此设置
+                        </button>
                       )}
                     </div>
                     <div className="history-item-content">
@@ -341,15 +344,9 @@ const Settings = () => {
                         </div>
                       )}
                     </div>
-                    {!isCurrentProfile && (
+                    {isCurrentProfile && (
                       <div className="history-item-actions">
-                        <button
-                          type="button"
-                          className="btn-apply-history"
-                          onClick={() => handleApplyHistory(item)}
-                        >
-                          应用此设置
-                        </button>
+                        <span className="current-badge">当前设置</span>
                       </div>
                     )}
                   </div>
