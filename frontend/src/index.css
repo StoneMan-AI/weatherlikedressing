@@ -95,12 +95,14 @@ body {
 }
 
 .btn-primary {
-  background: rgba(255, 255, 255, 0.25);
-  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  background: rgba(255, 255, 255, 0.25) !important;
+  color: var(--text-primary) !important;
 }
 
 .btn-primary:hover {
-  background: rgba(255, 255, 255, 0.35);
+  background-color: rgba(255, 255, 255, 0.35) !important;
+  background: rgba(255, 255, 255, 0.35) !important;
   transform: translateY(-1px);
 }
 
@@ -135,7 +137,8 @@ body {
 .input:focus {
   outline: none;
   border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
 }
 
 /* 下拉框样式 - iPhone风格 */
