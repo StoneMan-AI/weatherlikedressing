@@ -206,6 +206,18 @@ select {
   /* 防止 Safari 覆盖背景色 */
   -webkit-backface-visibility: hidden;
   -webkit-transform: translateZ(0);
+  /* 确保边框和圆角 */
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 16px;
+}
+
+select.input option,
+select option {
+  background-color: rgba(20, 20, 20, 0.98) !important;
+  color: #FFFFFF !important;
 }
 
 /* 下拉框选项样式 - 确保在所有浏览器中可见 */

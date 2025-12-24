@@ -3,7 +3,6 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import CustomSelect from '../components/CustomSelect';
 import { getOrCreateUserId } from '../utils/userId';
 import './Settings.css';
 
@@ -176,30 +175,30 @@ const Settings = () => {
           <form onSubmit={handleSubmit} className="settings-form">
             <div className="form-group">
               <label>年龄段</label>
-              <CustomSelect
+              <select
+                className="input"
                 value={formData.age_group}
                 onChange={(e) => handleInputChange('age_group', e.target.value)}
-                options={[
-                  { value: 'child_0_2', label: '0-2岁' },
-                  { value: 'child_3_6', label: '3-6岁' },
-                  { value: 'child_7_12', label: '7-12岁' },
-                  { value: 'adult', label: '成人' },
-                  { value: 'elderly_65_plus', label: '65岁以上' }
-                ]}
-              />
+              >
+                <option value="child_0_2">0-2岁</option>
+                <option value="child_3_6">3-6岁</option>
+                <option value="child_7_12">7-12岁</option>
+                <option value="adult">成人</option>
+                <option value="elderly_65_plus">65岁以上</option>
+              </select>
             </div>
 
             <div className="form-group">
               <label>温度敏感度</label>
-              <CustomSelect
+              <select
+                className="input"
                 value={formData.sensitivity}
                 onChange={(e) => handleInputChange('sensitivity', e.target.value)}
-                options={[
-                  { value: 'none', label: '正常' },
-                  { value: 'cold', label: '怕冷' },
-                  { value: 'hot', label: '怕热' }
-                ]}
-              />
+              >
+                <option value="none">正常</option>
+                <option value="cold">怕冷</option>
+                <option value="hot">怕热</option>
+              </select>
             </div>
 
             <div className="form-group">
@@ -299,15 +298,15 @@ const Settings = () => {
                   'hot': '怕热'
                 };
                 
-                // 健康状况标签映射（简化显示）
+                // 健康状况标签映射
                 const conditionLabels = {
-                  'rheumatism': '风湿',
+                  'rheumatism': '风湿/关节不适',
                   'asthma': '哮喘',
-                  'cardiovascular': '心血管',
+                  'cardiovascular': '心血管疾病',
                   'copd': 'COPD',
                   'migraine': '偏头痛',
                   'skin_disease': '皮肤病',
-                  'allergy': '过敏'
+                  'allergy': '过敏性疾病'
                 };
                 
                 // 检查当前表单是否与历史记录匹配
