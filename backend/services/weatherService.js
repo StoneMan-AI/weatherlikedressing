@@ -21,6 +21,7 @@ class WeatherService {
   async fetchWeatherData(latitude, longitude, timezone = 'Asia/Shanghai', forecastDays = 15) {
     try {
       // Open-Meteo免费版最多支持16天预报
+      // forecast_days 参数表示从今天开始未来N天的预报
       const maxDays = Math.min(forecastDays, 16);
       
       const params = {
@@ -45,9 +46,11 @@ class WeatherService {
           'wind_gusts_10m_max',
           'uv_index_max'
         ].join(','),
-        forecast_days: maxDays,
-        past_days: 1 // 获取过去1天的数据，以确保包含今天0时之前的数据
+        forecast_days: maxDays, // 从今天开始未来N天的预报（自然日）
+        past_days: 1 // 获取过去1天的数据，用于hourly数据计算今天0时之前的数据
       };
+      
+      console.log(`Fetching weather data: forecast_days=${maxDays}, timezone=${timezone}, from natural day today`);
 
       const response = await axios.get(this.openMeteoBaseUrl, { params });
       const data = response.data;
@@ -140,11 +143,40 @@ class WeatherService {
       }
 
       // 处理每日数据（用于15天预报）
+      // 确保从自然日今天开始计算15天
       const daily = data.daily;
       const dailyForecast = [];
       const dailyTimeArray = daily.time || [];
       
+      // 计算今天在指定时区的日期（YYYY-MM-DD格式）
+      const todayInTimezone = new Date();
+      const todayFormatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const todayDateStr = todayFormatter.format(todayInTimezone); // 格式：YYYY-MM-DD
+      
+      // 找到今天对应的索引
+      let todayIndex = -1;
       for (let i = 0; i < dailyTimeArray.length; i++) {
+        const dayDateStr = dailyTimeArray[i].split('T')[0]; // 提取日期部分
+        if (dayDateStr === todayDateStr) {
+          todayIndex = i;
+          break;
+        }
+      }
+      
+      // 如果找不到今天，使用第一个数据（可能是昨天或今天）
+      if (todayIndex === -1) {
+        console.warn(`Could not find today (${todayDateStr}) in daily data, using first available day`);
+        todayIndex = 0;
+      }
+      
+      // 从今天开始，提取15天的数据
+      const endIndex = Math.min(todayIndex + maxDays, dailyTimeArray.length);
+      for (let i = todayIndex; i < endIndex; i++) {
         dailyForecast.push({
           date: dailyTimeArray[i],
           temperature_max: daily.temperature_2m_max[i],
@@ -156,6 +188,8 @@ class WeatherService {
           uv_index_max: daily.uv_index_max[i] || 0
         });
       }
+      
+      console.log(`Daily forecast: Found ${dailyForecast.length} days starting from ${todayDateStr} (index ${todayIndex})`);
 
       return {
         current: currentWeather,
