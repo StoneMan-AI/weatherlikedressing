@@ -15,11 +15,11 @@
 .location-title-section {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   flex-shrink: 0;
   min-width: 0;
   flex-wrap: nowrap;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .location-title {
@@ -414,10 +414,18 @@
     font-size: 28px;
   }
   
+  .location-header {
+    flex-wrap: wrap;
+  }
+  
   .location-title-section {
-    flex-direction: column;
-    align-items: flex-start;
     width: 100%;
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .location-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
   
   .add-location-form {

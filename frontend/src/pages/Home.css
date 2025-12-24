@@ -124,12 +124,14 @@
 
 @media (max-width: 768px) {
   .settings-row {
-    flex-direction: column;
+    flex-direction: row;
     gap: var(--spacing-md);
+    flex-wrap: nowrap;
   }
   
   .setting-item {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
   }
   
   .location-header {

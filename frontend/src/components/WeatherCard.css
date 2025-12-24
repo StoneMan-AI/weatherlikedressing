@@ -99,6 +99,9 @@
 @media (max-width: 768px) {
   .weather-main {
     gap: var(--spacing-md);
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
   }
   
   .temperature {
@@ -112,11 +115,15 @@
   }
   
   .weather-details-row {
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
+    flex-wrap: nowrap;
+    min-width: fit-content;
   }
   
   .weather-detail-item {
     padding: var(--spacing-xs);
+    flex-shrink: 0;
+    min-width: fit-content;
   }
   
   .detail-label {
@@ -134,8 +141,10 @@
 
 @media (max-width: 480px) {
   .weather-main {
-    flex-direction: column;
-    gap: var(--spacing-sm);
+    flex-direction: row;
+    gap: var(--spacing-md);
+    flex-wrap: nowrap;
+    overflow-x: auto;
   }
   
   .temperature {
@@ -148,12 +157,14 @@
   }
   
   .weather-details-row {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: var(--spacing-xs);
+    min-width: fit-content;
   }
   
   .weather-detail-item {
-    flex: 1 1 calc(50% - var(--spacing-xs));
-    min-width: calc(50% - var(--spacing-xs));
+    flex-shrink: 0;
+    min-width: fit-content;
+    padding: var(--spacing-xs);
   }
 }
