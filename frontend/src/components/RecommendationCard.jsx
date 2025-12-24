@@ -33,7 +33,6 @@ const RecommendationCard = ({ recommendation }) => {
           <span className="score-value" style={{ color: scoreColor }}>
             {scoreLabel}
           </span>
-          <span className="score-number">({recommendation.comfort_score})</span>
         </div>
         <div className="header-right">
           {recommendation.urgency && (
@@ -107,7 +106,10 @@ const RecommendationCard = ({ recommendation }) => {
           </div>
           {recommendation.score_details && (
             <div className="score-breakdown">
-              <strong>分数明细：</strong>
+              <div className="breakdown-header">
+                <strong>分数明细：</strong>
+                <span className="total-score">总分：{recommendation.comfort_score}分</span>
+              </div>
               <p className="breakdown-note">（负数表示降低舒适度，正数表示提高舒适度）</p>
               <div className="breakdown-grid">
                 <span>

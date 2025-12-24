@@ -58,7 +58,7 @@
 
 .chart-wrapper {
   width: 100%;
-  overflow-x: auto;
+  overflow: hidden;
   overflow-y: visible;
   padding: 10px 0;
   display: flex;
@@ -66,9 +66,12 @@
 }
 
 .chart-svg {
+  width: 100%;
   max-width: 100%;
   height: auto;
   display: block;
+  /* 确保 SVG 在移动端也能完全显示 */
+  min-width: 0;
 }
 
 .chart-line {
@@ -136,29 +139,37 @@
   .view-selector {
     width: 100%;
     justify-content: flex-start;
+    flex-wrap: wrap;
   }
   
   .chart-wrapper {
     padding: 5px 0;
+    overflow: hidden;
+    width: 100%;
   }
   
   .chart-svg {
-    min-width: 600px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: auto;
+    /* 使用 viewBox 保持比例，同时适应屏幕宽度 */
+    preserveAspectRatio: xMidYMid meet;
   }
   
   .chart-y-axis text,
   .chart-x-axis text {
-    font-size: 14px;
+    font-size: 12px;
   }
   
   .current-value-label {
-    font-size: 18px;
+    font-size: 16px;
   }
   
   .max-temp-marker text,
   .min-temp-marker text,
   .max-value-marker text,
   .min-value-marker text {
-    font-size: 16px;
+    font-size: 14px;
   }
 }

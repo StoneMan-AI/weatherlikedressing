@@ -221,7 +221,7 @@
 
 .breakdown-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--spacing-sm);
   margin-top: var(--spacing-sm);
   font-size: 14px;
@@ -230,16 +230,53 @@
 
 .breakdown-grid span {
   padding: var(--spacing-sm);
-  background: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
   border-radius: 4px;
   border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
+  word-break: break-word;
 }
 
 .score-impact {
   font-size: 12px;
   color: var(--text-secondary);
   font-weight: normal;
+  margin-top: 2px;
+}
+
+/* 移动端也保持两列展示 */
+@media (max-width: 480px) {
+  .breakdown-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-xs);
+  }
+  
+  .breakdown-grid span {
+    padding: var(--spacing-xs);
+    font-size: 12px;
+  }
+  
+  .score-impact {
+    font-size: 11px;
+  }
+}
+
+.breakdown-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.breakdown-header strong {
+  color: var(--text-primary);
+}
+
+.total-score {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
 }

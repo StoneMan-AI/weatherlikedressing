@@ -361,7 +361,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     return (
       <div className="weather-chart">
         <div className="chart-wrapper">
-          <svg width="600" height="300" viewBox="0 0 600 300" className="chart-svg">
+          <svg width="100%" height="300" viewBox="0 0 600 300" preserveAspectRatio="xMidYMid meet" className="chart-svg">
             {/* 渐变定义 */}
             <defs>
               <linearGradient id="tempGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -532,7 +532,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     return (
       <div className="weather-chart">
         <div className="chart-wrapper">
-          <svg width="600" height="300" viewBox="0 0 600 300" className="chart-svg">
+          <svg width="100%" height="300" viewBox="0 0 600 300" preserveAspectRatio="xMidYMid meet" className="chart-svg">
             {/* 渐变定义 */}
             <defs>
               <linearGradient id={`${key}Gradient`} x1="0%" y1="0%" x2="100%" y2="0%">
