@@ -154,128 +154,77 @@ class CityGeocodingService {
   }
 
   /**
-   * 调用多个地理编码服务搜索城市（支持多个备用服务）
+   * 调用OpenStreetMap Nominatim API搜索城市
    * @param {string} cityName - 城市名称
    * @returns {Promise<Array>} - 搜索结果列表
    */
   async searchInOpenStreetMap(cityName) {
-    // 多个地理编码服务列表（按优先级排序）
-    const geocodingServices = [
-      {
-        name: 'OpenStreetMap Nominatim',
-        search: async () => {
-          const response = await axios.get(
-            `https://nominatim.openstreetmap.org/search`,
-            {
-              params: {
-                q: cityName,
-                format: 'json',
-                limit: 10,
-                addressdetails: 1
-              },
-              headers: {
-                'User-Agent': 'WeatherApp/1.0'
-              },
-              timeout: 8000
-            }
-          );
-          return response.data || [];
-        },
-        parser: (item) => {
-          const address = item.address || {};
-          const cityName = address.city || 
-                          address.town || 
-                          address.village ||
-                          address.county ||
-                          item.display_name?.split(',')[0] ||
-                          cityName;
-          
-          return {
-            name: cityName,
-            display_name: item.display_name,
-            latitude: parseFloat(item.lat),
-            longitude: parseFloat(item.lon),
-            timezone: this.estimateTimezone(parseFloat(item.lat), parseFloat(item.lon)),
-            country_code: address.country_code?.toUpperCase(),
-            country_name: address.country,
-            state: address.state || address.region
-          };
+    try {
+      console.log(`使用 OpenStreetMap Nominatim 搜索城市: ${cityName}`);
+      
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/search`,
+        {
+          params: {
+            q: cityName,
+            format: 'json',
+            limit: 10,
+            addressdetails: 1
+          },
+          headers: {
+            'User-Agent': 'WeatherApp/1.0'
+          },
+          timeout: 10000
         }
-      },
-      {
-        name: 'Photon (Komoot)',
-        search: async () => {
-          // Photon是Komoot提供的开源地理编码服务，无需API密钥
-          const response = await axios.get(
-            `https://photon.komoot.io/api/`,
-            {
-              params: {
-                q: cityName,
-                limit: 10,
-                lang: 'zh,en'
-              },
-              timeout: 8000
-            }
-          );
-          return response.data?.features || [];
-        },
-        parser: (item) => {
-          const properties = item.properties || {};
-          const coordinates = item.geometry?.coordinates || [];
-          return {
-            name: properties.name || cityName,
-            display_name: properties.name ? `${properties.name}, ${properties.country || ''}` : cityName,
-            latitude: parseFloat(coordinates[1] || properties.lat),
-            longitude: parseFloat(coordinates[0] || properties.lon),
-            timezone: this.estimateTimezone(parseFloat(coordinates[1] || properties.lat), parseFloat(coordinates[0] || properties.lon)),
-            country_code: properties.countrycode?.toUpperCase(),
-            country_name: properties.country,
-            state: properties.state || properties.region
-          };
-        }
-      },
-    ];
-
-    // 依次尝试每个服务
-    const failedServices = [];
-    for (const service of geocodingServices) {
-      try {
-        console.log(`尝试使用 ${service.name} 搜索城市: ${cityName}`);
-        const rawResults = await service.search();
-        
-        if (rawResults && rawResults.length > 0) {
-          const parsedResults = rawResults
-            .map(item => {
-              try {
-                return service.parser(item);
-              } catch (parseError) {
-                console.warn(`${service.name} 解析结果失败:`, parseError);
-                return null;
-              }
-            })
-            .filter(item => item && item.latitude && item.longitude);
-          
-          if (parsedResults.length > 0) {
-            console.log(`${service.name} 搜索成功，找到 ${parsedResults.length} 个结果`);
-            return parsedResults;
-          }
-        }
-      } catch (error) {
-        const errorMsg = error.response?.status 
-          ? `HTTP ${error.response.status}: ${error.message}`
-          : error.message;
-        console.warn(`${service.name} 搜索失败:`, errorMsg);
-        failedServices.push(`${service.name} (${errorMsg})`);
-        // 继续尝试下一个服务
-        continue;
+      );
+      
+      if (!response.data || response.data.length === 0) {
+        console.log(`OpenStreetMap Nominatim 未找到结果: ${cityName}`);
+        return [];
       }
+      
+      // 解析OpenStreetMap返回的数据
+      const parsedResults = response.data
+        .map(item => {
+          try {
+            const address = item.address || {};
+            const cityName = address.city || 
+                            address.town || 
+                            address.village ||
+                            address.county ||
+                            item.display_name?.split(',')[0] ||
+                            cityName;
+            
+            return {
+              name: cityName,
+              display_name: item.display_name,
+              latitude: parseFloat(item.lat),
+              longitude: parseFloat(item.lon),
+              timezone: this.estimateTimezone(parseFloat(item.lat), parseFloat(item.lon)),
+              country_code: address.country_code?.toUpperCase(),
+              country_name: address.country,
+              state: address.state || address.region
+            };
+          } catch (parseError) {
+            console.warn('解析OpenStreetMap结果失败:', parseError);
+            return null;
+          }
+        })
+        .filter(item => item && item.latitude && item.longitude);
+      
+      if (parsedResults.length > 0) {
+        console.log(`OpenStreetMap Nominatim 搜索成功，找到 ${parsedResults.length} 个结果`);
+        return parsedResults;
+      }
+      
+      return [];
+    } catch (error) {
+      const errorMsg = error.response?.status 
+        ? `HTTP ${error.response.status}: ${error.message}`
+        : error.message;
+      console.error(`OpenStreetMap Nominatim API调用失败:`, errorMsg);
+      throw new Error(`无法搜索城市"${cityName}"。OpenStreetMap Nominatim API调用失败: ${errorMsg}。请检查网络连接或稍后重试。`);
     }
-    
-    // 所有服务都失败，提供详细的错误信息
-    const errorDetails = failedServices.length > 0 
-      ? `失败的服务: ${failedServices.join('; ')}`
-      : '所有服务均无响应';
-    throw new Error(`无法搜索城市"${cityName}"。${errorDetails}。请检查网络连接或稍后重试。`);
   }
 
 

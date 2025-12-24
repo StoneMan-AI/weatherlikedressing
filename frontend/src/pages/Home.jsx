@@ -34,18 +34,30 @@ const Home = () => {
   const [loading, setLoading] = useState(false);
   const [recommendationLoading, setRecommendationLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
+  
+  // 使用 ref 跟踪初始化状态和权限监听器，避免重复执行
+  const initializationRef = useRef({ initialized: false, permissionListener: null });
 
   // 首次打开时获取位置（增强版，支持权限状态监听）
   useEffect(() => {
-    const initializeLocation = async () => {
-      if (locationLoading) return;
-      
-      // 如果已有位置，不需要初始化
-      if (currentLocation) {
-        setInitializing(false);
-        return;
-      }
+    // 如果已经初始化过，不再执行
+    if (initializationRef.current.initialized) {
+      return;
+    }
 
+    // 如果已有位置，标记为已初始化
+    if (currentLocation) {
+      initializationRef.current.initialized = true;
+      setInitializing(false);
+      return;
+    }
+
+    // 如果正在加载，等待
+    if (locationLoading) {
+      return;
+    }
+
+    const initializeLocation = async () => {
       // 检测是否为移动设备
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       
@@ -53,41 +65,59 @@ const Home = () => {
       let geolocationPermission = 'unknown';
       let permissionResult = null;
       
+      // 权限状态变化处理函数
+      const handlePermissionChange = async () => {
+        // 检查是否已初始化，避免重复处理
+        if (initializationRef.current.initialized) {
+          return;
+        }
+
+        const newState = permissionResult?.state;
+        console.log('地理位置权限状态变化:', newState);
+        
+        if (newState === 'granted') {
+          // 用户刚刚授权，尝试获取地理位置
+          try {
+            console.log('检测到用户授权，尝试获取地理位置...');
+            const location = await getLocationByGeolocation();
+            // 标记为已初始化，避免重复
+            if (!initializationRef.current.initialized) {
+              initializationRef.current.initialized = true;
+              addLocation(location);
+              setInitializing(false);
+              console.log('用户授权后成功获取地理位置:', location.name);
+            }
+          } catch (error) {
+            console.warn('用户授权后获取地理位置失败:', error.message);
+            // 如果获取失败，尝试IP定位
+            if (!initializationRef.current.initialized) {
+              try {
+                const ipLocation = await getLocationByIP();
+                initializationRef.current.initialized = true;
+                addLocation(ipLocation);
+                setInitializing(false);
+                console.log('使用IP定位作为备选方案');
+              } catch (ipError) {
+                console.warn('IP定位也失败:', ipError.message);
+                // 使用默认位置
+                const defaultLocation = getDefaultLocation();
+                initializationRef.current.initialized = true;
+                addLocation(defaultLocation);
+                setInitializing(false);
+              }
+            }
+          }
+        }
+      };
+      
       if (navigator.permissions && navigator.geolocation) {
         try {
           permissionResult = await navigator.permissions.query({ name: 'geolocation' });
           geolocationPermission = permissionResult.state;
           
-          // 监听权限状态变化（当用户操作权限对话框后）
-          permissionResult.onchange = async () => {
-            const newState = permissionResult.state;
-            console.log('地理位置权限状态变化:', newState);
-            
-            if (newState === 'granted') {
-              // 用户刚刚授权，尝试获取地理位置
-              try {
-                console.log('检测到用户授权，尝试获取地理位置...');
-                const location = await getLocationByGeolocation();
-                // 检查是否已有位置，避免重复添加
-                if (!currentLocation) {
-                  addLocation(location);
-                  console.log('用户授权后成功获取地理位置:', location.name);
-                }
-              } catch (error) {
-                console.warn('用户授权后获取地理位置失败:', error.message);
-                // 如果获取失败，尝试IP定位
-                try {
-                  const ipLocation = await getLocationByIP();
-                  if (!currentLocation) {
-                    addLocation(ipLocation);
-                    console.log('使用IP定位作为备选方案');
-                  }
-                } catch (ipError) {
-                  console.warn('IP定位也失败:', ipError.message);
-                }
-              }
-            }
-          };
+          // 设置权限状态变化监听器
+          permissionResult.onchange = handlePermissionChange;
+          initializationRef.current.permissionListener = permissionResult;
         } catch (error) {
           console.warn('无法查询地理位置权限状态:', error);
         }
@@ -103,12 +133,14 @@ const Home = () => {
             try {
               location = await getLocationByGeolocation();
               console.log('地理位置获取成功');
+              initializationRef.current.initialized = true;
             } catch (error) {
               console.warn('地理位置获取失败，尝试IP定位:', error.message);
               // 如果用户拒绝或失败，使用IP定位
               try {
                 location = await getLocationByIP();
                 console.log('IP定位成功');
+                initializationRef.current.initialized = true;
               } catch (ipError) {
                 console.warn('IP定位失败:', ipError.message);
                 throw ipError;
@@ -119,6 +151,7 @@ const Home = () => {
             console.log('用户已拒绝位置权限，使用IP定位');
             try {
               location = await getLocationByIP();
+              initializationRef.current.initialized = true;
             } catch (ipError) {
               console.warn('IP定位失败:', ipError.message);
               throw ipError;
@@ -127,6 +160,7 @@ const Home = () => {
             // 其他情况，尝试IP定位
             try {
               location = await getLocationByIP();
+              initializationRef.current.initialized = true;
             } catch (ipError) {
               console.warn('IP定位失败:', ipError.message);
               throw ipError;
@@ -136,6 +170,7 @@ const Home = () => {
           // 非移动设备或浏览器不支持地理位置，使用IP定位
           console.log('使用IP定位');
           location = await getLocationByIP();
+          initializationRef.current.initialized = true;
         }
 
         // 添加位置
@@ -147,6 +182,7 @@ const Home = () => {
         // 如果所有定位方式都失败，使用默认位置（北京）
         try {
           const defaultLocation = getDefaultLocation();
+          initializationRef.current.initialized = true;
           addLocation(defaultLocation);
           console.log('使用默认位置：北京');
         } catch (defaultError) {
@@ -158,8 +194,16 @@ const Home = () => {
     };
 
     initializeLocation();
+
+    // 清理函数：移除权限监听器
+    return () => {
+      if (initializationRef.current.permissionListener) {
+        initializationRef.current.permissionListener.onchange = null;
+        initializationRef.current.permissionListener = null;
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationLoading, currentLocation]);
+  }, [locationLoading]); // 移除 currentLocation 作为依赖项，避免循环
 
   // 获取天气数据
   const fetchWeatherData = async () => {

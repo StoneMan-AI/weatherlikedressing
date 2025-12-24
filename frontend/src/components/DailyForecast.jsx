@@ -6,22 +6,41 @@ const DailyForecast = ({ dailyData }) => {
     return null;
   }
 
+  // 判断是否是今天
+  const isToday = (dateString) => {
+    if (!dateString) return false;
+    
+    const date = new Date(dateString);
+    const today = new Date();
+    
+    // 比较年月日，忽略时分秒
+    return date.getFullYear() === today.getFullYear() &&
+           date.getMonth() === today.getMonth() &&
+           date.getDate() === today.getDate();
+  };
+
   const formatDate = (dateString) => {
+    if (!dateString) {
+      return { weekday: '', day: '' };
+    }
+    
     const date = new Date(dateString);
     const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+    
+    // 如果是今天，返回"今天"
+    if (isToday(dateString)) {
+      return {
+        weekday: '今天',
+        day: date.getDate()
+      };
+    }
+    
+    // 否则返回星期
     const weekday = `星期${weekdays[date.getDay()]}`;
     
     return {
       weekday,
       day: date.getDate()
-    };
-  };
-
-  const getTodayDate = () => {
-    const today = new Date();
-    return {
-      weekday: '今天',
-      day: today.getDate()
     };
   };
 
@@ -83,7 +102,9 @@ const DailyForecast = ({ dailyData }) => {
 
       <div className="forecast-list">
         {dailyData.slice(0, 15).map((day, index) => {
-          const dateInfo = index === 0 ? getTodayDate() : formatDate(day.date);
+          // 使用实际的日期字段（可能是date或time）
+          const dateString = day.date || day.time || day.timestamp;
+          const dateInfo = formatDate(dateString);
           const minTemp = Math.round(day.temperature_min || 0);
           const maxTemp = Math.round(day.temperature_max || 0);
           const barStyle = calculateBarWidth(minTemp, maxTemp);
