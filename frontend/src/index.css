@@ -11,31 +11,63 @@
    解决方案：全局重置所有表单控件的默认样式
    ============================================ */
 
+/* ============================================
+   全局控件样式重置 - Safari/iOS WebKit 兼容性
+   ============================================
+   彻底重写所有控件的默认样式，确保在 Safari 中正确显示
+   ============================================ */
+
 /* 全局重置所有表单控件的 Safari 默认样式 */
 button,
 input,
 select,
 textarea {
-  -webkit-appearance: none !important;
-  appearance: none !important;
-  /* 移除 Safari 的默认样式，确保自定义背景色可以显示 */
-}
-
-/* 特别针对 select 元素的全局重置 - 防止 Safari 默认白色背景 */
-select {
+  /* 移除所有默认样式 */
   -webkit-appearance: none !important;
   appearance: none !important;
   -moz-appearance: none !important;
-  /* 强制设置背景色，防止 Safari 默认白色背景 - 必须在全局级别设置 */
+  /* 强制设置背景色，防止 Safari 默认白色背景 */
   background-color: rgba(255, 255, 255, 0.1) !important;
   background: rgba(255, 255, 255, 0.1) !important;
+  /* 强制设置文字颜色 */
   color: #FFFFFF !important;
-  /* 确保边框和基本样式 */
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-radius: 16px !important;
   /* 防止 Safari 覆盖背景色 */
   -webkit-backface-visibility: hidden !important;
   -webkit-transform: translateZ(0) !important;
+  /* 确保边框 */
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  /* 重置所有可能影响显示的属性 */
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* 所有状态的背景色设置 */
+button:hover,
+button:focus,
+button:active,
+input:hover,
+input:focus,
+input:active,
+select:hover,
+select:focus,
+select:active,
+textarea:hover,
+textarea:focus,
+textarea:active {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #FFFFFF !important;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Safari特定修复：确保半透明背景正确显示 */
@@ -120,7 +152,7 @@ body {
 .btn,
 button {
   padding: var(--spacing-sm) var(--spacing-lg);
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: var(--border-radius);
   font-size: 16px;
   font-weight: 500;
@@ -129,15 +161,19 @@ button {
   /* Safari兼容性：必须同时设置 background-color 和 background */
   background-color: rgba(255, 255, 255, 0.2) !important;
   background: rgba(255, 255, 255, 0.2) !important;
-  color: var(--text-primary) !important;
+  color: #FFFFFF !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   /* 确保移除默认样式 */
   -webkit-appearance: none !important;
   appearance: none !important;
+  -moz-appearance: none !important;
   /* 防止 Safari 覆盖背景色 */
-  -webkit-backface-visibility: hidden;
-  -webkit-transform: translateZ(0);
+  -webkit-backface-visibility: hidden !important;
+  -webkit-transform: translateZ(0) !important;
+  /* 重置所有可能影响显示的属性 */
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 .btn-primary {
@@ -171,36 +207,57 @@ input[type="password"],
 input[type="number"],
 input[type="date"],
 input[type="time"],
+input[type="checkbox"],
+input[type="radio"],
 textarea {
   width: 100%;
   padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: var(--border-radius);
   font-size: 16px;
   transition: all 0.3s ease;
   /* Safari兼容性：必须同时设置 background-color 和 background */
   background-color: rgba(255, 255, 255, 0.1) !important;
   background: rgba(255, 255, 255, 0.1) !important;
-  color: var(--text-primary) !important;
+  color: #FFFFFF !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   /* 确保移除默认样式 */
   -webkit-appearance: none !important;
   appearance: none !important;
+  -moz-appearance: none !important;
   /* 防止 Safari 覆盖背景色 */
-  -webkit-backface-visibility: hidden;
-  -webkit-transform: translateZ(0);
+  -webkit-backface-visibility: hidden !important;
+  -webkit-transform: translateZ(0) !important;
+  /* 重置所有可能影响显示的属性 */
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* 复选框和单选框特殊处理 */
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  min-width: 18px;
+  min-height: 18px;
+  cursor: pointer;
 }
 
 .input::placeholder {
   color: var(--text-tertiary);
 }
 
-.input:focus {
-  outline: none;
-  border-color: rgba(255, 255, 255, 0.4);
+.input:focus,
+input:focus,
+textarea:focus {
+  outline: none !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
   background-color: rgba(255, 255, 255, 0.15) !important;
   background: rgba(255, 255, 255, 0.15) !important;
+  color: #FFFFFF !important;
 }
 
 /* 下拉框样式 - iPhone风格 */
@@ -213,15 +270,16 @@ select {
   /* Safari兼容性：必须同时设置 background-color 和 background，并且必须在最前面 */
   background-color: rgba(255, 255, 255, 0.1) !important;
   background: rgba(255, 255, 255, 0.1) !important;
-  /* 下拉箭头图标 */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important;
-  background-repeat: no-repeat !important;
-  background-position: right var(--spacing-md) center !important;
-  background-size: 12px !important;
+  /* 下拉箭头图标 - 使用多重背景，确保背景色和图标都显示 */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important,
+                    linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)) !important;
+  background-repeat: no-repeat, repeat !important;
+  background-position: right var(--spacing-md) center, 0 0 !important;
+  background-size: 12px, 100% 100% !important;
   /* 确保背景色不被背景图片覆盖 */
-  background-clip: padding-box !important;
+  background-clip: padding-box, padding-box !important;
   /* 边框和圆角 */
-  border: 1px solid var(--border-color) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: var(--border-radius);
   /* 尺寸和间距 */
   width: 100%;

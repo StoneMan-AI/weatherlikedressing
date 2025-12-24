@@ -159,17 +159,17 @@
   
   .chart-y-axis text,
   .chart-x-axis text {
-    font-size: 14px;
+    font-size: 18px;
   }
   
   .current-value-label {
-    font-size: 18px;
+    font-size: 24px;
   }
   
   .max-temp-marker text,
   .min-temp-marker text,
   .max-value-marker text,
   .min-value-marker text {
-    font-size: 16px;
+    font-size: 22px;
   }
 }
