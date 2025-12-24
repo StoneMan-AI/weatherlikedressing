@@ -4,6 +4,27 @@
   box-sizing: border-box;
 }
 
+/* Safari特定修复：确保半透明背景正确显示 */
+@supports (-webkit-appearance: none) {
+  /* Safari浏览器 */
+  [class*="card"],
+  [class*="btn"],
+  [class*="input"],
+  [class*="select"],
+  [class*="dropdown"],
+  [class*="trigger"],
+  [class*="panel"],
+  [class*="forecast"],
+  [class*="recommendation"],
+  [class*="weather-card"],
+  [class*="travel"],
+  [class*="health"],
+  [class*="detail"] {
+    -webkit-backface-visibility: hidden;
+    -webkit-transform: translateZ(0);
+  }
+}
+
 :root {
   /* iPhone天气风格色彩 */
   --primary-color: #1C1C1E;
@@ -42,11 +63,11 @@ body {
 
 /* 卡片样式 - iPhone风格 */
 .card {
-  background: var(--card-bg);
+  /* Safari兼容性：先设置背景色，再设置backdrop-filter */
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  /* Safari兼容性：确保背景色可见 */
-  background-color: rgba(255, 255, 255, 0.1);
   border-radius: var(--border-radius);
   padding: var(--spacing-lg);
   border: 1px solid var(--border-color);
@@ -66,8 +87,8 @@ body {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: rgba(255, 255, 255, 0.2);
-  background-color: rgba(255, 255, 255, 0.2); /* Safari兼容性 */
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
   color: var(--text-primary);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -100,9 +121,9 @@ body {
   border-radius: var(--border-radius);
   font-size: 16px;
   transition: all 0.3s ease;
-  background: rgba(255, 255, 255, 0.1);
-  background-color: rgba(255, 255, 255, 0.1); /* Safari兼容性 */
-  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-primary) !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }

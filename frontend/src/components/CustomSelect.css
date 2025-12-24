@@ -9,9 +9,9 @@
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   font-size: 16px;
-  background: rgba(255, 255, 255, 0.1);
-  background-color: rgba(255, 255, 255, 0.1); /* Safari兼容性 */
-  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-primary) !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   cursor: pointer;
@@ -24,12 +24,14 @@
 }
 
 .custom-select-trigger:hover {
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
 }
 
 .custom-select-trigger.is-open {
   border-color: rgba(255, 255, 255, 0.4);
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
 }
 
 .custom-select-value {

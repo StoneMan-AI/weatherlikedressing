@@ -1,7 +1,7 @@
 .weather-card {
   margin-bottom: var(--spacing-xl);
-  background: var(--card-bg);
-  background-color: rgba(255, 255, 255, 0.1); /* Safari兼容性 */
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: var(--border-radius);
@@ -67,7 +67,8 @@
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-sm);
-  background: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
   border-radius: var(--border-radius);
   border: 1px solid var(--border-color);
   flex: 1;
