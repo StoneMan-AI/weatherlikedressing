@@ -4,6 +4,23 @@
   box-sizing: border-box;
 }
 
+/* ============================================
+   Safari/iOS WebKit 全局兼容性修复
+   ============================================
+   问题：Safari 对表单控件有默认样式，导致半透明背景不显示
+   解决方案：全局重置所有表单控件的默认样式
+   ============================================ */
+
+/* 全局重置所有表单控件的 Safari 默认样式 */
+button,
+input,
+select,
+textarea {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  /* 移除 Safari 的默认样式，确保自定义背景色可以显示 */
+}
+
 /* Safari特定修复：确保半透明背景正确显示 */
 @supports (-webkit-appearance: none) {
   /* Safari浏览器 */
@@ -19,7 +36,11 @@
   [class*="weather-card"],
   [class*="travel"],
   [class*="health"],
-  [class*="detail"] {
+  [class*="detail"],
+  button,
+  input,
+  select,
+  textarea {
     -webkit-backface-visibility: hidden;
     -webkit-transform: translateZ(0);
   }
@@ -79,7 +100,8 @@ body {
 }
 
 /* 按钮样式 - iPhone风格 */
-.btn {
+.btn,
+button {
   padding: var(--spacing-sm) var(--spacing-lg);
   border: none;
   border-radius: var(--border-radius);
@@ -87,11 +109,18 @@ body {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
+  /* Safari兼容性：必须同时设置 background-color 和 background */
   background-color: rgba(255, 255, 255, 0.2) !important;
   background: rgba(255, 255, 255, 0.2) !important;
-  color: var(--text-primary);
+  color: var(--text-primary) !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  /* 确保移除默认样式 */
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  /* 防止 Safari 覆盖背景色 */
+  -webkit-backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
 }
 
 .btn-primary {
@@ -107,27 +136,43 @@ body {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.15);
-  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: var(--text-primary) !important;
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  background: rgba(255, 255, 255, 0.25) !important;
 }
 
 /* 输入框样式 - iPhone风格 */
-.input {
+.input,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+textarea {
   width: 100%;
   padding: var(--spacing-sm) var(--spacing-md);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   font-size: 16px;
   transition: all 0.3s ease;
+  /* Safari兼容性：必须同时设置 background-color 和 background */
   background-color: rgba(255, 255, 255, 0.1) !important;
   background: rgba(255, 255, 255, 0.1) !important;
   color: var(--text-primary) !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  /* 确保移除默认样式 */
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  /* 防止 Safari 覆盖背景色 */
+  -webkit-backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
 }
 
 .input::placeholder {
@@ -142,10 +187,15 @@ body {
 }
 
 /* 下拉框样式 - iPhone风格 */
-select.input {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
+select.input,
+select {
+  /* Safari兼容性：必须首先移除默认样式 */
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  -moz-appearance: none !important;
+  /* Safari兼容性：必须同时设置 background-color 和 background */
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right var(--spacing-md) center;
@@ -153,9 +203,9 @@ select.input {
   padding-right: calc(var(--spacing-md) * 2 + 12px);
   cursor: pointer;
   color: #FFFFFF !important;
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  /* Safari兼容性：确保背景色可见 */
-  background: rgba(255, 255, 255, 0.1) !important;
+  /* 防止 Safari 覆盖背景色 */
+  -webkit-backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
 }
 
 /* 下拉框选项样式 - 确保在所有浏览器中可见 */
