@@ -275,7 +275,7 @@ const Settings = () => {
         {profileHistory.length > 0 && (
           <section className="settings-section card profile-history-section">
             <div className="section-header">
-              <h2>📋 历史记录</h2>
+              <h2>📋 定制记录</h2>
               <span className="section-subtitle">最近保存的用户画像（最多2条）</span>
             </div>
             <div className="profile-history-list">
@@ -299,15 +299,15 @@ const Settings = () => {
                   'hot': '怕热'
                 };
                 
-                // 健康状况标签映射
+                // 健康状况标签映射（简化显示）
                 const conditionLabels = {
-                  'rheumatism': '风湿/关节不适',
+                  'rheumatism': '风湿',
                   'asthma': '哮喘',
-                  'cardiovascular': '心血管疾病',
+                  'cardiovascular': '心血管',
                   'copd': 'COPD',
                   'migraine': '偏头痛',
                   'skin_disease': '皮肤病',
-                  'allergy': '过敏性疾病'
+                  'allergy': '过敏'
                 };
                 
                 // 检查当前表单是否与历史记录匹配
@@ -330,11 +330,11 @@ const Settings = () => {
                         <span className="field-value">{ageGroupLabels[item.profile.age_group] || item.profile.age_group}</span>
                       </div>
                       <div className="history-item-field">
-                        <span className="field-label">温度敏感度：</span>
+                        <span className="field-label">敏感度：</span>
                         <span className="field-value">{sensitivityLabels[item.profile.sensitivity] || item.profile.sensitivity}</span>
                       </div>
                       {item.profile.conditions && item.profile.conditions.length > 0 && (
-                        <div className="history-item-field">
+                        <div className="history-item-field" style={{ gridColumn: '1 / -1' }}>
                           <span className="field-label">健康状况：</span>
                           <span className="field-value">
                             {item.profile.conditions.map(c => conditionLabels[c] || c).join('、')}

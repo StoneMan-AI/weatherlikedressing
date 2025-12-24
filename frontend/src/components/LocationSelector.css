@@ -143,7 +143,8 @@
 .city-search-input:focus {
   outline: none;
   border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
 }
 
 .btn-search-city {
@@ -195,7 +196,8 @@
 }
 
 .location-dropdown-trigger:hover {
-  background: var(--card-bg-hover);
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
 }
 
 .location-dropdown-text {
@@ -213,7 +215,8 @@
 }
 
 .location-dropdown {
-  background: rgba(20, 20, 20, 0.98);
+  background-color: rgba(20, 20, 20, 0.98) !important;
+  background: rgba(20, 20, 20, 0.98) !important;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border-color);
@@ -223,6 +226,10 @@
   overflow-y: auto;
   overflow-x: hidden;
   animation: dropdownFadeIn 0.2s ease-out;
+  position: fixed;
+  z-index: 99999;
+  -webkit-backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
 }
 
 @keyframes dropdownFadeIn {
@@ -250,12 +257,14 @@
 }
 
 .location-dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 .location-dropdown-item.active {
-  background: rgba(74, 144, 226, 0.9);
-  color: #FFFFFF;
+  background-color: rgba(74, 144, 226, 0.9) !important;
+  background: rgba(74, 144, 226, 0.9) !important;
+  color: #FFFFFF !important;
   font-weight: 500;
 }
 
@@ -280,7 +289,8 @@
 }
 
 .location-dropdown-item.active .default-badge-dropdown {
-  background: rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  background: rgba(255, 255, 255, 0.3) !important;
 }
 
 .btn-delete-location-dropdown {
@@ -288,8 +298,9 @@
   height: 24px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.2);
-  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: var(--text-primary) !important;
   font-size: 18px;
   font-weight: 300;
   cursor: pointer;
@@ -304,17 +315,20 @@
 }
 
 .btn-delete-location-dropdown:hover {
-  background: rgba(255, 0, 0, 0.3);
+  background-color: rgba(255, 0, 0, 0.3) !important;
+  background: rgba(255, 0, 0, 0.3) !important;
   transform: scale(1.15);
 }
 
 .location-dropdown-item.active .btn-delete-location-dropdown {
-  background: rgba(255, 255, 255, 0.3);
-  color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  background: rgba(255, 255, 255, 0.3) !important;
+  color: #FFFFFF !important;
 }
 
 .location-dropdown-item.active .btn-delete-location-dropdown:hover {
-  background: rgba(255, 0, 0, 0.5);
+  background-color: rgba(255, 0, 0, 0.5) !important;
+  background: rgba(255, 0, 0, 0.5) !important;
 }
 
 .location-dropdown::-webkit-scrollbar {

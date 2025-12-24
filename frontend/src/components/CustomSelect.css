@@ -99,12 +99,14 @@
 }
 
 .custom-select-option:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 .custom-select-option.is-selected {
-  background: rgba(74, 144, 226, 0.9);
-  color: #FFFFFF;
+  background-color: rgba(74, 144, 226, 0.9) !important;
+  background: rgba(74, 144, 226, 0.9) !important;
+  color: #FFFFFF !important;
   font-weight: 500;
 }
 

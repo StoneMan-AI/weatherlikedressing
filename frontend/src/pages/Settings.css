@@ -178,27 +178,44 @@
   border: 2px solid rgba(74, 144, 226, 0.2);
 }
 
+.profile-history-section .section-header {
+  margin-bottom: var(--spacing-sm);
+}
+
+.profile-history-section .section-header h2 {
+  margin-bottom: 4px;
+  font-size: 18px;
+}
+
+.profile-history-section .section-subtitle {
+  font-size: 12px;
+  margin-top: 2px;
+}
+
 .profile-history-list {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
 .profile-history-item {
-  background: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--border-radius);
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   transition: all 0.3s ease;
 }
 
 .profile-history-item:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
   border-color: rgba(74, 144, 226, 0.3);
 }
 
 .profile-history-item.is-current {
-  background: rgba(74, 144, 226, 0.15);
+  background-color: rgba(74, 144, 226, 0.15) !important;
+  background: rgba(74, 144, 226, 0.15) !important;
   border-color: rgba(74, 144, 226, 0.5);
 }
 
@@ -206,62 +223,67 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-sm);
-  padding-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+  padding-bottom: var(--spacing-xs);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .history-item-date {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-tertiary);
   font-weight: 500;
 }
 
 .history-item-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-xs) var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
 }
 
 .history-item-field {
   display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-xs);
-  font-size: 14px;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .field-label {
   color: var(--text-tertiary);
-  min-width: 90px;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .field-value {
   color: var(--text-primary);
   flex: 1;
+  word-break: break-word;
 }
 
 .history-item-actions {
-  margin-top: var(--spacing-md);
-  padding-top: var(--spacing-md);
+  margin-top: var(--spacing-xs);
+  padding-top: var(--spacing-xs);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: flex-end;
 }
 
 .btn-apply-history {
-  padding: var(--spacing-xs) var(--spacing-md);
-  background: rgba(74, 144, 226, 0.8);
+  padding: 4px var(--spacing-sm);
+  background-color: rgba(74, 144, 226, 0.8) !important;
+  background: rgba(74, 144, 226, 0.8) !important;
   border: 1px solid rgba(74, 144, 226, 0.9);
   border-radius: var(--border-radius);
-  color: #FFFFFF;
-  font-size: 14px;
+  color: #FFFFFF !important;
+  font-size: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .btn-apply-history:hover {
-  background: rgba(74, 144, 226, 1);
+  background-color: rgba(74, 144, 226, 1) !important;
+  background: rgba(74, 144, 226, 1) !important;
   border-color: rgba(74, 144, 226, 1);
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
@@ -269,11 +291,12 @@
 
 .current-badge {
   display: inline-block;
-  padding: 4px 10px;
-  background: rgba(74, 144, 226, 0.8);
-  color: #FFFFFF;
-  border-radius: 12px;
-  font-size: 12px;
+  padding: 2px 8px;
+  background-color: rgba(74, 144, 226, 0.8) !important;
+  background: rgba(74, 144, 226, 0.8) !important;
+  color: #FFFFFF !important;
+  border-radius: 10px;
+  font-size: 11px;
   font-weight: 500;
 }
 
@@ -282,9 +305,14 @@
     grid-template-columns: 1fr;
   }
   
+  .history-item-content {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xs);
+  }
+  
   .history-item-field {
-    flex-direction: column;
-    gap: 2px;
+    flex-direction: row;
+    gap: 4px;
   }
   
   .field-label {

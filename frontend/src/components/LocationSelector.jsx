@@ -176,7 +176,9 @@ const LocationSelector = () => {
                     top: `${dropdownPosition.top}px`,
                     left: `${dropdownPosition.left}px`,
                     width: `${dropdownPosition.width}px`,
-                    zIndex: 99999
+                    zIndex: 99999,
+                    WebkitBackfaceVisibility: 'hidden',
+                    WebkitTransform: 'translateZ(0)'
                   }}
                 >
                   {locations.map(location => (
