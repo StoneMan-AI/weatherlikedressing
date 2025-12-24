@@ -158,6 +158,9 @@ class WeatherService {
       });
       const todayDateStr = todayFormatter.format(todayInTimezone); // 格式：YYYY-MM-DD
       
+      console.log(`[WeatherService] Today in ${timezone}: ${todayDateStr}`);
+      console.log(`[WeatherService] Daily data dates:`, dailyTimeArray.slice(0, 5).map(d => d.split('T')[0]));
+      
       // 找到今天对应的索引
       let todayIndex = -1;
       for (let i = 0; i < dailyTimeArray.length; i++) {
@@ -168,9 +171,24 @@ class WeatherService {
         }
       }
       
-      // 如果找不到今天，使用第一个数据（可能是昨天或今天）
+      // 如果找不到今天，尝试查找第一个大于等于今天的日期
       if (todayIndex === -1) {
-        console.warn(`Could not find today (${todayDateStr}) in daily data, using first available day`);
+        console.warn(`Could not find today (${todayDateStr}) in daily data, searching for first future day`);
+        const todayDate = new Date(todayDateStr + 'T00:00:00');
+        for (let i = 0; i < dailyTimeArray.length; i++) {
+          const dayDateStr = dailyTimeArray[i].split('T')[0];
+          const dayDate = new Date(dayDateStr + 'T00:00:00');
+          if (dayDate >= todayDate) {
+            todayIndex = i;
+            console.log(`Found first future day: ${dayDateStr} at index ${i}`);
+            break;
+          }
+        }
+      }
+      
+      // 如果还是找不到，使用第一个数据（可能是昨天或今天）
+      if (todayIndex === -1) {
+        console.warn(`Could not find today or future day, using first available day`);
         todayIndex = 0;
       }
       
@@ -189,7 +207,7 @@ class WeatherService {
         });
       }
       
-      console.log(`Daily forecast: Found ${dailyForecast.length} days starting from ${todayDateStr} (index ${todayIndex})`);
+      console.log(`[WeatherService] Daily forecast: Found ${dailyForecast.length} days starting from ${dailyForecast[0]?.date?.split('T')[0]} (index ${todayIndex})`);
 
       return {
         current: currentWeather,

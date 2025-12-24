@@ -6,17 +6,29 @@ const DailyForecast = ({ dailyData }) => {
     return null;
   }
 
-  // 判断是否是今天
+  // 判断是否是今天（使用时区正确的日期比较）
   const isToday = (dateString) => {
     if (!dateString) return false;
     
-    const date = new Date(dateString);
-    const today = new Date();
-    
-    // 比较年月日，忽略时分秒
-    return date.getFullYear() === today.getFullYear() &&
-           date.getMonth() === today.getMonth() &&
-           date.getDate() === today.getDate();
+    try {
+      // 提取日期部分（YYYY-MM-DD）
+      const dayDateStr = dateString.split('T')[0];
+      
+      // 获取今天在本地时区的日期（YYYY-MM-DD格式）
+      const today = new Date();
+      const todayFormatter = new Intl.DateTimeFormat('en-CA', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const todayDateStr = todayFormatter.format(today);
+      
+      // 直接比较日期字符串
+      return dayDateStr === todayDateStr;
+    } catch (error) {
+      console.warn('Error comparing dates:', error);
+      return false;
+    }
   };
 
   const formatDate = (dateString) => {
