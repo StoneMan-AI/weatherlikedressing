@@ -175,8 +175,8 @@ class WeatherService {
       }
       
       // 从今天开始，提取15天的数据
-      const endIndex = Math.min(todayIndex + maxDays, dailyTimeArray.length);
-      for (let i = todayIndex; i < endIndex; i++) {
+      const dailyEndIndex = Math.min(todayIndex + maxDays, dailyTimeArray.length);
+      for (let i = todayIndex; i < dailyEndIndex; i++) {
         dailyForecast.push({
           date: dailyTimeArray[i],
           temperature_max: daily.temperature_2m_max[i],
