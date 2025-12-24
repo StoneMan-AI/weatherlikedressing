@@ -13,8 +13,9 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: var(--spacing-lg);
+  width: 100%;
 }
 
 .temperature-display {
@@ -56,9 +57,10 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   flex: 1;
-  justify-content: space-around;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
 }
 
 .weather-detail-item {
@@ -71,8 +73,8 @@
   background: rgba(255, 255, 255, 0.05) !important;
   border-radius: var(--border-radius);
   border: 1px solid var(--border-color);
-  flex: 1;
-  min-width: 0;
+  flex-shrink: 0;
+  min-width: fit-content;
 }
 
 .detail-label {

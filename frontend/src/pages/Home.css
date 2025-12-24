@@ -81,9 +81,12 @@
 }
 
 .settings-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
   gap: var(--spacing-lg);
+  width: 100%;
 }
 
 .setting-item {
@@ -92,6 +95,8 @@
   gap: var(--spacing-sm);
   position: relative;
   overflow: visible;
+  flex: 1;
+  min-width: 0;
 }
 
 .setting-item label {
@@ -119,6 +124,25 @@
 
 @media (max-width: 768px) {
   .settings-row {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+  
+  .setting-item {
+    width: 100%;
+  }
+  
+  .location-header {
+    flex-wrap: wrap;
+  }
+  
+  .location-title-section {
+    width: 100%;
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .location-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 }
