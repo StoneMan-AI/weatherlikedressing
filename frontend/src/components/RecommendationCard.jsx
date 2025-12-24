@@ -52,7 +52,12 @@ const RecommendationCard = ({ recommendation }) => {
       </div>
 
       <div className="recommendation-main">
-        <h3>穿衣建议</h3>
+        <h3>
+          穿衣建议
+          {recommendation.score_details && (
+            <span className="total-score-inline">（体感得分：{recommendation.comfort_score}分）</span>
+          )}
+        </h3>
         <div className="layers-list">
           {recommendation.recommendation_layers.map((layer, index) => (
             <div key={index} className="layer-item">
@@ -108,7 +113,6 @@ const RecommendationCard = ({ recommendation }) => {
             <div className="score-breakdown">
               <div className="breakdown-header">
                 <strong>分数明细：</strong>
-                <span className="total-score">总分：{recommendation.comfort_score}分</span>
               </div>
               <p className="breakdown-note">（负数表示降低舒适度，正数表示提高舒适度）</p>
               <div className="breakdown-grid">

@@ -73,6 +73,17 @@
   margin-bottom: var(--spacing-md);
   color: var(--text-primary);
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.total-score-inline {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  opacity: 0.8;
 }
 
 .layers-list {

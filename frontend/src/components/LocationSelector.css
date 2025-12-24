@@ -201,22 +201,27 @@
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-sm);
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  background: rgba(255, 255, 255, 0.1) !important;
+  background-color: rgba(74, 144, 226, 0.3) !important;
+  background: rgba(74, 144, 226, 0.3) !important;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
   border-radius: calc(var(--border-radius) * 0.75);
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 14px;
-  color: var(--text-primary);
+  color: #FFFFFF !important;
   white-space: nowrap;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  -webkit-backface-visibility: hidden !important;
+  -webkit-transform: translateZ(0) !important;
 }
 
 .location-dropdown-trigger:hover {
-  background-color: rgba(255, 255, 255, 0.15) !important;
-  background: rgba(255, 255, 255, 0.15) !important;
+  background-color: rgba(74, 144, 226, 0.4) !important;
+  background: rgba(74, 144, 226, 0.4) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
 }
 
 .location-dropdown-text {

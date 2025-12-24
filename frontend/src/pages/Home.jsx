@@ -277,23 +277,23 @@ const Home = () => {
                   <div className="setting-item">
                     <label>活动场景</label>
                     <div className="radio-group">
-                      <label>
+                      <label className={isOutdoor ? 'radio-checked' : ''}>
                         <input
                           type="radio"
                           value="outdoor"
                           checked={isOutdoor}
                           onChange={() => setIsOutdoor(true)}
                         />
-                        户外
+                        <span>户外</span>
                       </label>
-                      <label>
+                      <label className={!isOutdoor ? 'radio-checked' : ''}>
                         <input
                           type="radio"
                           value="indoor"
                           checked={!isOutdoor}
                           onChange={() => setIsOutdoor(false)}
                         />
-                        室内
+                        <span>室内</span>
                       </label>
                     </div>
                   </div>

@@ -94,12 +94,24 @@ const LocationSelector = () => {
         if (locationTriggerRef.current) {
           const rect = locationTriggerRef.current.getBoundingClientRect();
           const viewportHeight = window.innerHeight;
+          const viewportWidth = window.innerWidth;
           const dropdownMaxHeight = 200;
           const gap = 4;
           
           let top = rect.bottom + gap;
           let left = rect.left;
-          let width = rect.width;
+          let width = Math.min(rect.width, viewportWidth - 20); // 确保不超过视口宽度
+          
+          // 确保下拉框不会超出右边界
+          if (left + width > viewportWidth - 10) {
+            left = viewportWidth - width - 10;
+          }
+          
+          // 确保下拉框不会超出左边界
+          if (left < 10) {
+            left = 10;
+            width = Math.min(rect.width, viewportWidth - 20);
+          }
           
           const spaceBelow = viewportHeight - rect.bottom - gap;
           const spaceAbove = rect.top - gap;
@@ -109,13 +121,22 @@ const LocationSelector = () => {
             if (top < 10) {
               top = 10;
             }
+          } else {
+            // 确保下拉框不会超出底部
+            if (top + dropdownMaxHeight > viewportHeight - 10) {
+              top = viewportHeight - dropdownMaxHeight - 10;
+            }
           }
           
           setDropdownPosition({ top, left, width });
         }
       };
 
-      updatePosition();
+      // 延迟一帧确保DOM已更新
+      requestAnimationFrame(() => {
+        updatePosition();
+      });
+      
       window.addEventListener('resize', updatePosition);
       window.addEventListener('scroll', updatePosition, true);
 
