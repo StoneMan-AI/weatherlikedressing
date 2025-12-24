@@ -1,6 +1,7 @@
 .recommendation-card {
   margin-bottom: var(--spacing-xl);
   background: var(--card-bg);
+  background-color: rgba(255, 255, 255, 0.1); /* Safari兼容性 */
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: var(--border-radius);
@@ -47,6 +48,7 @@
 .btn-expand {
   padding: var(--spacing-xs) var(--spacing-md);
   background: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.15); /* Safari兼容性 */
   color: var(--text-primary);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);

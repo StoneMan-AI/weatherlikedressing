@@ -45,6 +45,8 @@ body {
   background: var(--card-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  /* Safari兼容性：确保背景色可见 */
+  background-color: rgba(255, 255, 255, 0.1);
   border-radius: var(--border-radius);
   padding: var(--spacing-lg);
   border: 1px solid var(--border-color);
@@ -65,6 +67,7 @@ body {
   cursor: pointer;
   transition: all 0.3s ease;
   background: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.2); /* Safari兼容性 */
   color: var(--text-primary);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -98,6 +101,7 @@ body {
   font-size: 16px;
   transition: all 0.3s ease;
   background: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.1); /* Safari兼容性 */
   color: var(--text-primary);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -126,6 +130,8 @@ select.input {
   cursor: pointer;
   color: #FFFFFF !important;
   background-color: rgba(255, 255, 255, 0.1) !important;
+  /* Safari兼容性：确保背景色可见 */
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 /* 下拉框选项样式 - 确保在所有浏览器中可见 */
