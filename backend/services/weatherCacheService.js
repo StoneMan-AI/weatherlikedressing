@@ -236,7 +236,7 @@ class WeatherCacheService {
       cutoffDate.setDate(cutoffDate.getDate() - this.ACTIVE_REGION_DAYS);
 
       const result = await pool.query(
-        `SELECT DISTINCT latitude, longitude, timezone 
+        `SELECT DISTINCT latitude, longitude, timezone, last_requested_at
          FROM active_regions 
          WHERE last_requested_at >= $1
          ORDER BY last_requested_at DESC`,

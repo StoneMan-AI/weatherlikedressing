@@ -20,14 +20,18 @@ class CityGeocodingService {
     const searchTerm = cityName.trim();
     
     // 1. 首先在数据库中搜索（模糊匹配）
+    console.log(`开始搜索城市: "${searchTerm}"`);
     const cachedResults = await this.searchInCache(searchTerm);
+    console.log(`缓存查询结果: ${cachedResults.length} 条`);
     
     if (cachedResults.length === 1) {
       // 只有一个匹配结果，直接返回并更新搜索次数
+      console.log(`缓存命中，直接返回: ${cachedResults[0].name}`);
       await this.updateSearchCount(cachedResults[0].id);
       return cachedResults[0];
     } else if (cachedResults.length > 1) {
       // 多个匹配结果，返回列表让用户选择
+      console.log(`缓存中找到多个结果: ${cachedResults.map(r => r.name).join(', ')}`);
       return {
         multiple: true,
         results: cachedResults
@@ -35,6 +39,7 @@ class CityGeocodingService {
     }
     
     // 2. 数据库中没有匹配结果，调用OpenStreetMap API
+    console.log(`缓存未命中，调用外部API搜索: "${searchTerm}"`);
     try {
       const apiResults = await this.searchInOpenStreetMap(searchTerm);
       
@@ -73,6 +78,9 @@ class CityGeocodingService {
     try {
       const searchTermLower = searchTerm.toLowerCase();
       const searchPattern = `%${searchTermLower}%`;
+      const citySuffix = searchTermLower + '市';
+      const provinceSuffix = searchTermLower + '省';
+      const startsWithPattern = `${searchTermLower}%`;
       
       // 使用ILIKE进行不区分大小写的模糊匹配
       // 查询所有缓存数据（包括预置数据和用户搜索过的数据）
@@ -95,13 +103,13 @@ class CityGeocodingService {
           OR LOWER(display_name) LIKE $1
           OR LOWER(state) LIKE $1
           OR LOWER(city_name) = $2
-          OR LOWER(city_name) = $2 || '市'
-          OR LOWER(city_name) = $2 || '省'
+          OR LOWER(city_name) = $3
+          OR LOWER(city_name) = $4
         ORDER BY 
           CASE 
             WHEN LOWER(city_name) = $2 THEN 1
-            WHEN LOWER(city_name) = $2 || '市' THEN 2
-            WHEN LOWER(city_name) LIKE $2 || '%' THEN 3
+            WHEN LOWER(city_name) = $3 THEN 2
+            WHEN LOWER(city_name) LIKE $5 THEN 3
             WHEN LOWER(display_name) LIKE $1 THEN 4
             ELSE 5
           END,
@@ -109,10 +117,18 @@ class CityGeocodingService {
           last_searched_at DESC
         LIMIT 20`,
         [
-          searchPattern,  // 模糊匹配模式
-          searchTermLower // 精确匹配
+          searchPattern,      // $1: 模糊匹配模式
+          searchTermLower,    // $2: 精确匹配
+          citySuffix,         // $3: 城市名称 + "市"
+          provinceSuffix,     // $4: 城市名称 + "省"
+          startsWithPattern   // $5: 以搜索关键词开头
         ]
       );
+      
+      console.log(`缓存搜索 "${searchTerm}": 找到 ${result.rows.length} 条结果`);
+      if (result.rows.length > 0) {
+        console.log(`匹配结果: ${result.rows.map(r => r.city_name).join(', ')}`);
+      }
       
       return result.rows.map(row => ({
         id: row.id,
