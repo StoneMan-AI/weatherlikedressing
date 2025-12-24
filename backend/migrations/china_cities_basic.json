@@ -1,0 +1,323 @@
+{
+  "cities": [
+    {
+      "name": "南京",
+      "display_name": "南京, 江苏, 中国",
+      "latitude": 32.0603,
+      "longitude": 118.7969,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "南京"
+    },
+    {
+      "name": "苏州",
+      "display_name": "苏州, 江苏, 中国",
+      "latitude": 31.2989,
+      "longitude": 120.5853,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "苏州"
+    },
+    {
+      "name": "无锡",
+      "display_name": "无锡, 江苏, 中国",
+      "latitude": 31.4912,
+      "longitude": 120.3124,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "无锡"
+    },
+    {
+      "name": "常州",
+      "display_name": "常州, 江苏, 中国",
+      "latitude": 31.8107,
+      "longitude": 119.9739,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "常州"
+    },
+    {
+      "name": "镇江",
+      "display_name": "镇江, 江苏, 中国",
+      "latitude": 32.1878,
+      "longitude": 119.4548,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "镇江"
+    },
+    {
+      "name": "扬州",
+      "display_name": "扬州, 江苏, 中国",
+      "latitude": 32.3932,
+      "longitude": 119.4129,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "扬州"
+    },
+    {
+      "name": "泰州",
+      "display_name": "泰州, 江苏, 中国",
+      "latitude": 32.4554,
+      "longitude": 119.9254,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "泰州"
+    },
+    {
+      "name": "南通",
+      "display_name": "南通, 江苏, 中国",
+      "latitude": 31.9802,
+      "longitude": 120.8943,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "南通"
+    },
+    {
+      "name": "盐城",
+      "display_name": "盐城, 江苏, 中国",
+      "latitude": 33.3775,
+      "longitude": 120.1633,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "盐城"
+    },
+    {
+      "name": "淮安",
+      "display_name": "淮安, 江苏, 中国",
+      "latitude": 33.5975,
+      "longitude": 119.0213,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "淮安"
+    },
+    {
+      "name": "宿迁",
+      "display_name": "宿迁, 江苏, 中国",
+      "latitude": 33.963,
+      "longitude": 118.2752,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "宿迁"
+    },
+    {
+      "name": "徐州",
+      "display_name": "徐州, 江苏, 中国",
+      "latitude": 34.2042,
+      "longitude": 117.2859,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "徐州"
+    },
+    {
+      "name": "连云港",
+      "display_name": "连云港, 江苏, 中国",
+      "latitude": 34.5969,
+      "longitude": 119.1788,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "连云港"
+    },
+    {
+      "name": "济南",
+      "display_name": "济南, 山东, 中国",
+      "latitude": 36.6512,
+      "longitude": 117.1201,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "山东",
+      "prefecture": "济南"
+    },
+    {
+      "name": "青岛",
+      "display_name": "青岛, 山东, 中国",
+      "latitude": 36.0671,
+      "longitude": 120.3826,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "山东",
+      "prefecture": "青岛"
+    },
+    {
+      "name": "淄博",
+      "display_name": "淄博, 山东, 中国",
+      "latitude": 36.8135,
+      "longitude": 118.0549,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "山东",
+      "prefecture": "淄博"
+    },
+    {
+      "name": "枣庄",
+      "display_name": "枣庄, 山东, 中国",
+      "latitude": 34.8104,
+      "longitude": 117.3239,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "山东",
+      "prefecture": "枣庄"
+    },
+    {
+      "name": "东营",
+      "display_name": "东营, 山东, 中国",
+      "latitude": 37.4348,
+      "longitude": 118.6746,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "山东",
+      "prefecture": "东营"
+    },
+    {
+      "name": "烟台",
+      "display_name": "烟台, 山东, 中国",
+      "latitude": 37.4638,
+      "longitude": 121.4479,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "山东",
+      "prefecture": "烟台"
+    },
+    {
+      "name": "潍坊",
+      "display_name": "潍坊, 山东, 中国",
+      "latitude": 36.7069,
+      "longitude": 119.1617,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "山东",
+      "prefecture": "潍坊"
+    },
+    {
+      "name": "济宁",
+      "display_name": "济宁, 山东, 中国",
+      "latitude": 35.4149,
+      "longitude": 116.5872,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "山东",
+      "prefecture": "济宁"
+    },
+    {
+      "name": "泰安",
+      "display_name": "泰安, 山东, 中国",
+      "latitude": 36.2002,
+      "longitude": 117.1201,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "山东",
+      "prefecture": "泰安"
+    },
+    {
+      "name": "威海",
+      "display_name": "威海, 山东, 中国",
+      "latitude": 37.5133,
+      "longitude": 122.1214,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "山东",
+      "prefecture": "威海"
+    },
+    {
+      "name": "日照",
+      "display_name": "日照, 山东, 中国",
+      "latitude": 35.4168,
+      "longitude": 119.5268,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "山东",
+      "prefecture": "日照"
+    },
+    {
+      "name": "临沂",
+      "display_name": "临沂, 山东, 中国",
+      "latitude": 35.0518,
+      "longitude": 118.3264,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "山东",
+      "prefecture": "临沂"
+    },
+    {
+      "name": "德州",
+      "display_name": "德州, 山东, 中国",
+      "latitude": 37.4513,
+      "longitude": 116.3594,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "山东",
+      "prefecture": "德州"
+    },
+    {
+      "name": "聊城",
+      "display_name": "聊城, 山东, 中国",
+      "latitude": 36.456,
+      "longitude": 115.9854,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "山东",
+      "prefecture": "聊城"
+    },
+    {
+      "name": "滨州",
+      "display_name": "滨州, 山东, 中国",
+      "latitude": 37.3833,
+      "longitude": 117.9704,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "山东",
+      "prefecture": "滨州"
+    },
+    {
+      "name": "菏泽",
+      "display_name": "菏泽, 山东, 中国",
+      "latitude": 35.2465,
+      "longitude": 115.4806,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "山东",
+      "prefecture": "菏泽"
+    }
+  ]
+}

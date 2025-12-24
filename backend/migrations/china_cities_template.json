@@ -1,0 +1,60 @@
+{
+  "cities": [
+    {
+      "name": "南京",
+      "display_name": "南京, 江苏, 中国",
+      "latitude": 32.0603,
+      "longitude": 118.7969,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "南京"
+    },
+    {
+      "name": "玄武区",
+      "display_name": "玄武区, 南京, 江苏, 中国",
+      "latitude": 32.0503,
+      "longitude": 118.7969,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "南京"
+    },
+    {
+      "name": "秦淮区",
+      "display_name": "秦淮区, 南京, 江苏, 中国",
+      "latitude": 32.0203,
+      "longitude": 118.7869,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "南京"
+    },
+    {
+      "name": "苏州",
+      "display_name": "苏州, 江苏, 中国",
+      "latitude": 31.2989,
+      "longitude": 120.5853,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "苏州"
+    },
+    {
+      "name": "虎丘区",
+      "display_name": "虎丘区, 苏州, 江苏, 中国",
+      "latitude": 31.3089,
+      "longitude": 120.5753,
+      "timezone": "Asia/Shanghai",
+      "country_code": "CN",
+      "country_name": "中国",
+      "state": "江苏",
+      "prefecture": "苏州"
+    }
+  ]
+}
+
