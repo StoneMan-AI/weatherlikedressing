@@ -254,13 +254,13 @@ const Home = () => {
 
     const currentLocationId = currentLocation.id || `${currentLocation.latitude}_${currentLocation.longitude}`;
     
-    // 如果位置发生了变化，清空旧的推荐数据
+    // 如果位置发生了变化，清空旧的推荐数据并强制重新计算
     if (lastLocationIdRef.current !== null && lastLocationIdRef.current !== currentLocationId) {
       console.log('Location changed, clearing old recommendation data');
       setRecommendation(null); // 清空旧的推荐数据
       setWeatherData(null); // 清空旧的天气数据
       setIsViewingTomorrow(false); // 重置"看明天"状态
-      isFirstLoadRef.current = true; // 重置首次加载标志
+      isFirstLoadRef.current = true; // 重置首次加载标志，确保会重新计算推荐
     }
     
     lastLocationIdRef.current = currentLocationId;
@@ -269,13 +269,15 @@ const Home = () => {
   // 当位置改变时获取天气数据（只在位置变化时调用，不依赖活动场景/强度）
   useEffect(() => {
     if (currentLocation && !initializing) {
+      // 位置变化时，重置首次加载标志，确保会重新计算推荐
+      isFirstLoadRef.current = true;
+      // 获取新位置的天气数据
       fetchWeatherData();
-      isFirstLoadRef.current = true; // 位置变化时重置首次加载标志
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLocation, initializing]);
 
-  // 当天气数据更新后，计算推荐（首次加载）
+  // 当天气数据更新后，计算推荐（首次加载或位置变化）
   useEffect(() => {
     if (!currentLocation || !weatherData || initializing) {
       return;
@@ -287,6 +289,8 @@ const Home = () => {
     if (isFirstLoad) {
       setLoading(true);
       // 使用最新的currentLocation和weatherData重新计算
+      // 确保在调用时使用最新的currentLocation值（通过闭包捕获）
+      const locationToUse = currentLocation;
       calculateRecommendation(0, false, null).finally(() => {
         setLoading(false);
         isFirstLoadRef.current = false; // 标记首次加载完成
