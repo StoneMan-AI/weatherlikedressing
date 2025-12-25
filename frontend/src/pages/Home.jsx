@@ -514,15 +514,6 @@ const Home = () => {
       const previousProfileStr = previousUserProfileRef.current;
       const profileActuallyChanged = currentProfileStr !== previousProfileStr;
       
-      console.log('首次加载：用户画像检查', {
-        profileChanged,
-        profileActuallyChanged,
-        currentProfileStr,
-        previousProfileStr,
-        userProfileFromState: JSON.stringify(userProfile),
-        userProfileFromUser: JSON.stringify(currentUserProfile)
-      });
-      
       // 如果标记存在但用户画像没有变化，说明用户从 Settings 返回但没有修改设置
       // 此时不应该重新计算，直接使用已有的推荐数据
       // 但前提是位置没有变化（如果位置变化了，标记会被清除，这里不会进入）
@@ -541,8 +532,11 @@ const Home = () => {
       // 如果有 profileChanged 标记且用户画像真的变化了，说明用户修改了设置
       // 此时应该使用本地计算，而不是API请求（避免重复请求）
       if (profileChanged && profileActuallyChanged) {
-        console.log('首次加载：检测到profileChanged标记且用户画像变化，使用本地计算');
-        // 清除标记
+        console.log('首次加载：检测到profileChanged标记且用户画像变化，使用本地计算', {
+          currentProfileStr,
+          previousProfileStr
+        });
+        // 清除标记（在开始计算前清除，避免重复触发）
         localStorage.removeItem('profileChanged');
         
         // 使用本地计算生成推荐
@@ -557,10 +551,6 @@ const Home = () => {
               gust_m_s: current.gust_m_s || 0,
               uv_index: current.uv_index || 0
             };
-            console.log('首次加载：使用用户画像进行计算', {
-              userProfile: currentUserProfile,
-              userProfileStr: JSON.stringify(currentUserProfile)
-            });
             const scoreDetails = calculateComfortScore(weatherData, isOutdoor, activityLevel, currentUserProfile);
             const dressingLayer = getDressingRecommendation(scoreDetails.ComfortScore);
             const reasonSummary = generateDetailedReason(inputs, scoreDetails);
@@ -580,16 +570,18 @@ const Home = () => {
             console.log('首次加载：本地计算完成（新推荐）', newRecommendation);
             // 更新用户画像 ref
             previousUserProfileRef.current = currentProfileStr;
-            // 标记首次加载完成
+            // 标记首次加载完成（在计算完成后立即标记，避免重复触发）
             isFirstLoadRef.current = false;
             return;
           } catch (error) {
             console.error('首次加载：本地计算失败，回退到API:', error);
             // 如果本地计算失败，回退到API请求
+            // 注意：这里不设置 isFirstLoadRef.current = false，让后续的API请求流程处理
           }
         }
       }
       
+      // 如果没有 profileChanged 标记，或者用户画像没有变化，使用API请求
       setLoading(true);
       // 使用最新的currentLocation和weatherData重新计算
       // 确保在调用时使用最新的currentLocation值（通过闭包捕获）
@@ -645,46 +637,38 @@ const Home = () => {
     const currentProfileStr = JSON.stringify(userProfile);
     const previousProfileStr = previousUserProfileRef.current;
     
-    console.log('用户画像变化检测:', {
-      currentProfileStr,
-      previousProfileStr,
-      initializing,
-      isFirstLoad: isFirstLoadRef.current,
-      hasLocation: !!currentLocation,
-      hasWeatherData: !!weatherData
-    });
-    
     // 检查是否有 profileChanged 标记
     const profileChanged = localStorage.getItem('profileChanged') === 'true';
     
     // 比较当前和上一次的用户画像
     const profileActuallyChanged = currentProfileStr !== previousProfileStr;
 
-    console.log('用户画像变化检查:', {
-      profileChanged,
-      profileActuallyChanged,
-      currentProfileStr,
-      previousProfileStr,
-      initializing,
-      isFirstLoad: isFirstLoadRef.current,
-      hasLocation: !!currentLocation,
-      hasWeatherData: !!weatherData
-    });
-
     // 如果正在初始化或首次加载，但有 profileChanged 标记，说明用户从Settings返回
     // 此时应该等待初始化完成后再计算，或者直接使用本地计算
     if (initializing || isFirstLoadRef.current || !currentLocation || !weatherData) {
-      console.log('跳过计算：初始化或缺少数据', {
-        profileChanged,
-        profileActuallyChanged
-      });
       // 如果有 profileChanged 标记，保留它，等待条件满足后再计算
-      // 如果没有标记，更新 ref
-      if (!profileChanged) {
+      // 如果没有标记，更新 ref（只在用户画像真的变化时更新，避免首次加载时重复更新）
+      if (!profileChanged && previousProfileStr !== null) {
+        previousUserProfileRef.current = currentProfileStr;
+      } else if (previousProfileStr === null) {
+        // 首次加载时，初始化 ref
         previousUserProfileRef.current = currentProfileStr;
       }
       return;
     }
+
+    // 只有在用户画像真的变化或者有 profileChanged 标记时才输出日志和执行计算
+    if (!profileChanged && !profileActuallyChanged) {
+      // 用户画像没有变化，也没有标记，直接返回
+      return;
+    }
+
+    console.log('用户画像变化检查:', {
+      profileChanged,
+      profileActuallyChanged,
+      currentProfileStr,
+      previousProfileStr
+    });
 
     // 如果标记存在，即使用户画像看起来没变化，也应该重新计算
     // 因为可能是 userProfile 还没更新，或者需要强制刷新
