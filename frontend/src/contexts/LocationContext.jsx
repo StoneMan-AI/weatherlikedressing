@@ -19,76 +19,50 @@ export const LocationProvider = ({ children }) => {
 
   // 从存储加载位置信息（支持无痕模式）
   useEffect(() => {
-    console.log('LocationContext - 开始加载位置数据');
-    console.log('LocationContext - 存储类型:', storageManager.getStorageType());
     const savedLocations = storageManager.getItem('weather_locations');
     const savedCurrentLocationId = storageManager.getItem('weather_current_location_id');
-    
-    console.log('LocationContext - 从存储读取的数据:', savedLocations ? '有数据' : '无数据');
-    console.log('LocationContext - 当前选择的地区ID:', savedCurrentLocationId);
     
     if (savedLocations) {
       try {
         const parsed = JSON.parse(savedLocations);
-        console.log('LocationContext - 解析后的位置数据，数量:', parsed.length);
-        console.log('LocationContext - 位置详情:', parsed);
         // 为旧数据添加last_used_at字段（兼容性处理）
         const parsedWithTimestamp = parsed.map(loc => ({
           ...loc,
           last_used_at: loc.last_used_at || (loc.is_default ? Date.now() : 0)
         }));
         setLocations(parsedWithTimestamp);
-        console.log('LocationContext - 已设置位置列表，数量:', parsedWithTimestamp.length);
         
         // 优先恢复用户最后选择的地区
         let targetLocation = null;
         if (savedCurrentLocationId) {
           targetLocation = parsedWithTimestamp.find(loc => loc.id === parseInt(savedCurrentLocationId));
-          console.log('LocationContext - 根据保存的ID查找位置:', targetLocation ? '找到' : '未找到');
         }
         
         // 如果保存的地区ID不存在，则使用默认地区或第一个地区
         if (!targetLocation) {
           targetLocation = parsedWithTimestamp.find(loc => loc.is_default) || parsedWithTimestamp[0];
-          console.log('LocationContext - 使用默认或第一个位置:', targetLocation ? targetLocation.name : '无');
         }
         
         if (targetLocation) {
           setCurrentLocation(targetLocation);
-          console.log('LocationContext - 已设置当前位置:', targetLocation.name);
         }
       } catch (error) {
-        console.error('LocationContext - 解析保存的位置数据失败:', error);
+        console.error('Failed to parse saved locations:', error);
       }
-    } else {
-      console.log('LocationContext - 没有保存的位置数据');
     }
     // 如果没有保存的位置，不在这里设置默认位置，让Home组件来处理
     // 这样可以确保首次打开时能正确初始化
     setLoading(false);
-    console.log('LocationContext - 位置数据加载完成');
   }, []);
 
   // 保存位置到存储（支持无痕模式）
   const saveLocations = (newLocations) => {
     try {
-      console.log('saveLocations - 准备保存位置数据，数量:', newLocations.length);
-      console.log('saveLocations - 位置数据:', newLocations);
       const locationsJson = JSON.stringify(newLocations);
       const success = storageManager.setItem('weather_locations', locationsJson);
       if (success) {
         setLocations(newLocations);
-        console.log(`saveLocations - 成功保存 ${newLocations.length} 个位置，使用存储类型: ${storageManager.getStorageType()}`);
-        // 验证保存是否成功
-        const saved = storageManager.getItem('weather_locations');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          console.log('saveLocations - 验证保存成功，读取到的位置数量:', parsed.length);
-        } else {
-          console.warn('saveLocations - 警告：保存后无法读取数据');
-        }
       } else {
-        console.warn('saveLocations - 存储失败，尝试只保留最近使用的10个位置');
         // 如果存储失败，尝试只保留最近使用的10个位置
         const recentLocations = newLocations
           .sort((a, b) => (b.last_used_at || 0) - (a.last_used_at || 0))
@@ -97,18 +71,15 @@ export const LocationProvider = ({ children }) => {
         const retrySuccess = storageManager.setItem('weather_locations', limitedJson);
         if (retrySuccess) {
           setLocations(recentLocations);
-          console.log(`saveLocations - 成功保存限制后的位置 (10个)，使用存储类型: ${storageManager.getStorageType()}`);
         } else {
           // 即使存储失败，也更新内存状态，至少在当前会话中可用
           setLocations(newLocations);
-          console.warn('saveLocations - 存储完全失败，仅更新内存状态');
         }
       }
     } catch (error) {
-      console.error('saveLocations - 保存位置时发生错误:', error);
+      console.error('Failed to save locations:', error);
       // 即使保存失败，也更新内存状态，至少在当前会话中可用
       setLocations(newLocations);
-      console.log('saveLocations - 已更新内存状态，位置数量:', newLocations.length);
     }
   };
 
@@ -123,8 +94,6 @@ export const LocationProvider = ({ children }) => {
 
   // 添加位置
   const addLocation = (location) => {
-    console.log('addLocation - 开始添加位置:', location.name, '当前locations数量:', locations.length);
-    
     // 检查位置是否已存在（通过经纬度判断，允许0.001度的误差）
     const existingLocation = locations.find(loc => {
       const latDiff = Math.abs(loc.latitude - location.latitude);
@@ -134,7 +103,6 @@ export const LocationProvider = ({ children }) => {
 
     // 如果位置已存在，更新最近使用时间并返回现有位置
     if (existingLocation) {
-      console.log('addLocation - 位置已存在，更新最近使用时间:', existingLocation.name);
       const now = Date.now();
       const updatedLocations = locations.map(loc => 
         loc.id === existingLocation.id 
@@ -149,7 +117,6 @@ export const LocationProvider = ({ children }) => {
     }
 
     // 位置不存在，创建新位置
-    console.log('addLocation - 位置不存在，创建新位置:', location.name);
     const newLocation = {
       id: Date.now(),
       name: location.name,
@@ -170,9 +137,6 @@ export const LocationProvider = ({ children }) => {
       newLocations = [...locations, newLocation];
     }
 
-    console.log('addLocation - 准备保存位置列表，新列表数量:', newLocations.length);
-    console.log('addLocation - 新位置详情:', newLocation);
-
     // 保存所有位置（包括历史位置）
     saveLocations(newLocations);
     
@@ -181,17 +145,11 @@ export const LocationProvider = ({ children }) => {
       // 注意：这里直接使用内部的 setCurrentLocation 状态更新函数
       // 而不是通过导出的 setCurrentLocation（它映射到 setCurrentLocationWithSave）
       // 因为 setCurrentLocationWithSave 会使用旧的 locations 状态，导致数据被覆盖
-      console.log('addLocation - 设置新位置为当前位置');
       // 直接设置状态，不触发 setCurrentLocationWithSave
       setCurrentLocation(newLocation);
       saveCurrentLocationId(newLocation.id);
-      // 注意：不需要调用 setCurrentLocationWithSave，因为：
-      // 1. 新位置已经在 newLocations 中
-      // 2. last_used_at 已经在创建时设置了
-      // 3. saveLocations 已经保存了完整列表（包含2个位置）
     }
 
-    console.log('addLocation - 位置添加完成，返回新位置');
     return newLocation;
   };
 
@@ -315,7 +273,6 @@ export const LocationProvider = ({ children }) => {
     // 依次尝试每个IP定位服务
     for (const service of ipServices) {
       try {
-        console.log(`尝试使用 ${service.name} 进行IP定位...`);
         const response = await axios.get(service.url, {
           timeout: 5000 // 5秒超时
         });
@@ -323,11 +280,9 @@ export const LocationProvider = ({ children }) => {
         
         const location = service.parser(data);
         if (location.latitude && location.longitude) {
-          console.log(`IP定位成功（${service.name}）:`, location.name);
           return location;
         }
       } catch (error) {
-        console.warn(`${service.name} IP定位失败:`, error.message);
         // 继续尝试下一个服务
         continue;
       }

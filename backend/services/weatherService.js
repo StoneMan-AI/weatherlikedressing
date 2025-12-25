@@ -297,18 +297,40 @@ class WeatherService {
 
   /**
    * 获取指定时间的天气数据
+   * @param {Object} forecastData - 天气数据
+   * @param {string} targetTime - 目标时间（ISO字符串，如 "2024-01-15T07:00:00"）
+   * @returns {Object} 该时间点的天气数据
    */
   getWeatherAtTime(forecastData, targetTime) {
-    const target = new Date(targetTime);
+    // 解析目标时间（如果格式是 YYYY-MM-DDTHH:mm:ss，会被解析为本地时间）
+    // 为了正确处理时区，我们需要确保时间字符串包含时区信息或使用UTC
+    let target;
+    if (typeof targetTime === 'string' && targetTime.includes('T') && !targetTime.includes('Z') && !targetTime.includes('+')) {
+      // 如果时间字符串没有时区信息，假设它是UTC时间
+      // 但实际上，我们应该根据timezone参数来处理
+      // 这里先尝试解析为UTC
+      target = new Date(targetTime + 'Z');
+    } else {
+      target = new Date(targetTime);
+    }
     
     // 优先从hourly数据中查找
     if (forecastData.hourly && forecastData.hourly.length > 0) {
+      let closestHour = null;
+      let minDiff = Infinity;
+      
       for (const hour of forecastData.hourly) {
         const hourTime = new Date(hour.timestamp);
-        // 找到最接近目标时间的数据
-        if (Math.abs(hourTime - target) < 3600000) { // 1小时内
-          return hour;
+        const diff = Math.abs(hourTime.getTime() - target.getTime());
+        // 找到最接近目标时间的数据（在2小时内）
+        if (diff < minDiff && diff < 7200000) { // 2小时内
+          minDiff = diff;
+          closestHour = hour;
         }
+      }
+      
+      if (closestHour) {
+        return closestHour;
       }
     }
     

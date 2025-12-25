@@ -102,23 +102,16 @@ router.post('/calculate', async (req, res) => {
     // 确定使用哪个时间点的天气数据
     let weatherInput;
     
-    // 如果指定了日期，使用全天数据生成推荐
-    if (target_date) {
-      weatherInput = weatherService.getWeatherForDay(weatherData, target_date, timezone);
-    } else if (target_time) {
-      // 兼容旧版本：如果指定了时间点，使用该时间点的数据
+    // 优先级：target_time > target_date > 当前时间
+    if (target_time) {
+      // 如果指定了时间点，使用该时间点的数据
       weatherInput = weatherService.getWeatherAtTime(weatherData, target_time);
+    } else if (target_date) {
+      // 如果指定了日期，使用全天数据生成推荐
+      weatherInput = weatherService.getWeatherForDay(weatherData, target_date, timezone);
     } else {
-      // 默认：使用今天24小时的平均数据
-      const today = new Date();
-      const todayFormatter = new Intl.DateTimeFormat('en-CA', {
-        timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      });
-      const todayDateStr = todayFormatter.format(today);
-      weatherInput = weatherService.getWeatherForDay(weatherData, todayDateStr, timezone);
+      // 默认：使用当前时间的天气数据
+      weatherInput = weatherData.current;
     }
     
     // 确保weatherInput包含所有必需字段

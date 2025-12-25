@@ -46,7 +46,6 @@ const Home = () => {
 
     // 如果已有位置，标记为已初始化（说明从存储中加载了位置数据）
     if (currentLocation) {
-      console.log('Home - 已有位置数据，跳过初始化:', currentLocation.name);
       initializationRef.current.initialized = true;
       setInitializing(false);
       return;
@@ -54,13 +53,11 @@ const Home = () => {
 
     // 如果正在加载位置数据，等待
     if (locationLoading) {
-      console.log('Home - 位置数据正在加载，等待...');
       return;
     }
 
     // 如果位置列表不为空，说明已经从存储中加载了数据，不需要再次初始化
     if (locations.length > 0) {
-      console.log('Home - 位置列表不为空，已有', locations.length, '个位置，跳过初始化');
       initializationRef.current.initialized = true;
       setInitializing(false);
       return;
@@ -68,39 +65,30 @@ const Home = () => {
 
     const initializeLocation = async () => {
       try {
-        console.log('Home - 开始位置初始化：使用IP定位（位置列表为空）');
-        
         // 尝试IP定位
         let location;
         try {
           location = await getLocationByIP();
-          console.log('Home - IP定位成功:', location.name);
           initializationRef.current.initialized = true;
         } catch (ipError) {
-          console.warn('Home - IP定位失败:', ipError.message);
           // IP定位失败，使用默认位置（北京）
-          console.log('Home - IP定位失败，使用默认位置：北京');
           location = getDefaultLocation();
           initializationRef.current.initialized = true;
         }
 
         // 添加位置（这会保存到存储中）
         if (location) {
-          console.log('Home - 准备添加位置到列表:', location.name);
-          const addedLocation = addLocation(location);
-          console.log('Home - 位置初始化完成:', addedLocation.name, '位置列表数量:', locations.length + 1);
+          addLocation(location);
         }
       } catch (error) {
-        console.error('Home - 位置初始化失败:', error);
+        console.error('位置初始化失败:', error);
         // 如果所有定位方式都失败，使用默认位置（北京）
         try {
           const defaultLocation = getDefaultLocation();
           initializationRef.current.initialized = true;
-          console.log('Home - 使用默认位置：北京');
-          const addedLocation = addLocation(defaultLocation);
-          console.log('Home - 默认位置添加完成:', addedLocation.name);
+          addLocation(defaultLocation);
         } catch (defaultError) {
-          console.error('Home - 设置默认位置失败:', defaultError);
+          console.error('设置默认位置失败:', defaultError);
         }
       } finally {
         setInitializing(false);
@@ -145,19 +133,25 @@ const Home = () => {
     }
     
     try {
+      const timezone = currentLocation.timezone || 'Asia/Shanghai';
+      
+      // 如果没有指定目标时间，使用当前时间
+      let finalTargetTime = targetTime;
+      if (!finalTargetTime) {
+        // 获取当前时间在指定时区的 ISO 字符串
+        const now = new Date();
+        finalTargetTime = now.toISOString();
+      }
+      
       const requestBody = {
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
-        timezone: currentLocation.timezone || 'Asia/Shanghai',
+        timezone: timezone,
         is_outdoor: isOutdoor,
         activity_level: activityLevel,
-        user_profile: userProfile // 传递用户画像数据以生成个性化建议
+        user_profile: userProfile, // 传递用户画像数据以生成个性化建议
+        target_time: finalTargetTime // 使用当前时间或指定的目标时间
       };
-      
-      // 如果指定了目标时间，添加到请求中
-      if (targetTime) {
-        requestBody.target_time = targetTime;
-      }
       
       const res = await axios.post('/api/recommendations/calculate', requestBody);
       
@@ -207,17 +201,15 @@ const Home = () => {
     try {
       setRecommendationLoading(true);
       
-      // 计算明天的日期（在指定时区）
       const timezone = currentLocation.timezone || 'Asia/Shanghai';
       
-      // 获取当前时间在指定时区
+      // 获取当前时间
       const now = new Date();
       
-      // 获取明天在指定时区的日期
+      // 获取明天在指定时区的日期字符串（YYYY-MM-DD格式）
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
       
-      // 获取明天的日期字符串（YYYY-MM-DD格式）
       const dateFormatter = new Intl.DateTimeFormat('en-CA', {
         timeZone: timezone,
         year: 'numeric',
@@ -226,7 +218,11 @@ const Home = () => {
       });
       const tomorrowDateStr = dateFormatter.format(tomorrow);
       
-      // 调用API获取明天的推荐（使用全天数据）
+      // 构造明天早上7时的时间字符串（格式：YYYY-MM-DDTHH:mm:ss）
+      // 注意：这个时间字符串会被后端解析为指定时区的时间
+      const tomorrow7AMStr = `${tomorrowDateStr}T07:00:00`;
+      
+      // 调用API获取明天的推荐（使用明天早上7时的天气数据）
       const res = await axios.post('/api/recommendations/calculate', {
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
@@ -234,7 +230,7 @@ const Home = () => {
         is_outdoor: isOutdoor,
         activity_level: activityLevel,
         user_profile: userProfile,
-        target_date: tomorrowDateStr // 使用target_date而不是target_time
+        target_time: tomorrow7AMStr // 使用明天早上7时的时间点（格式：YYYY-MM-DDTHH:mm:ss，在指定时区）
       });
       
       setRecommendation(res.data.data);
