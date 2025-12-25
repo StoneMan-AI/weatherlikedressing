@@ -216,10 +216,13 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
     const max = Math.max(...values);
     const range = max - min || 1;
     const expand = range * expandPercent;
+    // 允许负数温度，不强制限制最小值为0
+    const adjustedMin = min - expand;
+    const adjustedMax = max + expand;
     return {
-      min: Math.max(0, min - expand),
-      max: max + expand,
-      range: (max + expand) - Math.max(0, min - expand)
+      min: adjustedMin,
+      max: adjustedMax,
+      range: adjustedMax - adjustedMin
     };
   };
 
