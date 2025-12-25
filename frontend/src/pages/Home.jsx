@@ -519,11 +519,40 @@ const Home = () => {
     if (isFirstLoad) {
       // 检查是否有 profileChanged 标记（仅在非位置变化的情况下检查）
       const profileChanged = localStorage.getItem('profileChanged') === 'true';
-      // 直接从 user 对象获取最新的 profile_json，避免使用可能过时的 userProfile
-      const currentUserProfile = user?.profile_json || {};
-      const currentProfileStr = JSON.stringify(currentUserProfile);
+      
+      // 优先使用本地存储的最新数据进行比较，因为 user 对象可能还没有更新
+      const savedProfile = storageManager.getItem('user_profile');
+      let currentUserProfile = {};
+      let currentProfileStr = '{}';
+      
+      if (savedProfile) {
+        try {
+          currentUserProfile = JSON.parse(savedProfile);
+          currentProfileStr = JSON.stringify(currentUserProfile);
+        } catch (e) {
+          console.error('Failed to parse saved profile:', e);
+          // 如果解析失败，使用 user 对象的数据
+          currentUserProfile = user?.profile_json || {};
+          currentProfileStr = JSON.stringify(currentUserProfile);
+        }
+      } else {
+        // 如果本地存储没有数据，使用 user 对象的数据
+        currentUserProfile = user?.profile_json || {};
+        currentProfileStr = JSON.stringify(currentUserProfile);
+      }
+      
       const previousProfileStr = previousUserProfileRef.current;
       const profileActuallyChanged = currentProfileStr !== previousProfileStr;
+      
+      console.log('首次加载：用户画像检查', {
+        profileChanged,
+        profileActuallyChanged,
+        currentProfileStr,
+        previousProfileStr,
+        savedProfileExists: !!savedProfile,
+        userProfileFromUser: JSON.stringify(user?.profile_json || {}),
+        userProfileFromStorage: currentProfileStr
+      });
       
       // 如果标记存在但用户画像没有变化，说明用户从 Settings 返回但没有修改设置
       // 此时不应该重新计算，直接使用已有的推荐数据
@@ -540,12 +569,14 @@ const Home = () => {
         return;
       }
       
-      // 如果有 profileChanged 标记且用户画像真的变化了，说明用户修改了设置
-      // 此时应该使用本地计算，而不是API请求（避免重复请求）
-      if (profileChanged && profileActuallyChanged) {
+      // 如果有 profileChanged 标记，说明用户修改了设置，应该重新计算
+      // 注意：即使 profileActuallyChanged 为 false，如果有标记也应该重新计算
+      // 因为可能是 user 对象还没更新，或者需要强制刷新
+      if (profileChanged && (profileActuallyChanged || previousProfileStr === null)) {
         console.log('首次加载：检测到profileChanged标记且用户画像变化，使用本地计算', {
           currentProfileStr,
-          previousProfileStr
+          previousProfileStr,
+          profileActuallyChanged
         });
         // 清除标记（在开始计算前清除，避免重复触发）
         localStorage.removeItem('profileChanged');
@@ -657,14 +688,17 @@ const Home = () => {
     // 如果正在初始化或首次加载，但有 profileChanged 标记，说明用户从Settings返回
     // 此时应该等待初始化完成后再计算，或者直接使用本地计算
     if (initializing || isFirstLoadRef.current || !currentLocation || !weatherData) {
-      // 如果有 profileChanged 标记，保留它，等待条件满足后再计算
+      // 如果有 profileChanged 标记，不应该更新 ref，保留旧值用于后续比较
       // 如果没有标记，更新 ref（只在用户画像真的变化时更新，避免首次加载时重复更新）
-      if (!profileChanged && previousProfileStr !== null) {
-        previousUserProfileRef.current = currentProfileStr;
-      } else if (previousProfileStr === null) {
-        // 首次加载时，初始化 ref
-        previousUserProfileRef.current = currentProfileStr;
+      if (!profileChanged) {
+        if (previousProfileStr !== null) {
+          previousUserProfileRef.current = currentProfileStr;
+        } else {
+          // 首次加载时，初始化 ref（但只有在没有 profileChanged 标记时）
+          previousUserProfileRef.current = currentProfileStr;
+        }
       }
+      // 如果有 profileChanged 标记，保留 ref 不变，等待首次加载时进行比较
       return;
     }
 
