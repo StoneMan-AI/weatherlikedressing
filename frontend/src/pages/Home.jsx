@@ -290,10 +290,22 @@ const Home = () => {
     const lastLocationId = lastLocationIdRef.current;
     
     // 如果位置没有变化，且已经有天气数据，就不重新获取
-    if (lastLocationId === currentLocationId && weatherData) {
+    // 注意：这里需要确保 lastLocationId 不为 null（即不是首次加载）
+    // 如果 lastLocationId 为 null，说明是首次加载，需要获取天气数据
+    // 如果 lastLocationId 等于 currentLocationId，说明位置没变化，且已经有天气数据，就不重新获取
+    // 如果 lastLocationId 不等于 currentLocationId，说明位置变化了，需要重新获取
+    if (lastLocationId !== null && lastLocationId === currentLocationId) {
+      // 位置没变化，检查是否有天气数据
+      // 如果没有天气数据（被清空了），需要重新获取
+      if (weatherData === null) {
+        isFirstLoadRef.current = true;
+        fetchWeatherData();
+      }
       return;
     }
 
+    // 如果位置变化了（lastLocationId !== currentLocationId），或者首次加载（lastLocationId === null）
+    // 都需要重新获取天气数据
     // 位置变化时，重置首次加载标志，确保会重新计算推荐
     isFirstLoadRef.current = true;
     // 获取新位置的天气数据
