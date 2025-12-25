@@ -105,7 +105,7 @@ const Home = () => {
   // 获取天气数据
   const fetchWeatherData = async () => {
     if (!currentLocation) {
-      return;
+      return null;
     }
 
     try {
@@ -118,8 +118,42 @@ const Home = () => {
         }
       });
       setWeatherData(res.data.data);
+      return res.data.data; // 返回天气数据
     } catch (error) {
       console.error('Failed to fetch weather data:', error);
+      return null;
+    }
+  };
+
+  // 刷新页面数据
+  const handleRefresh = async () => {
+    if (!currentLocation) {
+      return;
+    }
+
+    // 重置状态
+    setLoading(true);
+    setRecommendationLoading(true);
+    setRecommendation(null);
+    setWeatherData(null);
+    isFirstLoadRef.current = true;
+
+    try {
+      // 重新获取天气数据
+      const newWeatherData = await fetchWeatherData();
+      
+      if (newWeatherData) {
+        // 如果天气数据获取成功，重新计算推荐
+        await calculateRecommendation(0, false, null);
+      } else {
+        // 如果天气数据获取失败，也尝试重新计算（可能会使用缓存或失败）
+        await calculateRecommendation(0, false, null);
+      }
+    } catch (error) {
+      console.error('Refresh failed:', error);
+    } finally {
+      setLoading(false);
+      setRecommendationLoading(false);
     }
   };
 
@@ -538,6 +572,33 @@ const Home = () => {
           <p className="text-gray" style={{ fontSize: '14px', marginTop: '8px' }}>
             请检查位置权限设置或手动添加位置
           </p>
+        </div>
+      )}
+
+      {/* 显示刷新按钮：当有位置但没有天气数据或推荐数据时 */}
+      {currentLocation && !initializing && !locationLoading && (!weatherData || !recommendation) && !loading && (
+        <div className="empty-state">
+          <p className="text-gray">内容加载失败</p>
+          <p className="text-gray" style={{ fontSize: '14px', marginTop: '8px', marginBottom: '16px' }}>
+            请点击刷新按钮重试
+          </p>
+          <button 
+            className="btn-refresh" 
+            onClick={handleRefresh}
+            disabled={loading || recommendationLoading}
+          >
+            {loading || recommendationLoading ? (
+              <>
+                <div className="loading-spinner-small"></div>
+                <span>刷新中...</span>
+              </>
+            ) : (
+              <>
+                <span>🔄</span>
+                <span>刷新</span>
+              </>
+            )}
+          </button>
         </div>
       )}
     </div>
