@@ -56,8 +56,27 @@ export const LocationProvider = ({ children }) => {
 
   // 保存位置到localStorage
   const saveLocations = (newLocations) => {
-    localStorage.setItem('weather_locations', JSON.stringify(newLocations));
-    setLocations(newLocations);
+    try {
+      const locationsJson = JSON.stringify(newLocations);
+      localStorage.setItem('weather_locations', locationsJson);
+      setLocations(newLocations);
+      console.log('saveLocations - Saved locations count:', newLocations.length);
+      console.log('saveLocations - Saved locations:', newLocations);
+    } catch (error) {
+      console.error('Failed to save locations to localStorage:', error);
+      // 如果localStorage满了，尝试清理一些旧数据
+      try {
+        // 只保留最近使用的10个位置
+        const recentLocations = newLocations
+          .sort((a, b) => (b.last_used_at || 0) - (a.last_used_at || 0))
+          .slice(0, 10);
+        localStorage.setItem('weather_locations', JSON.stringify(recentLocations));
+        setLocations(recentLocations);
+        console.log('saveLocations - Saved limited locations (10 most recent):', recentLocations.length);
+      } catch (retryError) {
+        console.error('Failed to save even limited locations:', retryError);
+      }
+    }
   };
 
   // 保存当前选择的地区ID

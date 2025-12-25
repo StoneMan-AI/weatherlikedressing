@@ -105,6 +105,11 @@ const LocationSelector = () => {
     return a.id - b.id;
   });
 
+  // 调试信息：检查locations数组
+  console.log('LocationSelector - locations count:', locations.length);
+  console.log('LocationSelector - locations:', locations);
+  console.log('LocationSelector - currentLocation:', currentLocation);
+
   return (
     <div className="location-selector">
       <div className="location-header">
@@ -117,6 +122,7 @@ const LocationSelector = () => {
               className="location-select"
               value={currentLocation?.id || ''}
               onChange={handleLocationChange}
+              style={{ display: 'block' }} // 确保在移动端也显示
             >
               {sortedLocations.map(location => (
                 <option key={location.id} value={location.id}>

@@ -506,14 +506,22 @@
     margin-bottom: var(--spacing-sm);
     flex-wrap: nowrap;
     overflow: visible;
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--spacing-sm) !important;
   }
   
   .location-select {
-    min-width: 100px;
-    max-width: 150px;
-    font-size: 13px;
-    padding: var(--spacing-xs) var(--spacing-xs);
-    padding-right: calc(var(--spacing-xs) + 20px);
+    min-width: 100px !important;
+    max-width: 150px !important;
+    font-size: 13px !important;
+    padding: var(--spacing-xs) var(--spacing-xs) !important;
+    padding-right: calc(var(--spacing-xs) + 20px) !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: 1 !important;
   }
   
   .location-actions {
