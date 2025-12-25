@@ -242,8 +242,29 @@ const Home = () => {
     await calculateRecommendation(0, false, null);
   };
 
-  // 使用 useRef 跟踪是否是首次加载
+  // 使用 useRef 跟踪是否是首次加载和上一个位置ID
   const isFirstLoadRef = useRef(true);
+  const lastLocationIdRef = useRef(null);
+
+  // 当位置改变时，立即清空旧的推荐数据和重置状态
+  useEffect(() => {
+    if (!currentLocation) {
+      return;
+    }
+
+    const currentLocationId = currentLocation.id || `${currentLocation.latitude}_${currentLocation.longitude}`;
+    
+    // 如果位置发生了变化，清空旧的推荐数据
+    if (lastLocationIdRef.current !== null && lastLocationIdRef.current !== currentLocationId) {
+      console.log('Location changed, clearing old recommendation data');
+      setRecommendation(null); // 清空旧的推荐数据
+      setWeatherData(null); // 清空旧的天气数据
+      setIsViewingTomorrow(false); // 重置"看明天"状态
+      isFirstLoadRef.current = true; // 重置首次加载标志
+    }
+    
+    lastLocationIdRef.current = currentLocationId;
+  }, [currentLocation]);
 
   // 当位置改变时获取天气数据（只在位置变化时调用，不依赖活动场景/强度）
   useEffect(() => {
@@ -254,24 +275,25 @@ const Home = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLocation, initializing]);
 
-  // 当位置改变时计算推荐（首次加载）
+  // 当天气数据更新后，计算推荐（首次加载）
   useEffect(() => {
-    if (!currentLocation || initializing) {
+    if (!currentLocation || !weatherData || initializing) {
       return;
     }
 
     const isFirstLoad = isFirstLoadRef.current;
     
-    // 如果是首次加载（位置变化），显示全屏 loading 并请求后端
+    // 如果是首次加载（位置变化或天气数据更新），显示全屏 loading 并请求后端
     if (isFirstLoad) {
       setLoading(true);
-      calculateRecommendation(0, false).finally(() => {
+      // 使用最新的currentLocation和weatherData重新计算
+      calculateRecommendation(0, false, null).finally(() => {
         setLoading(false);
         isFirstLoadRef.current = false; // 标记首次加载完成
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentLocation, initializing]);
+  }, [currentLocation, weatherData, initializing]);
 
   // 当活动场景或活动强度改变时，使用本地计算（不请求后端）
   useEffect(() => {

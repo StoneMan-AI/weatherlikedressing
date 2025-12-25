@@ -734,15 +734,8 @@ class RuleEngine {
       const detailedRecommendations = [...baseRecommendations, ...additionalRecommendations];
 
       // 生成详细的配饰建议（包含原因说明）
+      // 注意：日常生活推荐可以包含"尽量不出门"等建议，这与旅行推荐不同
       const baseAccessories = (dressingLayer.accessories || []).map(accessory => {
-        // 过滤掉"尽量不出门"等不适合日常的建议，替换为更实用的建议
-        if (accessory.includes('尽量不出门')) {
-          return {
-            name: '紧急保暖包',
-            reason: `极端寒冷天气（当前温度${inputs.temperature_c.toFixed(1)}°C），建议准备紧急保暖装备`,
-            details: '建议准备暖宝宝、热水袋、保温杯等保暖用品，以备不时之需'
-          };
-        }
         return {
           name: accessory,
           reason: this.getAccessoryReason(accessory, inputs, scoreDetails),
