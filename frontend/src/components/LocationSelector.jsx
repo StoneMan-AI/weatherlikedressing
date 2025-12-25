@@ -282,11 +282,12 @@ const LocationSelector = () => {
             style={{ position: 'relative' }}
           >
             私人定制
-            {hasCustomProfile && (
-              <span className="custom-profile-badge" title="已启用个性化设置">
-                ✓
-              </span>
-            )}
+            <span 
+              className={`custom-profile-badge ${hasCustomProfile ? 'has-custom' : 'no-custom'}`}
+              title={hasCustomProfile ? '已启用个性化设置' : '未设置个性化'}
+            >
+              ✓
+            </span>
           </button>
           <button
             className="btn-travel-guide"

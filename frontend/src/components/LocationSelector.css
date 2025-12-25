@@ -74,10 +74,8 @@
   right: -4px;
   width: 16px;
   height: 16px;
-  background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 2px 6px rgba(74, 144, 226, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -87,6 +85,20 @@
   line-height: 1;
   padding: 0;
   animation: badgeAppear 0.3s ease-out;
+}
+
+/* 已设置私人定制 - 绿色 */
+.custom-profile-badge.has-custom {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  box-shadow: 0 2px 6px rgba(76, 175, 80, 0.5);
+}
+
+/* 未设置私人定制 - 白色 */
+.custom-profile-badge.no-custom {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+  box-shadow: 0 2px 6px rgba(255, 255, 255, 0.3);
+  color: rgba(0, 0, 0, 0.6);
+  border-color: rgba(255, 255, 255, 0.8);
 }
 
 @keyframes badgeAppear {

@@ -186,6 +186,18 @@ const Settings = () => {
       // 更新用户数据
       updateUser(updatedUser);
       
+      // 更新历史记录：将应用的记录移到最前面（更新时间戳）
+      const updatedHistoryItem = {
+        ...historyItem,
+        timestamp: new Date().toISOString() // 更新时间戳，使其成为最新记录
+      };
+      
+      // 从历史记录中移除当前项，然后添加到最前面
+      const filteredHistory = profileHistory.filter(item => item.id !== historyItem.id);
+      const updatedHistory = [updatedHistoryItem, ...filteredHistory].slice(0, 2);
+      setProfileHistory(updatedHistory);
+      localStorage.setItem('profileHistory', JSON.stringify(updatedHistory));
+      
       // 标记用户已设置私人定制
       localStorage.setItem('hasCustomProfile', 'true');
       
