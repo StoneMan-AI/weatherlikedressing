@@ -151,7 +151,7 @@ const TravelRecommendation = ({ currentLocation, weatherData, userProfile }) => 
         <div className="travel-title-row">
           <h3>外出旅行穿衣建议</h3>
           {currentLocation && (
-            <span className="travel-location-hint">({currentLocation.name})</span>
+            <span className="travel-location-hint">(目的地：{currentLocation.name})</span>
           )}
         </div>
         <p className="travel-subtitle">根据旅行日期和天气情况，为您提供个性化建议</p>
@@ -176,7 +176,7 @@ const TravelRecommendation = ({ currentLocation, weatherData, userProfile }) => 
                 }
               } else {
                 // 如果日期无效，显示错误提示
-                setError('出发日期不能是过去的日期，且不能超过15天');
+                setError('出发日期不能是过去的日期，且不能是15天之后');
                 // 恢复为今天
                 setStartDate(getMinDate());
               }
@@ -202,7 +202,7 @@ const TravelRecommendation = ({ currentLocation, weatherData, userProfile }) => 
                 }
                 setEndDate(newDate);
               } else {
-                setError('返回日期不能是过去的日期，且不能超过15天');
+                setError('返回日期不能是过去的日期，且不能是15天之后');
                 // 恢复为开始日期+2天或今天+2天
                 const baseDate = startDate || getMinDate();
                 const newEndDate = new Date(baseDate);

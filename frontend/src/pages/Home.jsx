@@ -306,7 +306,7 @@ const Home = () => {
                     >
                       <option value="low">低（静坐/慢走）</option>
                       <option value="moderate">中（正常步行/轻运动）</option>
-                      <option value="high">高（跑步/剧烈运动）</option>
+                      
                     </select>
                   </div>
                 </div>

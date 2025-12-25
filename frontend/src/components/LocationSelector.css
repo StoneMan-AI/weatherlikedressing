@@ -16,7 +16,7 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  flex-shrink: 0;
+  flex: 1;
   min-width: 0;
   flex-wrap: nowrap;
   overflow: visible;
@@ -28,7 +28,10 @@
   color: var(--text-primary);
   letter-spacing: -0.5px;
   white-space: nowrap;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   margin: 0;
 }
 
@@ -191,11 +194,6 @@
   cursor: not-allowed;
 }
 
-.location-dropdown-wrapper {
-  position: relative;
-  flex-shrink: 0;
-}
-
 .location-select {
   padding: var(--spacing-xs) var(--spacing-sm);
   padding-right: calc(var(--spacing-sm) + 20px);
@@ -217,12 +215,17 @@
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
+  flex-shrink: 0;
   min-width: 100px;
+  max-width: 200px;
+  width: auto;
   -webkit-appearance: none !important;
   appearance: none !important;
   -moz-appearance: none !important;
   -webkit-backface-visibility: hidden !important;
   -webkit-transform: translateZ(0) !important;
+  position: relative;
+  z-index: 1;
 }
 
 .location-select:hover {
@@ -478,6 +481,7 @@
 @media (max-width: 768px) {
   .location-title {
     font-size: 28px;
+    max-width: calc(100% - 120px);
   }
   
   .location-header {
@@ -487,6 +491,16 @@
   .location-title-section {
     width: 100%;
     margin-bottom: var(--spacing-sm);
+    flex-wrap: nowrap;
+    overflow: visible;
+  }
+  
+  .location-select {
+    min-width: 100px;
+    max-width: 150px;
+    font-size: 13px;
+    padding: var(--spacing-xs) var(--spacing-xs);
+    padding-right: calc(var(--spacing-xs) + 20px);
   }
   
   .location-actions {

@@ -98,19 +98,17 @@ const LocationSelector = () => {
             {currentLocation?.name || '选择位置'}
           </h2>
           {locations.length > 1 && (
-            <div className="location-dropdown-wrapper">
-              <select
-                className="location-select"
-                value={currentLocation?.id || ''}
-                onChange={handleLocationChange}
-              >
-                {locations.map(location => (
-                  <option key={location.id} value={location.id}>
-                    {location.name}{location.is_default ? ' (默认)' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <select
+              className="location-select"
+              value={currentLocation?.id || ''}
+              onChange={handleLocationChange}
+            >
+              {locations.map(location => (
+                <option key={location.id} value={location.id}>
+                  {location.name}{location.is_default ? ' (默认)' : ''}
+                </option>
+              ))}
+            </select>
           )}
         </div>
         <div className="location-actions">
