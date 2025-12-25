@@ -449,14 +449,25 @@ const Home = () => {
     // 如果位置发生了变化，清空旧的推荐数据并强制重新计算
     if (lastLocationIdRef.current !== null && lastLocationIdRef.current !== currentLocationId) {
       console.log('Location changed, clearing old recommendation data');
-      setRecommendation(null); // 清空旧的推荐数据
-      setWeatherData(null); // 清空旧的天气数据
-      setIsViewingTomorrow(false); // 重置"看明天"状态
-      isFirstLoadRef.current = true; // 重置首次加载标志，确保会重新计算推荐
-      // 清除 profileChanged 标记，因为位置变化时应该重新计算，不受此标记影响
-      localStorage.removeItem('profileChanged');
-      // 标记位置已变化
-      locationChangedRef.current = true;
+      
+      // 检查是否有 profileChanged 标记，如果有，说明用户刚修改了私人定制
+      // 此时不应该清空推荐数据，而是保留标记，让用户画像变化的useEffect来处理
+      const profileChanged = localStorage.getItem('profileChanged') === 'true';
+      
+      if (!profileChanged) {
+        // 只有在没有 profileChanged 标记时才清空数据
+        // 这样可以避免在用户从Settings返回时误清空推荐数据
+        setRecommendation(null); // 清空旧的推荐数据
+        setWeatherData(null); // 清空旧的天气数据
+        setIsViewingTomorrow(false); // 重置"看明天"状态
+        isFirstLoadRef.current = true; // 重置首次加载标志，确保会重新计算推荐
+        // 标记位置已变化
+        locationChangedRef.current = true;
+      } else {
+        console.log('检测到profileChanged标记，保留推荐数据，等待用户画像变化处理');
+        // 如果有 profileChanged 标记，不清空推荐数据，只标记位置变化
+        locationChangedRef.current = true;
+      }
     } else {
       // 位置没变化，清除标记
       locationChangedRef.current = false;
