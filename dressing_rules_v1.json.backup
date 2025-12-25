@@ -123,7 +123,7 @@
     {
       "id": "rain_alert",
       "condition": "precip_prob > 50",
-      "message": "预计有降雨，建议带雨具"
+      "message": "1预计有降雨，建议带雨具"
     }
   ],
   "push_triggers": [

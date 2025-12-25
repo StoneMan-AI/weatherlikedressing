@@ -40,6 +40,17 @@ const Settings = () => {
         sensitivity: user.profile_json?.sensitivity || 'none',
         conditions: user.profile_json?.conditions || []
       });
+      
+      // 如果用户有profile_json且不是默认值，标记为已设置私人定制
+      const profile = user.profile_json || {};
+      const hasCustomSettings = 
+        profile.age_group && profile.age_group !== 'adult' ||
+        profile.sensitivity && profile.sensitivity !== 'none' ||
+        (profile.conditions && profile.conditions.length > 0);
+      
+      if (hasCustomSettings) {
+        localStorage.setItem('hasCustomProfile', 'true');
+      }
     }
   }, [user]);
 
@@ -82,6 +93,12 @@ const Settings = () => {
       const updatedHistory = [newHistoryItem, ...profileHistory].slice(0, 2);
       setProfileHistory(updatedHistory);
       localStorage.setItem('profileHistory', JSON.stringify(updatedHistory));
+      
+      // 标记用户已设置私人定制
+      localStorage.setItem('hasCustomProfile', 'true');
+      
+      // 触发自定义事件，通知其他组件更新
+      window.dispatchEvent(new CustomEvent('customProfileUpdated'));
       
       alert('用户画像更新成功！系统将根据您的个人属性提供个性化穿衣建议。');
       // 停留在当前页面，不跳转
@@ -129,17 +146,66 @@ const Settings = () => {
   };
 
   // 应用历史记录中的用户画像设置
-  const handleApplyHistory = (historyItem) => {
-    setFormData({
+  const handleApplyHistory = async (historyItem) => {
+    // 更新表单数据
+    const appliedFormData = {
       age_group: historyItem.profile.age_group || 'adult',
       sensitivity: historyItem.profile.sensitivity || 'none',
       conditions: historyItem.profile.conditions || []
-    });
+    };
+    setFormData(appliedFormData);
     
-    // 滚动到表单顶部，让用户看到已应用设置
-    const formElement = document.querySelector('.settings-form');
-    if (formElement) {
-      formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // 保存用户选择到后端
+    const profileData = {
+      profile_json: {
+        age_group: appliedFormData.age_group,
+        sensitivity: appliedFormData.sensitivity,
+        conditions: appliedFormData.conditions
+      }
+    };
+    
+    try {
+      // 获取或创建用户ID（匿名用户）
+      const userId = getOrCreateUserId();
+      
+      // 配置请求头
+      const config = {
+        headers: {
+          'X-User-ID': userId
+        }
+      };
+      
+      // 如果有token，也添加到请求头
+      if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const res = await axios.put('/api/users/profile', profileData, config);
+      const updatedUser = res.data.data;
+      
+      // 更新用户数据
+      updateUser(updatedUser);
+      
+      // 标记用户已设置私人定制
+      localStorage.setItem('hasCustomProfile', 'true');
+      
+      // 触发自定义事件，通知其他组件更新
+      window.dispatchEvent(new CustomEvent('customProfileUpdated'));
+      
+      alert('设置已应用并保存成功！');
+      
+      // 滚动到表单顶部，让用户看到已应用设置
+      const formElement = document.querySelector('.settings-form');
+      if (formElement) {
+        formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } catch (error) {
+      console.error('Failed to apply profile:', error);
+      if (error.response?.status === 401) {
+        alert('认证失败，请重新登录');
+      } else {
+        alert('保存失败，请重试');
+      }
     }
   };
 

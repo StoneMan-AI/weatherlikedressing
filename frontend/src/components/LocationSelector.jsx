@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { useLocationContext } from '../contexts/LocationContext';
+import { useAuth } from '../contexts/AuthContext';
 import './LocationSelector.css';
 
 const LocationSelector = () => {
@@ -14,6 +15,7 @@ const LocationSelector = () => {
     deleteLocation,
     searchLocationByCityName
   } = useLocationContext();
+  const { user } = useAuth();
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [cityName, setCityName] = useState('');
@@ -21,8 +23,41 @@ const LocationSelector = () => {
   const [searchResults, setSearchResults] = useState(null); // 存储多个搜索结果
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [hasCustomProfile, setHasCustomProfile] = useState(false);
   const dropdownRef = useRef(null);
   const triggerRef = useRef(null);
+
+  // 检查用户是否设置了私人定制
+  const checkCustomProfile = () => {
+    // 检查localStorage
+    const savedFlag = localStorage.getItem('hasCustomProfile') === 'true';
+    
+    // 检查用户数据
+    const profile = user?.profile_json || {};
+    const hasCustomSettings = 
+      (profile.age_group && profile.age_group !== 'adult') ||
+      (profile.sensitivity && profile.sensitivity !== 'none') ||
+      (profile.conditions && profile.conditions.length > 0);
+    
+    return savedFlag || hasCustomSettings;
+  };
+
+  // 初始化时检查
+  useEffect(() => {
+    setHasCustomProfile(checkCustomProfile());
+  }, [user]);
+
+  // 监听自定义事件，当私人定制更新时刷新状态
+  useEffect(() => {
+    const handleCustomProfileUpdate = () => {
+      setHasCustomProfile(checkCustomProfile());
+    };
+
+    window.addEventListener('customProfileUpdated', handleCustomProfileUpdate);
+    return () => {
+      window.removeEventListener('customProfileUpdated', handleCustomProfileUpdate);
+    };
+  }, [user]);
 
   const handleSearchCity = async (e) => {
     e.preventDefault();
@@ -244,8 +279,12 @@ const LocationSelector = () => {
             className="btn-custom-profile"
             onClick={() => navigate('/settings')}
             title="私人定制"
+            style={{ position: 'relative' }}
           >
             私人定制
+            {hasCustomProfile && (
+              <span className="custom-profile-badge" />
+            )}
           </button>
           <button
             className="btn-travel-guide"

@@ -165,6 +165,24 @@ class RuleEngine {
           adjustment -= 2; // 湿冷时额外扣2分（相当于提高保暖层级）
         }
       }
+
+      // 心血管疾病在温度变化大时额外调整（需要更稳定的温度环境）
+      if (userProfile.conditions.includes('cardiovascular')) {
+        const { temperature_c } = inputs;
+        // 极端温度时额外扣分
+        if (temperature_c < 5 || temperature_c > 30) {
+          adjustment -= 1; // 极端温度时额外扣1分
+        }
+      }
+
+      // 皮肤病在湿度异常时额外调整
+      if (userProfile.conditions.includes('skin_disease')) {
+        const { relative_humidity } = inputs;
+        // 高湿度或低湿度时额外扣分
+        if (relative_humidity >= 80 || relative_humidity <= 30) {
+          adjustment -= 1; // 湿度异常时额外扣1分
+        }
+      }
     }
 
     // 是否怀孕（新增）
@@ -217,6 +235,17 @@ class RuleEngine {
         const currentIndex = this.layers.findIndex(l => l.min_score === baseLayer.min_score);
         if (currentIndex > 0) {
           baseLayer = this.layers[currentIndex - 1];
+        }
+      }
+    }
+
+    // 个性化调整：心血管疾病在极端温度时提高保暖层级（采用最保守策略）
+    if (userProfile?.conditions?.includes('cardiovascular')) {
+      const { temperature_c } = inputs;
+      if (temperature_c < 5) {
+        const currentIndex = this.layers.findIndex(l => l.min_score === baseLayer.min_score);
+        if (currentIndex > 0) {
+          baseLayer = this.layers[currentIndex - 1]; // 更保暖
         }
       }
     }
@@ -335,6 +364,100 @@ class RuleEngine {
         id: 'aqi_asthma_risk',
         message: '空气质量差，减少户外活动并备好哮喘用药'
       });
+    }
+
+    // 心血管疾病相关提醒
+    if (user_profile?.conditions?.includes('cardiovascular')) {
+      // 温度变化大时提醒（基于当前温度范围判断）
+      if (temperature_c < 5) {
+        healthMessages.push({
+          id: 'cardiovascular_cold_risk',
+          message: '低温天气，心血管疾病患者需注意保暖，避免温度骤变，建议分层穿衣便于调节'
+        });
+      } else if (temperature_c > 30) {
+        healthMessages.push({
+          id: 'cardiovascular_heat_risk',
+          message: '高温天气，心血管疾病患者需注意防暑降温，避免剧烈活动，及时补充水分'
+        });
+      }
+    }
+
+    // COPD相关提醒
+    if (user_profile?.conditions?.includes('copd')) {
+      // 空气质量差
+      if (aqi >= 100) {
+        healthMessages.push({
+          id: 'copd_aqi_risk',
+          message: '空气质量不佳，COPD患者建议减少户外活动，外出时佩戴口罩'
+        });
+      }
+      // 极端温度
+      if (temperature_c < 5) {
+        healthMessages.push({
+          id: 'copd_cold_risk',
+          message: '低温天气，COPD患者需特别注意保暖，避免冷空气刺激呼吸道'
+        });
+      } else if (temperature_c > 30) {
+        healthMessages.push({
+          id: 'copd_heat_risk',
+          message: '高温天气，COPD患者需注意防暑，避免在高温时段外出'
+        });
+      }
+    }
+
+    // 偏头痛相关提醒（基于气压变化，目前没有气压数据，给出一般性建议）
+    if (user_profile?.conditions?.includes('migraine')) {
+      // 天气变化大时可能诱发偏头痛
+      const wind_m_s = inputs.wind_m_s || 0;
+      if (precip_prob > 60 || (temperature_c < 10 && wind_m_s > 8)) {
+        healthMessages.push({
+          id: 'migraine_weather_risk',
+          message: '天气变化较大，可能诱发偏头痛，建议携带常用药物，注意休息'
+        });
+      }
+    }
+
+    // 皮肤病相关提醒
+    if (user_profile?.conditions?.includes('skin_disease')) {
+      // 高湿度
+      if (relative_humidity >= 80) {
+        healthMessages.push({
+          id: 'skin_disease_high_humidity_risk',
+          message: '湿度较高，皮肤病可能加重，建议穿着透气、吸湿的衣物，保持皮肤干爽'
+        });
+      }
+      // 低湿度
+      if (relative_humidity <= 30) {
+        healthMessages.push({
+          id: 'skin_disease_low_humidity_risk',
+          message: '湿度较低，皮肤可能干燥，建议使用保湿产品，穿着柔软舒适的衣物'
+        });
+      }
+      // 极端温度
+      if (temperature_c < 5 || temperature_c > 30) {
+        healthMessages.push({
+          id: 'skin_disease_temp_risk',
+          message: '极端温度可能刺激皮肤，建议穿着合适的衣物保护皮肤'
+        });
+      }
+    }
+
+    // 过敏性疾病相关提醒
+    if (user_profile?.conditions?.includes('allergy')) {
+      // 空气质量差
+      if (aqi >= 100) {
+        healthMessages.push({
+          id: 'allergy_aqi_risk',
+          message: '空气质量不佳，过敏患者建议减少户外活动，外出时佩戴口罩，携带抗过敏药物'
+        });
+      }
+      // 高湿度可能增加过敏原
+      if (relative_humidity >= 70 && temperature_c >= 15 && temperature_c <= 25) {
+        healthMessages.push({
+          id: 'allergy_humidity_risk',
+          message: '温湿度适宜，可能增加花粉、霉菌等过敏原，过敏患者需注意防护'
+        });
+      }
     }
 
     // 降雨规则
