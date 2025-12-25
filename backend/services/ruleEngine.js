@@ -288,7 +288,7 @@ class RuleEngine {
     const messages = [];
 
     if (precip_prob > 50) {
-      let message = '10预计有降雨，建议带雨具';
+      let message = '预计有降雨，建议带雨具';
       
       if (temperature_c < 10) {
         message += '、防滑鞋';

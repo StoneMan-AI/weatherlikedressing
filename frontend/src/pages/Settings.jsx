@@ -372,11 +372,13 @@ const Settings = () => {
                   'allergy': '过敏性疾病'
                 };
                 
-                // 检查当前表单是否与历史记录匹配
+                // 检查当前用户设置是否与历史记录匹配
+                // 优先使用 user.profile_json（后端保存的数据），如果没有则使用 formData
+                const currentProfile = user?.profile_json || formData;
                 const isCurrentProfile = 
-                  formData.age_group === item.profile.age_group &&
-                  formData.sensitivity === item.profile.sensitivity &&
-                  JSON.stringify([...formData.conditions].sort()) === JSON.stringify([...(item.profile.conditions || [])].sort());
+                  currentProfile.age_group === item.profile.age_group &&
+                  currentProfile.sensitivity === item.profile.sensitivity &&
+                  JSON.stringify([...(currentProfile.conditions || [])].sort()) === JSON.stringify([...(item.profile.conditions || [])].sort());
                 
                 return (
                   <div key={item.id} className={`profile-history-item ${isCurrentProfile ? 'is-current' : ''}`}>
