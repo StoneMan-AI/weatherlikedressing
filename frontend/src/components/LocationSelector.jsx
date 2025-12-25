@@ -78,6 +78,13 @@ const LocationSelector = () => {
   };
 
 
+  // 调试：打印位置数据
+  useEffect(() => {
+    console.log('LocationSelector - locations:', locations);
+    console.log('LocationSelector - locations.length:', locations.length);
+    console.log('LocationSelector - currentLocation:', currentLocation);
+  }, [locations, currentLocation]);
+
   // 按最近使用时间排序地区列表（最近使用的在前）
   const sortedLocations = [...locations].sort((a, b) => {
     // 首先按最近使用时间降序排序

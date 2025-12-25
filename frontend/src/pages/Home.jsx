@@ -44,51 +44,63 @@ const Home = () => {
       return;
     }
 
-    // 如果已有位置，标记为已初始化
+    // 如果已有位置，标记为已初始化（说明从存储中加载了位置数据）
     if (currentLocation) {
+      console.log('Home - 已有位置数据，跳过初始化:', currentLocation.name);
       initializationRef.current.initialized = true;
       setInitializing(false);
       return;
     }
 
-    // 如果正在加载，等待
+    // 如果正在加载位置数据，等待
     if (locationLoading) {
+      console.log('Home - 位置数据正在加载，等待...');
+      return;
+    }
+
+    // 如果位置列表不为空，说明已经从存储中加载了数据，不需要再次初始化
+    if (locations.length > 0) {
+      console.log('Home - 位置列表不为空，已有', locations.length, '个位置，跳过初始化');
+      initializationRef.current.initialized = true;
+      setInitializing(false);
       return;
     }
 
     const initializeLocation = async () => {
       try {
-        console.log('开始位置初始化：使用IP定位');
+        console.log('Home - 开始位置初始化：使用IP定位（位置列表为空）');
         
         // 尝试IP定位
         let location;
         try {
           location = await getLocationByIP();
-          console.log('IP定位成功:', location.name);
+          console.log('Home - IP定位成功:', location.name);
           initializationRef.current.initialized = true;
         } catch (ipError) {
-          console.warn('IP定位失败:', ipError.message);
+          console.warn('Home - IP定位失败:', ipError.message);
           // IP定位失败，使用默认位置（北京）
-          console.log('IP定位失败，使用默认位置：北京');
+          console.log('Home - IP定位失败，使用默认位置：北京');
           location = getDefaultLocation();
           initializationRef.current.initialized = true;
         }
 
-        // 添加位置
+        // 添加位置（这会保存到存储中）
         if (location) {
-          addLocation(location);
-          console.log('位置初始化完成:', location.name);
+          console.log('Home - 准备添加位置到列表:', location.name);
+          const addedLocation = addLocation(location);
+          console.log('Home - 位置初始化完成:', addedLocation.name, '位置列表数量:', locations.length + 1);
         }
       } catch (error) {
-        console.error('位置初始化失败:', error);
+        console.error('Home - 位置初始化失败:', error);
         // 如果所有定位方式都失败，使用默认位置（北京）
         try {
           const defaultLocation = getDefaultLocation();
           initializationRef.current.initialized = true;
-          addLocation(defaultLocation);
-          console.log('使用默认位置：北京');
+          console.log('Home - 使用默认位置：北京');
+          const addedLocation = addLocation(defaultLocation);
+          console.log('Home - 默认位置添加完成:', addedLocation.name);
         } catch (defaultError) {
-          console.error('设置默认位置失败:', defaultError);
+          console.error('Home - 设置默认位置失败:', defaultError);
         }
       } finally {
         setInitializing(false);
@@ -97,7 +109,7 @@ const Home = () => {
 
     initializeLocation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationLoading]); // 移除 currentLocation 作为依赖项，避免循环
+  }, [locationLoading, locations.length, currentLocation]); // 添加 locations.length 和 currentLocation 作为依赖项
 
   // 获取天气数据
   const fetchWeatherData = async () => {
