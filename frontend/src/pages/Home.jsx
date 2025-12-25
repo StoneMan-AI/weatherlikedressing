@@ -10,6 +10,7 @@ import TravelRecommendation from '../components/TravelRecommendation';
 import { useLocationContext } from '../contexts/LocationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { recalculateRecommendation, canUseLocalCalculation, calculateComfortScore, getDressingRecommendation, generateDetailedReason } from '../utils/recommendationCalculator';
+import storageManager from '../utils/storage';
 import './Home.css';
 
 const Home = () => {
@@ -23,7 +24,58 @@ const Home = () => {
   } = useLocationContext();
   
   const { user } = useAuth();
-  const userProfile = user?.profile_json || {};
+  
+  // 优先使用本地存储的用户画像数据，如果没有则使用user对象中的数据
+  const [userProfile, setUserProfile] = useState(() => {
+    // 初始化时从本地存储加载用户画像数据
+    const savedProfile = storageManager.getItem('user_profile');
+    if (savedProfile) {
+      try {
+        return JSON.parse(savedProfile);
+      } catch (e) {
+        console.error('Failed to parse saved user profile:', e);
+      }
+    }
+    // 如果没有本地存储的数据，使用user对象中的数据
+    return user?.profile_json || {};
+  });
+  
+  // 当user对象更新时，同步更新本地存储的用户画像数据（但不覆盖本地存储）
+  useEffect(() => {
+    if (user?.profile_json) {
+      const currentSavedProfile = storageManager.getItem('user_profile');
+      // 如果本地存储没有数据，或者user对象的数据更新，则更新本地存储
+      if (!currentSavedProfile) {
+        storageManager.setItem('user_profile', JSON.stringify(user.profile_json));
+        setUserProfile(user.profile_json);
+      } else {
+        // 如果本地存储有数据，优先使用本地存储的数据
+        try {
+          const parsed = JSON.parse(currentSavedProfile);
+          setUserProfile(parsed);
+        } catch (e) {
+          console.error('Failed to parse saved user profile:', e);
+          setUserProfile(user.profile_json);
+        }
+      }
+    }
+  }, [user]);
+  
+  // 监听customProfileUpdated事件，更新本地存储的用户画像数据
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      // 从user对象获取最新的用户画像数据
+      if (user?.profile_json) {
+        storageManager.setItem('user_profile', JSON.stringify(user.profile_json));
+        setUserProfile(user.profile_json);
+      }
+    };
+    
+    window.addEventListener('customProfileUpdated', handleProfileUpdate);
+    return () => {
+      window.removeEventListener('customProfileUpdated', handleProfileUpdate);
+    };
+  }, [user]);
 
   const [isOutdoor, setIsOutdoor] = useState(true);
   const [activityLevel, setActivityLevel] = useState('low');

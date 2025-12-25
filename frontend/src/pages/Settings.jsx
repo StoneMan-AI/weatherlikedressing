@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { getOrCreateUserId } from '../utils/userId';
+import storageManager from '../utils/storage';
 import './Settings.css';
 
 const Settings = () => {
@@ -32,24 +33,101 @@ const Settings = () => {
     }
   }, []);
 
-  // 当用户数据加载后，初始化表单数据
+  // 当用户进入Settings页面时，从后端获取最新的用户画像数据并更新本地存储
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        const userId = getOrCreateUserId();
+        const config = {
+          headers: {
+            'X-User-ID': userId
+          }
+        };
+        
+        // 如果有token，也添加到请求头
+        if (token) {
+          config.headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        // 从后端获取最新的用户画像数据
+        const res = await axios.get('/api/users/profile', config);
+        
+        if (res.data && res.data.data) {
+          const userData = res.data.data;
+          const profileJson = userData.profile_json || {};
+          
+          // 更新AuthContext中的用户数据
+          updateUser(userData);
+          
+          // 保存用户画像数据到本地存储（使用storageManager，支持无痕模式）
+          storageManager.setItem('user_profile', JSON.stringify(profileJson));
+          
+          // 初始化表单数据
+          setFormData({
+            age_group: profileJson.age_group || 'adult',
+            sensitivity: profileJson.sensitivity || 'none',
+            conditions: profileJson.conditions || []
+          });
+          
+          // 如果用户有profile_json且不是默认值，标记为已设置私人定制
+          const hasCustomSettings = 
+            profileJson.age_group && profileJson.age_group !== 'adult' ||
+            profileJson.sensitivity && profileJson.sensitivity !== 'none' ||
+            (profileJson.conditions && profileJson.conditions.length > 0);
+          
+          if (hasCustomSettings) {
+            storageManager.setItem('hasCustomProfile', 'true');
+          } else {
+            storageManager.removeItem('hasCustomProfile');
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load user profile:', error);
+        // 如果获取失败，尝试从本地存储加载
+        const savedProfile = storageManager.getItem('user_profile');
+        if (savedProfile) {
+          try {
+            const profileJson = JSON.parse(savedProfile);
+            setFormData({
+              age_group: profileJson.age_group || 'adult',
+              sensitivity: profileJson.sensitivity || 'none',
+              conditions: profileJson.conditions || []
+            });
+          } catch (e) {
+            console.error('Failed to parse saved profile:', e);
+          }
+        }
+      }
+    };
+    
+    // 进入Settings页面时加载用户画像数据
+    loadUserProfile();
+  }, []); // 只在组件挂载时执行一次
+
+  // 当用户数据加载后，初始化表单数据（作为备用方案）
   useEffect(() => {
     if (user) {
+      const profileJson = user.profile_json || {};
+      
+      // 保存用户画像数据到本地存储
+      storageManager.setItem('user_profile', JSON.stringify(profileJson));
+      
       setFormData({
-        age_group: user.profile_json?.age_group || 'adult',
-        sensitivity: user.profile_json?.sensitivity || 'none',
-        conditions: user.profile_json?.conditions || []
+        age_group: profileJson.age_group || 'adult',
+        sensitivity: profileJson.sensitivity || 'none',
+        conditions: profileJson.conditions || []
       });
       
       // 如果用户有profile_json且不是默认值，标记为已设置私人定制
-      const profile = user.profile_json || {};
       const hasCustomSettings = 
-        profile.age_group && profile.age_group !== 'adult' ||
-        profile.sensitivity && profile.sensitivity !== 'none' ||
-        (profile.conditions && profile.conditions.length > 0);
+        profileJson.age_group && profileJson.age_group !== 'adult' ||
+        profileJson.sensitivity && profileJson.sensitivity !== 'none' ||
+        (profileJson.conditions && profileJson.conditions.length > 0);
       
       if (hasCustomSettings) {
-        localStorage.setItem('hasCustomProfile', 'true');
+        storageManager.setItem('hasCustomProfile', 'true');
+      } else {
+        storageManager.removeItem('hasCustomProfile');
       }
     } else if (!token) {
       // 如果没有user数据且没有token（匿名用户），尝试从后端加载用户数据
@@ -91,24 +169,30 @@ const Settings = () => {
           
           if (res.data && res.data.data) {
             const userData = res.data.data;
+            const profileJson = userData.profile_json || {};
+            
             updateUser(userData);
+            
+            // 保存用户画像数据到本地存储（使用storageManager，支持无痕模式）
+            storageManager.setItem('user_profile', JSON.stringify(profileJson));
             
             // 初始化表单数据（使用后端返回的数据，确保数据一致）
             setFormData({
-              age_group: userData.profile_json?.age_group || 'adult',
-              sensitivity: userData.profile_json?.sensitivity || 'none',
-              conditions: userData.profile_json?.conditions || []
+              age_group: profileJson.age_group || 'adult',
+              sensitivity: profileJson.sensitivity || 'none',
+              conditions: profileJson.conditions || []
             });
             
             // 检查是否有自定义设置
-            const profile = userData.profile_json || {};
             const hasCustomSettings = 
-              profile.age_group && profile.age_group !== 'adult' ||
-              profile.sensitivity && profile.sensitivity !== 'none' ||
-              (profile.conditions && profile.conditions.length > 0);
+              profileJson.age_group && profileJson.age_group !== 'adult' ||
+              profileJson.sensitivity && profileJson.sensitivity !== 'none' ||
+              (profileJson.conditions && profileJson.conditions.length > 0);
             
             if (hasCustomSettings) {
-              localStorage.setItem('hasCustomProfile', 'true');
+              storageManager.setItem('hasCustomProfile', 'true');
+            } else {
+              storageManager.removeItem('hasCustomProfile');
             }
           }
         } catch (error) {
@@ -161,6 +245,10 @@ const Settings = () => {
     onSuccess: (data) => {
       updateUser(data);
       
+      // 保存用户画像数据到本地存储（使用storageManager，支持无痕模式）
+      const profileJson = data.profile_json || {};
+      storageManager.setItem('user_profile', JSON.stringify(profileJson));
+      
       // 添加用户画像历史记录
       const newHistoryItem = {
         id: Date.now(),
@@ -178,7 +266,7 @@ const Settings = () => {
       localStorage.setItem('profileHistory', JSON.stringify(updatedHistory));
       
       // 标记用户已设置私人定制
-      localStorage.setItem('hasCustomProfile', 'true');
+      storageManager.setItem('hasCustomProfile', 'true');
       
       // 标记用户修改了定制属性，需要重新计算推荐
       localStorage.setItem('profileChanged', 'true');
@@ -272,6 +360,10 @@ const Settings = () => {
       // 更新用户数据
       updateUser(updatedUser);
       
+      // 保存用户画像数据到本地存储（使用storageManager，支持无痕模式）
+      const profileJson = updatedUser.profile_json || {};
+      storageManager.setItem('user_profile', JSON.stringify(profileJson));
+      
       // 更新历史记录：将应用的记录移到最前面（更新时间戳）
       const updatedHistoryItem = {
         ...historyItem,
@@ -285,7 +377,7 @@ const Settings = () => {
       localStorage.setItem('profileHistory', JSON.stringify(updatedHistory));
       
       // 标记用户已设置私人定制
-      localStorage.setItem('hasCustomProfile', 'true');
+      storageManager.setItem('hasCustomProfile', 'true');
       
       // 标记用户修改了定制属性，需要重新计算推荐
       localStorage.setItem('profileChanged', 'true');
