@@ -151,7 +151,7 @@ const TravelRecommendation = ({ currentLocation, weatherData, userProfile }) => 
         <div className="travel-title-row">
           <h3>外出旅行穿衣建议</h3>
           {currentLocation && (
-            <span className="travel-location-hint">(目的地：{currentLocation.name})</span>
+            <span className="travel-location-hint">({currentLocation.name})</span>
           )}
         </div>
         <p className="travel-subtitle">根据旅行日期和天气情况，为您提供个性化建议</p>

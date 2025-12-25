@@ -145,22 +145,35 @@
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   font-size: 16px;
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  color: var(--text-primary) !important;
+  background-color: rgba(74, 144, 226, 0.3) !important;
+  background: rgba(74, 144, 226, 0.3) !important;
+  color: #FFFFFF !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  -webkit-backface-visibility: hidden !important;
+  -webkit-transform: translateZ(0) !important;
 }
 
 .city-search-input::placeholder {
-  color: var(--text-tertiary);
+  color: rgba(255, 255, 255, 0.7) !important;
 }
 
 .city-search-input:focus {
-  outline: none;
-  border-color: rgba(255, 255, 255, 0.4);
-  background-color: rgba(255, 255, 255, 0.15) !important;
-  background: rgba(255, 255, 255, 0.15) !important;
+  outline: none !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background-color: rgba(74, 144, 226, 0.4) !important;
+  background: rgba(74, 144, 226, 0.4) !important;
+  color: #FFFFFF !important;
+}
+
+.city-search-input:disabled {
+  background-color: rgba(74, 144, 226, 0.15) !important;
+  background: rgba(74, 144, 226, 0.15) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-search-city {
