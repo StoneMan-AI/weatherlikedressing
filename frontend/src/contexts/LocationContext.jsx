@@ -178,9 +178,17 @@ export const LocationProvider = ({ children }) => {
     
     if (newLocation.is_default || locations.length === 0) {
       // 新添加的位置被设为当前时，直接设置（last_used_at已经在创建时设置）
+      // 注意：这里直接使用内部的 setCurrentLocation 状态更新函数
+      // 而不是通过导出的 setCurrentLocation（它映射到 setCurrentLocationWithSave）
+      // 因为 setCurrentLocationWithSave 会使用旧的 locations 状态，导致数据被覆盖
       console.log('addLocation - 设置新位置为当前位置');
+      // 直接设置状态，不触发 setCurrentLocationWithSave
       setCurrentLocation(newLocation);
       saveCurrentLocationId(newLocation.id);
+      // 注意：不需要调用 setCurrentLocationWithSave，因为：
+      // 1. 新位置已经在 newLocations 中
+      // 2. last_used_at 已经在创建时设置了
+      // 3. saveLocations 已经保存了完整列表（包含2个位置）
     }
 
     console.log('addLocation - 位置添加完成，返回新位置');
@@ -222,17 +230,32 @@ export const LocationProvider = ({ children }) => {
   const setCurrentLocationWithSave = (location) => {
     if (location) {
       const now = Date.now();
-      // 更新该地区的最近使用时间
-      const newLocations = locations.map(loc => 
-        loc.id === location.id 
-          ? { ...loc, last_used_at: now }
-          : loc
-      );
-      saveLocations(newLocations);
-      // 更新当前location对象，包含最新的last_used_at
-      const updatedLocation = { ...location, last_used_at: now };
-      setCurrentLocation(updatedLocation);
-      saveCurrentLocationId(location.id);
+      // 使用函数式更新，确保使用最新的 locations 状态
+      setLocations(currentLocations => {
+        // 检查位置是否在列表中
+        const locationExists = currentLocations.some(loc => loc.id === location.id);
+        if (!locationExists) {
+          console.warn('setCurrentLocationWithSave - 位置不在列表中，跳过更新:', location.id);
+          // 如果位置不在列表中，只更新当前状态，不保存
+          const updatedLocation = { ...location, last_used_at: now };
+          setCurrentLocation(updatedLocation);
+          saveCurrentLocationId(location.id);
+          return currentLocations; // 返回原列表，不修改
+        }
+        
+        // 更新该地区的最近使用时间
+        const newLocations = currentLocations.map(loc => 
+          loc.id === location.id 
+            ? { ...loc, last_used_at: now }
+            : loc
+        );
+        saveLocations(newLocations);
+        // 更新当前location对象，包含最新的last_used_at
+        const updatedLocation = { ...location, last_used_at: now };
+        setCurrentLocation(updatedLocation);
+        saveCurrentLocationId(location.id);
+        return newLocations;
+      });
     } else {
       setCurrentLocation(null);
       saveCurrentLocationId(null);
