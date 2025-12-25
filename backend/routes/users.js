@@ -160,13 +160,66 @@ router.post('/login', [
 
 /**
  * GET /api/users/profile
- * 获取用户资料
+ * 获取用户资料（支持匿名用户）
+ * 如果已登录，使用登录用户ID；否则使用X-User-ID查找匿名用户
  */
-router.get('/profile', authenticateToken, async (req, res) => {
+router.get('/profile', async (req, res) => {
   try {
+    let userId;
+    
+    // 尝试从token中获取用户ID（如果已登录）
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        userId = decoded.id;
+      } catch (err) {
+        // Token无效，继续使用匿名用户ID
+        console.warn('Invalid token, using anonymous user ID');
+      }
+    }
+    
+    // 如果没有登录用户ID，使用匿名用户ID（从中间件获取）
+    if (!userId) {
+      const anonymousId = req.userId || req.anonymousUserId;
+      
+      if (!anonymousId) {
+        return res.status(400).json({ error: 'User ID required. Please provide X-User-ID header or login.' });
+      }
+      
+      // 查找匿名用户（通过profile_json中的anonymous_id字段）
+      const anonymousUserResult = await pool.query(
+        `SELECT id, mobile, email, language, country_code, profile_json, membership_status, push_pref_json, created_at 
+         FROM users 
+         WHERE profile_json->>'anonymous_id' = $1`,
+        [anonymousId]
+      );
+      
+      if (anonymousUserResult.rows.length > 0) {
+        userId = anonymousUserResult.rows[0].id;
+      } else {
+        // 如果匿名用户不存在，返回默认数据
+        return res.json({
+          success: true,
+          data: {
+            id: null,
+            mobile: null,
+            email: null,
+            language: 'zh-CN',
+            country_code: null,
+            profile_json: {},
+            membership_status: 'free',
+            push_pref_json: {}
+          }
+        });
+      }
+    }
+    
     const result = await pool.query(
       'SELECT id, mobile, email, language, country_code, profile_json, membership_status, push_pref_json, created_at FROM users WHERE id = $1',
-      [req.user.id]
+      [userId]
     );
 
     if (result.rows.length === 0) {

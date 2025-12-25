@@ -68,6 +68,17 @@ const Home = () => {
       if (user?.profile_json) {
         storageManager.setItem('user_profile', JSON.stringify(user.profile_json));
         setUserProfile(user.profile_json);
+      } else {
+        // 如果user对象还没有更新，尝试从本地存储加载最新的数据
+        const savedProfile = storageManager.getItem('user_profile');
+        if (savedProfile) {
+          try {
+            const profileJson = JSON.parse(savedProfile);
+            setUserProfile(profileJson);
+          } catch (e) {
+            console.error('Failed to parse saved profile:', e);
+          }
+        }
       }
     };
     
@@ -186,9 +197,9 @@ const Home = () => {
             localStorage.removeItem('profileChanged');
             calculateRecommendation(0, true);
           }
-        } else {
-          console.log('事件触发：条件不满足，跳过计算', {
-            profileChanged,
+        } else if (profileChanged) {
+          // 如果标记存在但条件不满足，保留标记，等待条件满足后再计算
+          console.log('事件触发：条件不满足，保留标记等待', {
             hasLocation: !!currentLocation,
             hasWeatherData: !!weatherData,
             initializing,

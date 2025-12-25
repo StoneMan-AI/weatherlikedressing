@@ -407,7 +407,15 @@ const Settings = () => {
       <div className="settings-header">
         <button 
           className="btn-back"
-          onClick={() => navigate('/')}
+          onClick={() => {
+            // 如果用户修改了私人定制属性，触发刷新首页的事件
+            const profileChanged = localStorage.getItem('profileChanged') === 'true';
+            if (profileChanged) {
+              // 触发自定义事件，通知首页刷新数据
+              window.dispatchEvent(new CustomEvent('customProfileUpdated'));
+            }
+            navigate('/');
+          }}
           title="返回首页"
         >
           ← 返回
