@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { useLocationContext } from '../contexts/LocationContext';
 import './LocationSelector.css';
 
@@ -18,6 +19,10 @@ const LocationSelector = () => {
   const [cityName, setCityName] = useState('');
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState(null); // 存储多个搜索结果
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const dropdownRef = useRef(null);
+  const triggerRef = useRef(null);
 
   const handleSearchCity = async (e) => {
     e.preventDefault();
@@ -72,23 +77,6 @@ const LocationSelector = () => {
     setSearchResults(null);
   };
 
-  const handleDeleteLocation = (id) => {
-    if (locations.length <= 1) {
-      alert('至少需要保留一个位置');
-      return;
-    }
-    if (confirm('确定要删除这个位置吗？')) {
-      deleteLocation(id);
-    }
-  };
-
-  const handleLocationChange = (e) => {
-    const selectedLocationId = parseInt(e.target.value);
-    const selectedLocation = locations.find(loc => loc.id === selectedLocationId);
-    if (selectedLocation) {
-      setCurrentLocation(selectedLocation);
-    }
-  };
 
   // 按最近使用时间排序地区列表（最近使用的在前）
   const sortedLocations = [...locations].sort((a, b) => {
@@ -105,10 +93,83 @@ const LocationSelector = () => {
     return a.id - b.id;
   });
 
-  // 调试信息：检查locations数组
-  console.log('LocationSelector - locations count:', locations.length);
-  console.log('LocationSelector - locations:', locations);
-  console.log('LocationSelector - currentLocation:', currentLocation);
+  // 计算下拉框位置
+  useEffect(() => {
+    if (isDropdownOpen && triggerRef.current) {
+      const updatePosition = () => {
+        const trigger = triggerRef.current;
+        if (trigger) {
+          const rect = trigger.getBoundingClientRect();
+          setDropdownPosition({
+            top: rect.bottom + window.scrollY + 4,
+            left: rect.left + window.scrollX,
+            width: rect.width
+          });
+        }
+      };
+      
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [isDropdownOpen]);
+
+  // 点击外部关闭下拉框
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        isDropdownOpen &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(event.target)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
+  const handleToggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const handleSelectLocation = (location) => {
+    setCurrentLocation(location);
+    setIsDropdownOpen(false);
+  };
+
+  const handleDeleteLocation = (e, id) => {
+    e.stopPropagation();
+    if (locations.length <= 1) {
+      alert('至少需要保留一个位置');
+      return;
+    }
+    if (confirm('确定要删除这个位置吗？')) {
+      deleteLocation(id);
+      // 如果删除的是当前选中的位置，切换到第一个位置
+      if (currentLocation?.id === id) {
+        const remainingLocations = locations.filter(loc => loc.id !== id);
+        if (remainingLocations.length > 0) {
+          setCurrentLocation(remainingLocations[0]);
+        }
+      }
+    }
+  };
 
   return (
     <div className="location-selector">
@@ -118,18 +179,64 @@ const LocationSelector = () => {
             {currentLocation?.name || '选择位置'}
           </h2>
           {locations.length > 1 && (
-            <select
-              className="location-select"
-              value={currentLocation?.id || ''}
-              onChange={handleLocationChange}
-              style={{ display: 'block' }} // 确保在移动端也显示
-            >
-              {sortedLocations.map(location => (
-                <option key={location.id} value={location.id}>
-                  {location.name}{location.is_default ? ' (默认)' : ''}
-                </option>
-              ))}
-            </select>
+            <>
+              <button
+                ref={triggerRef}
+                className="location-select-trigger"
+                onClick={handleToggleDropdown}
+                type="button"
+              >
+                <span className="location-select-text">
+                  {currentLocation?.name || '选择位置'}
+                </span>
+                <span className={`location-select-arrow ${isDropdownOpen ? 'open' : ''}`}>
+                  ▼
+                </span>
+              </button>
+              {isDropdownOpen && createPortal(
+                <div
+                  ref={dropdownRef}
+                  className="location-dropdown-custom"
+                  style={{
+                    position: 'absolute',
+                    top: `${dropdownPosition.top}px`,
+                    left: `${dropdownPosition.left}px`,
+                    width: `${dropdownPosition.width}px`,
+                    minWidth: '200px'
+                  }}
+                >
+                  <div className="location-dropdown-list">
+                    {sortedLocations.map(location => (
+                      <div
+                        key={location.id}
+                        className={`location-dropdown-item-custom ${
+                          currentLocation?.id === location.id ? 'active' : ''
+                        }`}
+                        onClick={() => handleSelectLocation(location)}
+                      >
+                        <span className="location-dropdown-name-custom">
+                          {location.name}
+                          {location.is_default && (
+                            <span className="default-badge-custom">默认</span>
+                          )}
+                        </span>
+                        {locations.length > 1 && (
+                          <button
+                            className="btn-delete-location-custom"
+                            onClick={(e) => handleDeleteLocation(e, location.id)}
+                            type="button"
+                            title="删除"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>,
+                document.body
+              )}
+            </>
           )}
         </div>
         <div className="location-actions">
