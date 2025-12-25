@@ -121,8 +121,7 @@ const Home = () => {
   };
 
   // 计算推荐（带重试机制）- 优化：只更新推荐，不重新获取天气数据
-  // 注意："穿衣建议"板块始终使用"户外"模式（is_outdoor = true），以计算阳光分数，体感更暖
-  const calculateRecommendation = async (retryCount = 0, skipLoading = false, targetTime = null) => {
+  const calculateRecommendation = async (retryCount = 0, skipLoading = false, targetTime = null, forceOutdoor = false) => {
     if (!currentLocation) {
       return;
     }
@@ -144,11 +143,14 @@ const Home = () => {
         finalTargetTime = now.toISOString();
       }
       
+      // 如果 forceOutdoor 为 true，强制使用户外模式；否则使用用户选择的活动场景
+      const finalIsOutdoor = forceOutdoor ? true : isOutdoor;
+      
       const requestBody = {
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
         timezone: timezone,
-        is_outdoor: true, // "穿衣建议"板块始终使用"户外"模式，计算阳光分数，体感更暖
+        is_outdoor: finalIsOutdoor, // 使用用户选择的活动场景（户外/室内）
         activity_level: activityLevel,
         user_profile: userProfile, // 传递用户画像数据以生成个性化建议
         target_time: finalTargetTime // 使用当前时间或指定的目标时间
@@ -219,19 +221,16 @@ const Home = () => {
       });
       const tomorrowDateStr = dateFormatter.format(tomorrow);
       
-      // 构造明天早上7时的时间字符串（格式：YYYY-MM-DDTHH:mm:ss）
-      // 注意：这个时间字符串会被后端解析为指定时区的时间
-      const tomorrow7AMStr = `${tomorrowDateStr}T07:00:00`;
-      
-      // 调用API获取明天的推荐（使用明天早上7时的天气数据）
+      // 调用API获取明天的推荐（使用明天全天天气概况数据）
+      // "看明天"功能使用户外模式，因为通常是外出场景
       const res = await axios.post('/api/recommendations/calculate', {
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
         timezone: timezone,
-        is_outdoor: isOutdoor,
+        is_outdoor: true, // "看明天"使用户外模式，计算阳光分数
         activity_level: activityLevel,
         user_profile: userProfile,
-        target_time: tomorrow7AMStr // 使用明天早上7时的时间点（格式：YYYY-MM-DDTHH:mm:ss，在指定时区）
+        target_date: tomorrowDateStr // 使用明天的日期，后端会使用全天天气概况数据（格式：YYYY-MM-DD）
       });
       
       setRecommendation(res.data.data);
@@ -309,7 +308,6 @@ const Home = () => {
   }, [currentLocation, weatherData, initializing]);
 
   // 当活动场景或活动强度改变时，使用本地计算（不请求后端）
-  // 注意："穿衣建议"板块始终使用"户外"模式（is_outdoor = true），以计算阳光分数，体感更暖
   useEffect(() => {
     if (!currentLocation || initializing || isFirstLoadRef.current) {
       return; // 首次加载时跳过，由上面的 useEffect 处理
@@ -319,11 +317,11 @@ const Home = () => {
     if (canUseLocalCalculation(weatherData, recommendation?.recommendation)) {
       try {
         // 使用本地计算重新生成推荐
-        // "穿衣建议"板块始终使用"户外"模式（is_outdoor = true）
+        // 使用用户选择的活动场景（户外/室内）
         const recalculated = recalculateRecommendation(
           recommendation.recommendation,
           weatherData,
-          true, // 强制使用"户外"模式，计算阳光分数，体感更暖
+          isOutdoor, // 使用用户选择的活动场景
           activityLevel,
           userProfile
         );
