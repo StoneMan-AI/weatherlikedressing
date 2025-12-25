@@ -569,70 +569,26 @@ const Home = () => {
         return;
       }
       
-      // 如果有 profileChanged 标记，说明用户修改了设置，应该重新计算
-      // 注意：即使 profileActuallyChanged 为 false，如果有标记也应该重新计算
-      // 因为可能是 user 对象还没更新，或者需要强制刷新
-      if (profileChanged && (profileActuallyChanged || previousProfileStr === null)) {
-        console.log('首次加载：检测到profileChanged标记且用户画像变化，使用本地计算', {
-          currentProfileStr,
-          previousProfileStr,
-          profileActuallyChanged
-        });
-        // 清除标记（在开始计算前清除，避免重复触发）
+      // 首次加载时，无论用户的定制属性有没有修改，都使用后端规则引擎处理
+      // 清除 profileChanged 标记（如果存在）
+      if (profileChanged) {
         localStorage.removeItem('profileChanged');
-        
-        // 使用本地计算生成推荐
-        // 注意：使用 currentUserProfile（从 user 对象直接获取），而不是 userProfile（可能还没更新）
-        if (weatherData && weatherData.current && weatherData.current.temperature_c !== undefined) {
-          try {
-            const current = weatherData.current || {};
-            const inputs = {
-              temperature_c: current.temperature_c || 0,
-              relative_humidity: current.relative_humidity || 0,
-              wind_m_s: current.wind_m_s || 0,
-              gust_m_s: current.gust_m_s || 0,
-              uv_index: current.uv_index || 0
-            };
-            const scoreDetails = calculateComfortScore(weatherData, isOutdoor, activityLevel, currentUserProfile);
-            const dressingLayer = getDressingRecommendation(scoreDetails.ComfortScore);
-            const reasonSummary = generateDetailedReason(inputs, scoreDetails);
-            const newRecommendation = {
-              comfort_score: scoreDetails.ComfortScore,
-              score_details: scoreDetails,
-              recommendation_layers: dressingLayer.layers,
-              accessories: dressingLayer.accessories,
-              label: dressingLayer.label,
-              notes: dressingLayer.notes,
-              reason_summary: reasonSummary,
-              health_messages: []
-            };
-            setRecommendation({
-              recommendation: newRecommendation
-            });
-            console.log('首次加载：本地计算完成（新推荐）', newRecommendation);
-            // 更新用户画像 ref
-            previousUserProfileRef.current = currentProfileStr;
-            // 标记首次加载完成（在计算完成后立即标记，避免重复触发）
-            isFirstLoadRef.current = false;
-            return;
-          } catch (error) {
-            console.error('首次加载：本地计算失败，回退到API:', error);
-            // 如果本地计算失败，回退到API请求
-            // 注意：这里不设置 isFirstLoadRef.current = false，让后续的API请求流程处理
-          }
-        }
       }
       
-      // 如果没有 profileChanged 标记，或者用户画像没有变化，使用API请求
+      // 更新用户画像 ref（用于后续比较）
+      previousUserProfileRef.current = currentProfileStr;
+      
+      // 使用后端API计算推荐
+      console.log('首次加载：使用后端规则引擎计算推荐', {
+        profileChanged,
+        profileActuallyChanged,
+        currentProfileStr,
+        previousProfileStr
+      });
       setLoading(true);
-      // 使用最新的currentLocation和weatherData重新计算
-      // 确保在调用时使用最新的currentLocation值（通过闭包捕获）
-      const locationToUse = currentLocation;
       calculateRecommendation(0, false, null).finally(() => {
         setLoading(false);
         isFirstLoadRef.current = false; // 标记首次加载完成
-        // 更新用户画像 ref，用于下次比较
-        previousUserProfileRef.current = JSON.stringify(userProfile);
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
