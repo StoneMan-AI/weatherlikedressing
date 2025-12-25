@@ -39,6 +39,98 @@ const Home = () => {
   
   // 使用 ref 跟踪上一次的用户画像，用于检测是否真的发生了变化
   const previousUserProfileRef = useRef(null);
+  
+  // 监听 customProfileUpdated 事件，确保从Settings返回时能正确触发计算
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      console.log('收到 customProfileUpdated 事件，准备重新计算');
+      // 延迟一下，确保userProfile已经更新
+      setTimeout(() => {
+        // 强制触发一次检查
+        const currentProfileStr = JSON.stringify(userProfile);
+        const previousProfileStr = previousUserProfileRef.current;
+        const profileChanged = localStorage.getItem('profileChanged') === 'true';
+        const profileActuallyChanged = currentProfileStr !== previousProfileStr;
+        
+        console.log('事件触发后的检查:', {
+          profileChanged,
+          profileActuallyChanged,
+          currentProfileStr,
+          previousProfileStr,
+          hasLocation: !!currentLocation,
+          hasWeatherData: !!weatherData
+        });
+        
+        // 如果标记存在且用户画像真的变化了，且有必要的条件，则触发计算
+        if (profileChanged && profileActuallyChanged && currentLocation && weatherData && !initializing && !isFirstLoadRef.current) {
+          console.log('通过事件触发重新计算');
+          // 清除标记
+          localStorage.removeItem('profileChanged');
+          
+          // 优先使用本地计算
+          if (weatherData && weatherData.current && weatherData.current.temperature_c !== undefined) {
+            try {
+              if (recommendation?.recommendation && canUseLocalCalculation(weatherData, recommendation.recommendation)) {
+                const recalculated = recalculateRecommendation(
+                  recommendation.recommendation,
+                  weatherData,
+                  isOutdoor,
+                  activityLevel,
+                  userProfile
+                );
+                setRecommendation({
+                  ...recommendation,
+                  recommendation: recalculated
+                });
+                console.log('事件触发：本地计算完成（更新推荐）');
+              } else {
+                const current = weatherData.current || {};
+                const inputs = {
+                  temperature_c: current.temperature_c || 0,
+                  relative_humidity: current.relative_humidity || 0,
+                  wind_m_s: current.wind_m_s || 0,
+                  gust_m_s: current.gust_m_s || 0,
+                  uv_index: current.uv_index || 0
+                };
+                const scoreDetails = calculateComfortScore(weatherData, isOutdoor, activityLevel, userProfile);
+                const dressingLayer = getDressingRecommendation(scoreDetails.ComfortScore);
+                const reasonSummary = generateDetailedReason(inputs, scoreDetails);
+                const newRecommendation = {
+                  comfort_score: scoreDetails.ComfortScore,
+                  score_details: scoreDetails,
+                  recommendation_layers: dressingLayer.layers,
+                  accessories: dressingLayer.accessories,
+                  label: dressingLayer.label,
+                  notes: dressingLayer.notes,
+                  reason_summary: reasonSummary,
+                  health_messages: []
+                };
+                setRecommendation({
+                  recommendation: newRecommendation
+                });
+                console.log('事件触发：本地计算完成（新推荐）');
+              }
+            } catch (error) {
+              console.error('事件触发：本地计算失败，回退到API:', error);
+              calculateRecommendation(0, true);
+            }
+          } else {
+            console.log('事件触发：天气数据不完整，回退到API');
+            calculateRecommendation(0, true);
+          }
+          
+          // 更新 ref
+          previousUserProfileRef.current = currentProfileStr;
+        }
+      }, 100);
+    };
+    
+    window.addEventListener('customProfileUpdated', handleProfileUpdate);
+    return () => {
+      window.removeEventListener('customProfileUpdated', handleProfileUpdate);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userProfile, currentLocation, weatherData, initializing]);
 
   // 首次打开时获取位置（仅使用IP定位）
   useEffect(() => {
@@ -493,8 +585,18 @@ const Home = () => {
     const currentProfileStr = JSON.stringify(userProfile);
     const previousProfileStr = previousUserProfileRef.current;
     
+    console.log('用户画像变化检测:', {
+      currentProfileStr,
+      previousProfileStr,
+      initializing,
+      isFirstLoad: isFirstLoadRef.current,
+      hasLocation: !!currentLocation,
+      hasWeatherData: !!weatherData
+    });
+    
     // 如果正在初始化或首次加载，只更新 ref，不重新计算
     if (initializing || isFirstLoadRef.current || !currentLocation || !weatherData) {
+      console.log('跳过计算：初始化或缺少数据');
       previousUserProfileRef.current = currentProfileStr;
       return;
     }
@@ -505,8 +607,16 @@ const Home = () => {
     // 比较当前和上一次的用户画像
     const profileActuallyChanged = currentProfileStr !== previousProfileStr;
 
+    console.log('用户画像变化检查:', {
+      profileChanged,
+      profileActuallyChanged,
+      currentProfileStr,
+      previousProfileStr
+    });
+
     // 只有当标记存在且用户画像真的变化时才重新计算
     if (profileChanged && profileActuallyChanged) {
+      console.log('开始重新计算推荐（用户画像变化）');
       // 清除标记
       localStorage.removeItem('profileChanged');
       
@@ -561,6 +671,7 @@ const Home = () => {
             setRecommendation({
               recommendation: newRecommendation
             });
+            console.log('本地计算完成（新推荐）:', newRecommendation);
           }
         } catch (error) {
           console.error('Local calculation failed, falling back to API:', error);
@@ -568,13 +679,17 @@ const Home = () => {
           calculateRecommendation(0, true);
         }
       } else {
+        console.log('天气数据不完整，回退到API请求');
         // 如果没有完整数据，回退到API请求
         calculateRecommendation(0, true);
       }
     } else if (profileChanged && !profileActuallyChanged) {
+      console.log('清除profileChanged标记（用户画像未变化）');
       // 如果标记存在但用户画像没有变化，说明用户从 Settings 返回但没有修改设置
       // 清除标记，避免下次误触发
       localStorage.removeItem('profileChanged');
+    } else if (!profileChanged && profileActuallyChanged) {
+      console.log('用户画像变化但无标记，可能是页面刷新导致');
     }
 
     // 更新 ref
