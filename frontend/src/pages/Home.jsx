@@ -121,6 +121,7 @@ const Home = () => {
   };
 
   // 计算推荐（带重试机制）- 优化：只更新推荐，不重新获取天气数据
+  // 注意："穿衣建议"板块始终使用"户外"模式（is_outdoor = true），以计算阳光分数，体感更暖
   const calculateRecommendation = async (retryCount = 0, skipLoading = false, targetTime = null) => {
     if (!currentLocation) {
       return;
@@ -147,7 +148,7 @@ const Home = () => {
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
         timezone: timezone,
-        is_outdoor: isOutdoor,
+        is_outdoor: true, // "穿衣建议"板块始终使用"户外"模式，计算阳光分数，体感更暖
         activity_level: activityLevel,
         user_profile: userProfile, // 传递用户画像数据以生成个性化建议
         target_time: finalTargetTime // 使用当前时间或指定的目标时间
@@ -308,6 +309,7 @@ const Home = () => {
   }, [currentLocation, weatherData, initializing]);
 
   // 当活动场景或活动强度改变时，使用本地计算（不请求后端）
+  // 注意："穿衣建议"板块始终使用"户外"模式（is_outdoor = true），以计算阳光分数，体感更暖
   useEffect(() => {
     if (!currentLocation || initializing || isFirstLoadRef.current) {
       return; // 首次加载时跳过，由上面的 useEffect 处理
@@ -317,10 +319,11 @@ const Home = () => {
     if (canUseLocalCalculation(weatherData, recommendation?.recommendation)) {
       try {
         // 使用本地计算重新生成推荐
+        // "穿衣建议"板块始终使用"户外"模式（is_outdoor = true）
         const recalculated = recalculateRecommendation(
           recommendation.recommendation,
           weatherData,
-          isOutdoor,
+          true, // 强制使用"户外"模式，计算阳光分数，体感更暖
           activityLevel,
           userProfile
         );
