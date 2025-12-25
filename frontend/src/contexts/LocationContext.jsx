@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import storageManager from '../utils/storage';
 
 const LocationContext = createContext();
 
@@ -16,10 +17,10 @@ export const LocationProvider = ({ children }) => {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 从localStorage加载位置信息
+  // 从存储加载位置信息（支持无痕模式）
   useEffect(() => {
-    const savedLocations = localStorage.getItem('weather_locations');
-    const savedCurrentLocationId = localStorage.getItem('weather_current_location_id');
+    const savedLocations = storageManager.getItem('weather_locations');
+    const savedCurrentLocationId = storageManager.getItem('weather_current_location_id');
     
     if (savedLocations) {
       try {
@@ -54,37 +55,37 @@ export const LocationProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // 保存位置到localStorage
+  // 保存位置到存储（支持无痕模式）
   const saveLocations = (newLocations) => {
     try {
       const locationsJson = JSON.stringify(newLocations);
-      localStorage.setItem('weather_locations', locationsJson);
-      setLocations(newLocations);
-      console.log('saveLocations - Saved locations count:', newLocations.length);
-      console.log('saveLocations - Saved locations:', newLocations);
-    } catch (error) {
-      console.error('Failed to save locations to localStorage:', error);
-      // 如果localStorage满了，尝试清理一些旧数据
-      try {
-        // 只保留最近使用的10个位置
+      const success = storageManager.setItem('weather_locations', locationsJson);
+      if (success) {
+        setLocations(newLocations);
+        console.log(`saveLocations - Saved ${newLocations.length} locations using ${storageManager.getStorageType()}`);
+      } else {
+        // 如果存储失败，尝试只保留最近使用的10个位置
         const recentLocations = newLocations
           .sort((a, b) => (b.last_used_at || 0) - (a.last_used_at || 0))
           .slice(0, 10);
-        localStorage.setItem('weather_locations', JSON.stringify(recentLocations));
+        const limitedJson = JSON.stringify(recentLocations);
+        storageManager.setItem('weather_locations', limitedJson);
         setLocations(recentLocations);
-        console.log('saveLocations - Saved limited locations (10 most recent):', recentLocations.length);
-      } catch (retryError) {
-        console.error('Failed to save even limited locations:', retryError);
+        console.log(`saveLocations - Saved limited locations (10 most recent) using ${storageManager.getStorageType()}`);
       }
+    } catch (error) {
+      console.error('Failed to save locations:', error);
+      // 即使保存失败，也更新内存状态，至少在当前会话中可用
+      setLocations(newLocations);
     }
   };
 
-  // 保存当前选择的地区ID
+  // 保存当前选择的地区ID（支持无痕模式）
   const saveCurrentLocationId = (locationId) => {
     if (locationId) {
-      localStorage.setItem('weather_current_location_id', locationId.toString());
+      storageManager.setItem('weather_current_location_id', locationId.toString());
     } else {
-      localStorage.removeItem('weather_current_location_id');
+      storageManager.removeItem('weather_current_location_id');
     }
   };
 
