@@ -17,10 +17,74 @@ const WeatherCard = ({ weather, location }) => {
 
   const aqiInfo = getAQIStatus(aqi);
 
+  // 获取当前时间在指定时区的小时索引（与WeatherDetail保持一致）
+  const getCurrentHourIndex = () => {
+    if (!location?.timezone) return null;
+    
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: location.timezone,
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: false
+    });
+    const parts = formatter.formatToParts(now);
+    const hour = parseInt(parts.find(p => p.type === 'hour').value);
+    return hour;
+  };
+
+  // 从hourly数据中获取当前小时的温度（与WeatherDetail保持一致）
+  const getCurrentTempFromHourly = () => {
+    if (!hourly || hourly.length === 0) {
+      return current?.temperature_c || 0;
+    }
+
+    const currentHourIndex = getCurrentHourIndex();
+    if (currentHourIndex === null) {
+      return current?.temperature_c || 0;
+    }
+
+    // 获取今天0时在指定时区的时间
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: location?.timezone || 'Asia/Shanghai',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric'
+    });
+    const dateStr = formatter.format(now);
+    const [month, day, year] = dateStr.split('/');
+    const todayStart = new Date(year, month - 1, day, 0, 0);
+
+    // 找到当前小时对应的数据点
+    let closestHour = null;
+    let minDiff = Infinity;
+
+    for (const hour of hourly) {
+      const hourTime = new Date(hour.timestamp);
+      const targetTime = new Date(todayStart);
+      targetTime.setHours(currentHourIndex);
+
+      const diff = Math.abs(hourTime.getTime() - targetTime.getTime());
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestHour = hour;
+      }
+    }
+
+    // 如果找到了数据点且时间差在1小时内，使用它；否则使用current数据
+    if (closestHour && minDiff < 3600000) {
+      return closestHour.temperature_c;
+    }
+
+    return current?.temperature_c || 0;
+  };
+
   // 获取今天的最高和最低温度
   // 优先从hourly数据计算（更准确），如果没有则从daily数据获取
   const getTodayTemps = () => {
-    const currentTemp = Math.round(current.temperature_c);
+    // 使用与WeatherDetail相同的方式获取当前温度
+    const currentTemp = Math.round(getCurrentTempFromHourly());
     let maxTemp = currentTemp;
     let minTemp = currentTemp;
     
