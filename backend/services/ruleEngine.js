@@ -477,9 +477,220 @@ class RuleEngine {
   }
 
   /**
-   * 生成完整的推荐结果（增强版）
+   * 获取穿衣层级的详细原因说明
    */
-  generateRecommendation(inputs) {
+  getLayerReason(layer, inputs, scoreDetails) {
+    const { temperature_c, relative_humidity, wind_m_s, uv_index, precip_prob } = inputs;
+    const score = scoreDetails.ComfortScore;
+
+    // 根据层级类型和天气条件生成原因
+    if (layer.includes('短袖') || layer.includes('薄长袖')) {
+      return `适合较暖天气（当前温度${temperature_c.toFixed(1)}°C，体感${score.toFixed(1)}分），建议在温度较高的时段穿着`;
+    }
+    if (layer.includes('长袖') && !layer.includes('厚')) {
+      return `适合温和天气（当前温度${temperature_c.toFixed(1)}°C），提供基础保暖`;
+    }
+    if (layer.includes('薄外套') || layer.includes('轻外套')) {
+      return `适合微凉天气（当前温度${temperature_c.toFixed(1)}°C），可应对早晚温差`;
+    }
+    if (layer.includes('厚外套') || layer.includes('夹克')) {
+      return `适合较冷天气（当前温度${temperature_c.toFixed(1)}°C，体感${score.toFixed(1)}分），提供良好保暖`;
+    }
+    if (layer.includes('羽绒') || layer.includes('厚')) {
+      return `适合寒冷天气（当前温度${temperature_c.toFixed(1)}°C，体感${score.toFixed(1)}分），确保充分保暖`;
+    }
+    if (layer.includes('保暖内衣') || layer.includes('打底')) {
+      return `基础保暖层（当前温度${temperature_c.toFixed(1)}°C），贴身保暖，建议选择透气材质`;
+    }
+    if (layer.includes('毛衣') || layer.includes('针织')) {
+      return `中间保暖层（当前温度${temperature_c.toFixed(1)}°C），提供额外保暖`;
+    }
+
+    // 默认原因
+    return `根据当前天气条件（温度${temperature_c.toFixed(1)}°C，体感${score.toFixed(1)}分）推荐`;
+  }
+
+  /**
+   * 获取穿衣层级的详细说明
+   */
+  getLayerDetails(layer, inputs) {
+    const { temperature_c, relative_humidity, wind_m_s } = inputs;
+
+    if (layer.includes('短袖') || layer.includes('薄长袖')) {
+      return '建议选择透气性好的材质，如棉质或速干面料，适合户外活动';
+    }
+    if (layer.includes('羽绒') || layer.includes('厚')) {
+      return '建议选择填充量充足的羽绒服，确保保暖效果，注意防风性能';
+    }
+    if (layer.includes('薄外套') || layer.includes('轻外套')) {
+      return '建议选择轻薄但有一定保暖性的外套，方便携带和增减';
+    }
+    if (layer.includes('保暖内衣') || layer.includes('打底')) {
+      return '建议选择贴身、透气、吸湿排汗的材质，避免闷热';
+    }
+    if (wind_m_s > 5) {
+      return '建议选择防风性能好的材质，避免强风影响体感温度';
+    }
+    if (relative_humidity > 70) {
+      return '建议选择透气、吸湿排汗的材质，保持干爽舒适';
+    }
+
+    return '建议根据个人体感适当调整，注意保暖和舒适度的平衡';
+  }
+
+  /**
+   * 获取配饰的详细原因说明
+   */
+  getAccessoryReason(accessory, inputs, scoreDetails) {
+    const { temperature_c, wind_m_s, uv_index, precip_prob } = inputs;
+
+    if (accessory.includes('帽')) {
+      if (temperature_c < 5) {
+        return `天气较冷（${temperature_c.toFixed(1)}°C），头部保暖很重要，建议佩戴保暖帽`;
+      }
+      if (uv_index >= 6) {
+        return `紫外线较强（UV指数${uv_index}），建议佩戴遮阳帽防晒`;
+      }
+      return '建议佩戴帽子，既可保暖又可防晒';
+    }
+    if (accessory.includes('围巾')) {
+      return `天气较冷（${temperature_c.toFixed(1)}°C），颈部保暖可有效提升体感温度`;
+    }
+    if (accessory.includes('手套')) {
+      return `天气较冷（${temperature_c.toFixed(1)}°C），手部保暖很重要，建议佩戴手套`;
+    }
+    if (accessory.includes('雨') || accessory.includes('伞')) {
+      return `预计有降雨（降雨概率${precip_prob}%），建议携带雨具`;
+    }
+    if (accessory.includes('防晒')) {
+      return `紫外线较强（UV指数${uv_index}），建议做好防晒措施`;
+    }
+    if (accessory.includes('口罩')) {
+      return '建议佩戴口罩，既可保暖又可防护';
+    }
+
+    return '根据当前天气条件推荐';
+  }
+
+  /**
+   * 获取配饰的详细说明
+   */
+  getAccessoryDetails(accessory, inputs) {
+    const { temperature_c, uv_index } = inputs;
+
+    if (accessory.includes('帽')) {
+      if (temperature_c < 5) {
+        return '建议选择保暖性能好的帽子，如毛线帽或抓绒帽';
+      }
+      if (uv_index >= 6) {
+        return '建议选择宽檐帽或带有UPF防晒功能的帽子';
+      }
+      return '建议根据天气情况选择合适的帽子';
+    }
+    if (accessory.includes('围巾')) {
+      return '建议选择柔软、保暖的材质，如羊毛或羊绒围巾';
+    }
+    if (accessory.includes('手套')) {
+      return '建议选择保暖且灵活的手套，方便活动';
+    }
+    if (accessory.includes('雨') || accessory.includes('伞')) {
+      return '建议携带轻便的雨具，避免被雨水打湿';
+    }
+    if (accessory.includes('防晒')) {
+      return '建议使用SPF30+的防晒霜，并定期补涂';
+    }
+
+    return '建议根据个人需求选择合适的配饰';
+  }
+
+  /**
+   * 根据天气条件生成额外的穿衣建议（类似旅行推荐）
+   */
+  generateAdditionalRecommendations(inputs, weatherData, scoreDetails) {
+    const recommendations = [];
+    const { temperature_c, wind_m_s, precip_prob, relative_humidity } = inputs;
+
+    // 如果有daily数据，分析温差
+    if (weatherData && weatherData.daily && weatherData.daily.length > 0) {
+      const todayData = weatherData.daily[0];
+      if (todayData.temperature_max && todayData.temperature_min) {
+        const tempRange = todayData.temperature_max - todayData.temperature_min;
+        
+        // 如果温差大（超过8度），建议多层穿搭
+        if (tempRange > 8) {
+          recommendations.push({
+            name: '多层穿搭（便于增减）',
+            reason: `今日温差较大（${tempRange.toFixed(1)}°C），建议采用多层穿搭，早晚添加外套，中午可适当减少`,
+            details: '建议携带轻薄外套，方便根据温度变化随时增减衣物'
+          });
+        }
+      }
+    }
+
+    // 如果有降雨，建议防水装备
+    if (precip_prob > 50) {
+      recommendations.push({
+        name: '防水外套/雨衣',
+        reason: `预计有降雨（降雨概率${precip_prob}%），建议携带防水装备`,
+        details: '建议携带轻便的防水外套或雨衣，避免被雨水打湿'
+      });
+    }
+
+    // 如果风力大，建议防风装备
+    if (wind_m_s > 8) {
+      recommendations.push({
+        name: '防风外套',
+        reason: `风力较大（风速${wind_m_s.toFixed(1)} m/s），建议携带防风衣物`,
+        details: '建议选择防风性能好的外套，避免强风影响体感温度'
+      });
+    }
+
+    return recommendations;
+  }
+
+  /**
+   * 根据天气条件生成额外的配饰建议
+   */
+  generateAdditionalAccessories(inputs, weatherData) {
+    const accessories = [];
+    const { temperature_c, uv_index, wind_m_s, precip_prob } = inputs;
+
+    // 如果紫外线强，建议防晒
+    if (uv_index >= 6 && inputs.is_outdoor) {
+      accessories.push({
+        name: '防晒霜 SPF30+',
+        reason: `紫外线较强（UV指数${uv_index}），需要防晒`,
+        details: '建议使用SPF30+的防晒霜，并定期补涂'
+      });
+      accessories.push({
+        name: '遮阳帽',
+        reason: `紫外线较强（UV指数${uv_index}），防止阳光直射`,
+        details: '建议选择宽檐帽或带有UPF防晒功能的帽子'
+      });
+    }
+
+    // 如果天气很冷，建议额外保暖配饰
+    if (temperature_c < 5) {
+      // 检查是否已经有保暖帽
+      const hasHat = (inputs.user_profile?.conditions || []).some(c => c.includes('帽'));
+      if (!hasHat) {
+        accessories.push({
+          name: '保暖帽',
+          reason: `天气较冷（${temperature_c.toFixed(1)}°C），头部保暖很重要`,
+          details: '建议选择保暖性能好的帽子，如毛线帽或抓绒帽'
+        });
+      }
+    }
+
+    return accessories;
+  }
+
+  /**
+   * 生成完整的推荐结果（增强版）
+   * @param {Object} inputs - 输入参数
+   * @param {Object} weatherData - 天气数据（可选，用于分析温差等）
+   */
+  generateRecommendation(inputs, weatherData = null) {
     try {
       // 计算舒适度分数
       const scoreDetails = this.calculateComfortScore(inputs);
@@ -507,10 +718,48 @@ class RuleEngine {
       const urgency = this.calculateUrgency(inputs, scoreDetails);
       const confidence = this.calculateConfidence(inputs);
 
+      // 生成基础穿衣建议
+      const baseRecommendations = (dressingLayer.layers || []).map(layer => {
+        return {
+          name: layer,
+          reason: this.getLayerReason(layer, inputs, scoreDetails),
+          details: this.getLayerDetails(layer, inputs)
+        };
+      });
+
+      // 根据天气条件添加额外建议（类似旅行推荐）
+      const additionalRecommendations = this.generateAdditionalRecommendations(inputs, weatherData, scoreDetails);
+      
+      // 合并所有建议
+      const detailedRecommendations = [...baseRecommendations, ...additionalRecommendations];
+
+      // 生成详细的配饰建议（包含原因说明）
+      const baseAccessories = (dressingLayer.accessories || []).map(accessory => {
+        // 过滤掉"尽量不出门"等不适合日常的建议，替换为更实用的建议
+        if (accessory.includes('尽量不出门')) {
+          return {
+            name: '紧急保暖包',
+            reason: `极端寒冷天气（当前温度${inputs.temperature_c.toFixed(1)}°C），建议准备紧急保暖装备`,
+            details: '建议准备暖宝宝、热水袋、保温杯等保暖用品，以备不时之需'
+          };
+        }
+        return {
+          name: accessory,
+          reason: this.getAccessoryReason(accessory, inputs, scoreDetails),
+          details: this.getAccessoryDetails(accessory, inputs)
+        };
+      });
+
+      // 根据天气条件添加额外配饰建议
+      const additionalAccessories = this.generateAdditionalAccessories(inputs, weatherData);
+      const detailedAccessories = [...baseAccessories, ...additionalAccessories];
+
       return {
         comfort_score: scoreDetails.ComfortScore,
-        recommendation_layers: dressingLayer.layers || [],
-        accessories: dressingLayer.accessories || [],
+        recommendation_layers: dressingLayer.layers || [], // 保留原有格式，向后兼容
+        detailed_recommendations: detailedRecommendations, // 新增详细格式
+        accessories: dressingLayer.accessories || [], // 保留原有格式，向后兼容
+        detailed_accessories: detailedAccessories, // 新增详细格式
         label: dressingLayer.label || '',
         notes: dressingLayer.notes || '',
         reason_summary: detailedReason || '',

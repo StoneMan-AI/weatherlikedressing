@@ -56,7 +56,7 @@ const RecommendationCard = ({ recommendation, onViewTomorrow, isViewingTomorrow 
           <h3>
             穿衣建议
             {recommendation.score_details && (
-              <span className="total-score-inline">（体感得分：{recommendation.comfort_score}分）</span>
+              <span className="total-score-inline">（体感分:{recommendation.comfort_score}分）</span>
             )}
           </h3>
           {onViewTomorrow && (
@@ -70,19 +70,42 @@ const RecommendationCard = ({ recommendation, onViewTomorrow, isViewingTomorrow 
           )}
         </div>
         <div className="layers-list">
-          {recommendation.recommendation_layers.map((layer, index) => (
-            <div key={index} className="layer-item">
-              <span className="layer-number">{index + 1}</span>
-              <span className="layer-text">{layer}</span>
-            </div>
-          ))}
+          {/* 优先使用详细推荐，如果没有则使用简单格式 */}
+          {recommendation.detailed_recommendations && recommendation.detailed_recommendations.length > 0 ? (
+            recommendation.detailed_recommendations.map((item, index) => (
+              <div key={index} className="layer-item">
+                <span className="layer-number">{index + 1}</span>
+                <span className="layer-text">{item.name}</span>
+              </div>
+            ))
+          ) : (
+            recommendation.recommendation_layers.map((layer, index) => (
+              <div key={index} className="layer-item">
+                <span className="layer-number">{index + 1}</span>
+                <span className="layer-text">{layer}</span>
+              </div>
+            ))
+          )}
         </div>
 
-        {recommendation.accessories && recommendation.accessories.length > 0 && (
+        {/* 配饰建议 */}
+        {recommendation.detailed_accessories && recommendation.detailed_accessories.length > 0 ? (
           <div className="accessories">
             <strong>配饰建议：</strong>
-            {recommendation.accessories.join('、')}
+            {recommendation.detailed_accessories.map((item, index) => (
+              <span key={index}>
+                {item.name}
+                {index < recommendation.detailed_accessories.length - 1 ? '、' : ''}
+              </span>
+            ))}
           </div>
+        ) : (
+          recommendation.accessories && recommendation.accessories.length > 0 && (
+            <div className="accessories">
+              <strong>配饰建议：</strong>
+              {recommendation.accessories.join('、')}
+            </div>
+          )
         )}
       </div>
 

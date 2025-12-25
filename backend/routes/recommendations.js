@@ -170,7 +170,7 @@ router.post('/calculate', async (req, res) => {
     // 生成推荐
     let recommendation;
     try {
-      recommendation = ruleEngine.generateRecommendation(inputs);
+      recommendation = ruleEngine.generateRecommendation(inputs, weatherData);
       
       // 验证推荐结果
       if (!recommendation || !recommendation.comfort_score) {
