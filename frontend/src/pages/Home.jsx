@@ -290,6 +290,7 @@ const Home = () => {
   // 使用 useRef 跟踪是否是首次加载和上一个位置ID
   const isFirstLoadRef = useRef(true);
   const lastLocationIdRef = useRef(null);
+  const locationChangedRef = useRef(false); // 标记位置是否变化
 
   // 当位置改变时，立即清空旧的推荐数据和重置状态
   useEffect(() => {
@@ -308,6 +309,11 @@ const Home = () => {
       isFirstLoadRef.current = true; // 重置首次加载标志，确保会重新计算推荐
       // 清除 profileChanged 标记，因为位置变化时应该重新计算，不受此标记影响
       localStorage.removeItem('profileChanged');
+      // 标记位置已变化
+      locationChangedRef.current = true;
+    } else {
+      // 位置没变化，清除标记
+      locationChangedRef.current = false;
     }
     
     lastLocationIdRef.current = currentLocationId;
@@ -319,31 +325,31 @@ const Home = () => {
       return;
     }
 
-    // 检查位置是否真的变化了（通过比较位置ID）
+    // 检查位置是否真的变化了（通过比较位置ID和变化标记）
     const currentLocationId = currentLocation.id || `${currentLocation.latitude}_${currentLocation.longitude}`;
     const lastLocationId = lastLocationIdRef.current;
+    const locationChanged = locationChangedRef.current;
     
-    // 如果位置没有变化，且已经有天气数据，就不重新获取
-    // 注意：这里需要确保 lastLocationId 不为 null（即不是首次加载）
-    // 如果 lastLocationId 为 null，说明是首次加载，需要获取天气数据
-    // 如果 lastLocationId 等于 currentLocationId，说明位置没变化，且已经有天气数据，就不重新获取
-    // 如果 lastLocationId 不等于 currentLocationId，说明位置变化了，需要重新获取
-    if (lastLocationId !== null && lastLocationId === currentLocationId) {
-      // 位置没变化，检查是否有天气数据
-      // 如果没有天气数据（被清空了），需要重新获取
-      if (weatherData === null) {
-        isFirstLoadRef.current = true;
-        fetchWeatherData();
-      }
+    // 如果位置变化了，或者首次加载（lastLocationId === null），都需要重新获取天气数据
+    if (locationChanged || lastLocationId === null) {
+      // 位置变化时，重置首次加载标志，确保会重新计算推荐
+      isFirstLoadRef.current = true;
+      // 获取新位置的天气数据
+      fetchWeatherData();
+      // 清除位置变化标记
+      locationChangedRef.current = false;
       return;
     }
 
-    // 如果位置变化了（lastLocationId !== currentLocationId），或者首次加载（lastLocationId === null）
-    // 都需要重新获取天气数据
-    // 位置变化时，重置首次加载标志，确保会重新计算推荐
-    isFirstLoadRef.current = true;
-    // 获取新位置的天气数据
-    fetchWeatherData();
+    // 如果位置没有变化，检查是否有天气数据
+    // 如果没有天气数据（被清空了），需要重新获取
+    if (lastLocationId === currentLocationId && weatherData === null) {
+      isFirstLoadRef.current = true;
+      fetchWeatherData();
+      return;
+    }
+
+    // 如果位置没有变化，且已经有天气数据，就不重新获取
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLocation, initializing]);
 
