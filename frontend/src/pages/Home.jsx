@@ -102,21 +102,31 @@ const Home = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationLoading, locations.length, currentLocation]); // 添加 locations.length 和 currentLocation 作为依赖项
 
-  // 获取天气数据
-  const fetchWeatherData = async () => {
+  // 获取天气数据（带超时机制）
+  const fetchWeatherData = async (timeout = 10000) => {
     if (!currentLocation) {
       return null;
     }
 
     try {
-      const res = await axios.get('/api/weather/forecast', {
+      // 创建超时 Promise
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('请求超时')), timeout);
+      });
+
+      // 创建请求 Promise
+      const requestPromise = axios.get('/api/weather/forecast', {
         params: {
           latitude: currentLocation.latitude,
           longitude: currentLocation.longitude,
           timezone: currentLocation.timezone || 'Asia/Shanghai',
           days: 15
-        }
+        },
+        timeout: timeout // axios 的超时配置
       });
+
+      // 使用 Promise.race 实现超时控制
+      const res = await Promise.race([requestPromise, timeoutPromise]);
       setWeatherData(res.data.data);
       return res.data.data; // 返回天气数据
     } catch (error) {
@@ -125,7 +135,7 @@ const Home = () => {
     }
   };
 
-  // 刷新页面数据
+  // 刷新页面数据（带超时机制）
   const handleRefresh = async () => {
     if (!currentLocation) {
       return;
@@ -138,20 +148,64 @@ const Home = () => {
     setWeatherData(null);
     isFirstLoadRef.current = true;
 
+    // 设置整体超时时间（30秒）
+    const REFRESH_TIMEOUT = 30000;
+    let timeoutId = null;
+    let isTimeout = false;
+
     try {
-      // 重新获取天气数据
-      const newWeatherData = await fetchWeatherData();
-      
-      if (newWeatherData) {
-        // 如果天气数据获取成功，重新计算推荐
-        await calculateRecommendation(0, false, null);
-      } else {
-        // 如果天气数据获取失败，也尝试重新计算（可能会使用缓存或失败）
-        await calculateRecommendation(0, false, null);
-      }
+      // 创建超时 Promise
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          isTimeout = true;
+          reject(new Error('刷新超时，请稍后重试'));
+        }, REFRESH_TIMEOUT);
+      });
+
+      // 创建刷新任务 Promise
+      const refreshTask = async () => {
+        try {
+          // 重新获取天气数据（10秒超时）
+          const newWeatherData = await fetchWeatherData(10000);
+          
+          if (newWeatherData) {
+            // 如果天气数据获取成功，重新计算推荐（20秒超时）
+            await Promise.race([
+              calculateRecommendation(0, false, null),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('计算推荐超时')), 20000)
+              )
+            ]);
+          } else {
+            // 如果天气数据获取失败，也尝试重新计算（可能会使用缓存或失败）
+            await Promise.race([
+              calculateRecommendation(0, false, null),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('计算推荐超时')), 20000)
+              )
+            ]);
+          }
+        } catch (error) {
+          console.error('Refresh task failed:', error);
+          throw error;
+        }
+      };
+
+      // 使用 Promise.race 实现整体超时控制
+      await Promise.race([refreshTask(), timeoutPromise]);
     } catch (error) {
       console.error('Refresh failed:', error);
+      if (isTimeout) {
+        alert('刷新超时，请检查网络连接后重试');
+      } else {
+        alert(error.message || '刷新失败，请稍后重试');
+      }
     } finally {
+      // 清除超时定时器
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      // 确保恢复按钮状态
       setLoading(false);
       setRecommendationLoading(false);
     }
