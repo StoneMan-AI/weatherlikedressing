@@ -36,6 +36,9 @@ const Home = () => {
   
   // 使用 ref 跟踪初始化状态，避免重复执行
   const initializationRef = useRef({ initialized: false });
+  
+  // 使用 ref 跟踪上一次的用户画像，用于检测是否真的发生了变化
+  const previousUserProfileRef = useRef(null);
 
   // 首次打开时获取位置（仅使用IP定位）
   useEffect(() => {
@@ -342,6 +345,41 @@ const Home = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOutdoor, activityLevel]);
+
+  // 监听用户画像变化，但只有在用户修改了定制属性时才重新计算
+  useEffect(() => {
+    const currentProfileStr = JSON.stringify(userProfile);
+    const previousProfileStr = previousUserProfileRef.current;
+    
+    // 如果正在初始化或首次加载，只更新 ref，不重新计算
+    if (initializing || isFirstLoadRef.current || !currentLocation || !weatherData) {
+      previousUserProfileRef.current = currentProfileStr;
+      return;
+    }
+
+    // 检查是否有 profileChanged 标记
+    const profileChanged = localStorage.getItem('profileChanged') === 'true';
+    
+    // 比较当前和上一次的用户画像
+    const profileActuallyChanged = currentProfileStr !== previousProfileStr;
+
+    // 只有当标记存在且用户画像真的变化时才重新计算
+    if (profileChanged && profileActuallyChanged) {
+      // 清除标记
+      localStorage.removeItem('profileChanged');
+      
+      // 重新计算推荐
+      calculateRecommendation(0, true);
+    } else if (profileChanged && !profileActuallyChanged) {
+      // 如果标记存在但用户画像没有变化，说明用户从 Settings 返回但没有修改设置
+      // 清除标记，避免下次误触发
+      localStorage.removeItem('profileChanged');
+    }
+
+    // 更新 ref
+    previousUserProfileRef.current = currentProfileStr;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userProfile, currentLocation, weatherData, initializing]);
 
   if (initializing || locationLoading) {
     return (

@@ -180,6 +180,9 @@ const Settings = () => {
       // 标记用户已设置私人定制
       localStorage.setItem('hasCustomProfile', 'true');
       
+      // 标记用户修改了定制属性，需要重新计算推荐
+      localStorage.setItem('profileChanged', 'true');
+      
       // 触发自定义事件，通知其他组件更新
       window.dispatchEvent(new CustomEvent('customProfileUpdated'));
       
@@ -283,6 +286,9 @@ const Settings = () => {
       
       // 标记用户已设置私人定制
       localStorage.setItem('hasCustomProfile', 'true');
+      
+      // 标记用户修改了定制属性，需要重新计算推荐
+      localStorage.setItem('profileChanged', 'true');
       
       // 触发自定义事件，通知其他组件更新
       window.dispatchEvent(new CustomEvent('customProfileUpdated'));

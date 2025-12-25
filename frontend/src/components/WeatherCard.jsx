@@ -33,15 +33,25 @@ const WeatherCard = ({ weather, location }) => {
     return hour;
   };
 
-  // 从hourly数据中获取当前小时的温度（与WeatherDetail保持一致）
-  const getCurrentTempFromHourly = () => {
+  // 从hourly数据中获取当前小时的天气数据（与WeatherDetail保持一致）
+  const getCurrentHourDataFromHourly = () => {
     if (!hourly || hourly.length === 0) {
-      return current?.temperature_c || 0;
+      return {
+        temperature_c: current?.temperature_c || 0,
+        relative_humidity: current?.relative_humidity || 0,
+        wind_m_s: current?.wind_m_s || 0,
+        uv_index: current?.uv_index || 0
+      };
     }
 
     const currentHourIndex = getCurrentHourIndex();
     if (currentHourIndex === null) {
-      return current?.temperature_c || 0;
+      return {
+        temperature_c: current?.temperature_c || 0,
+        relative_humidity: current?.relative_humidity || 0,
+        wind_m_s: current?.wind_m_s || 0,
+        uv_index: current?.uv_index || 0
+      };
     }
 
     // 获取今天0时在指定时区的时间
@@ -74,17 +84,30 @@ const WeatherCard = ({ weather, location }) => {
 
     // 如果找到了数据点且时间差在1小时内，使用它；否则使用current数据
     if (closestHour && minDiff < 3600000) {
-      return closestHour.temperature_c;
+      return {
+        temperature_c: closestHour.temperature_c || 0,
+        relative_humidity: closestHour.relative_humidity || 0,
+        wind_m_s: closestHour.wind_m_s || 0,
+        uv_index: closestHour.uv_index || 0
+      };
     }
 
-    return current?.temperature_c || 0;
+    return {
+      temperature_c: current?.temperature_c || 0,
+      relative_humidity: current?.relative_humidity || 0,
+      wind_m_s: current?.wind_m_s || 0,
+      uv_index: current?.uv_index || 0
+    };
   };
+
+  // 获取当前小时的天气数据
+  const currentHourData = getCurrentHourDataFromHourly();
 
   // 获取今天的最高和最低温度
   // 优先从hourly数据计算（更准确），如果没有则从daily数据获取
   const getTodayTemps = () => {
     // 使用与WeatherDetail相同的方式获取当前温度
-    const currentTemp = Math.round(getCurrentTempFromHourly());
+    const currentTemp = Math.round(currentHourData.temperature_c);
     let maxTemp = currentTemp;
     let minTemp = currentTemp;
     
@@ -156,15 +179,15 @@ const WeatherCard = ({ weather, location }) => {
         <div className="weather-details-row">
           <div className="weather-detail-item">
             <span className="detail-label">湿度</span>
-            <span className="detail-value">{current.relative_humidity}%</span>
+            <span className="detail-value">{Math.round(currentHourData.relative_humidity)}%</span>
           </div>
           <div className="weather-detail-item">
             <span className="detail-label">风速</span>
-            <span className="detail-value">{current.wind_m_s?.toFixed(1)} m/s</span>
+            <span className="detail-value">{currentHourData.wind_m_s?.toFixed(1)} m/s</span>
           </div>
           <div className="weather-detail-item">
             <span className="detail-label">紫外线</span>
-            <span className="detail-value">{current.uv_index || 0}</span>
+            <span className="detail-value">{Math.round(currentHourData.uv_index) || 0}</span>
           </div>
           <div className="weather-detail-item">
             <span className="detail-label">空气质量</span>
