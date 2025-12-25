@@ -68,13 +68,15 @@ const Home = () => {
         // 注意：即使profileActuallyChanged为false，如果有标记也应该重新计算（可能是userProfile还没更新）
         if (profileChanged && currentLocation && weatherData && !initializing && !isFirstLoadRef.current) {
           console.log('通过事件触发重新计算');
-          // 清除标记
-          localStorage.removeItem('profileChanged');
           
           // 优先使用本地计算
           if (weatherData && weatherData.current && weatherData.current.temperature_c !== undefined) {
             try {
-              if (recommendation?.recommendation && canUseLocalCalculation(weatherData, recommendation.recommendation)) {
+              // 检查是否有原有推荐
+              const hasExistingRecommendation = recommendation?.recommendation && canUseLocalCalculation(weatherData, recommendation.recommendation);
+              
+              if (hasExistingRecommendation) {
+                // 如果有原有推荐，使用本地计算更新
                 const recalculated = recalculateRecommendation(
                   recommendation.recommendation,
                   weatherData,
@@ -88,6 +90,7 @@ const Home = () => {
                 });
                 console.log('事件触发：本地计算完成（更新推荐）', recalculated);
               } else {
+                // 如果没有原有推荐，使用本地计算生成新推荐
                 const current = weatherData.current || {};
                 const inputs = {
                   temperature_c: current.temperature_c || 0,
@@ -115,14 +118,20 @@ const Home = () => {
                 console.log('事件触发：本地计算完成（新推荐）', newRecommendation);
               }
               
+              // 清除标记（在成功计算后清除）
+              localStorage.removeItem('profileChanged');
               // 更新 ref
               previousUserProfileRef.current = currentProfileStr;
             } catch (error) {
               console.error('事件触发：本地计算失败，回退到API:', error);
+              // 如果本地计算失败，清除标记并回退到API
+              localStorage.removeItem('profileChanged');
               calculateRecommendation(0, true);
             }
           } else {
             console.log('事件触发：天气数据不完整，回退到API');
+            // 如果天气数据不完整，清除标记并回退到API
+            localStorage.removeItem('profileChanged');
             calculateRecommendation(0, true);
           }
         } else {
@@ -454,7 +463,9 @@ const Home = () => {
       // 如果标记存在但用户画像没有变化，说明用户从 Settings 返回但没有修改设置
       // 此时不应该重新计算，直接使用已有的推荐数据
       // 但前提是位置没有变化（如果位置变化了，标记会被清除，这里不会进入）
+      // 注意：如果 previousProfileStr 为 null，说明是首次加载，应该正常计算
       if (profileChanged && !profileActuallyChanged && previousProfileStr !== null) {
+        console.log('首次加载：检测到profileChanged标记但用户画像未变化，跳过API请求');
         // 清除标记，避免误触发
         localStorage.removeItem('profileChanged');
         // 更新 ref，但不重新计算
@@ -462,6 +473,53 @@ const Home = () => {
         // 标记首次加载完成，避免后续触发
         isFirstLoadRef.current = false;
         return;
+      }
+      
+      // 如果有 profileChanged 标记且用户画像真的变化了，说明用户修改了设置
+      // 此时应该使用本地计算，而不是API请求（避免重复请求）
+      if (profileChanged && profileActuallyChanged) {
+        console.log('首次加载：检测到profileChanged标记且用户画像变化，使用本地计算');
+        // 清除标记
+        localStorage.removeItem('profileChanged');
+        
+        // 使用本地计算生成推荐
+        if (weatherData && weatherData.current && weatherData.current.temperature_c !== undefined) {
+          try {
+            const current = weatherData.current || {};
+            const inputs = {
+              temperature_c: current.temperature_c || 0,
+              relative_humidity: current.relative_humidity || 0,
+              wind_m_s: current.wind_m_s || 0,
+              gust_m_s: current.gust_m_s || 0,
+              uv_index: current.uv_index || 0
+            };
+            const scoreDetails = calculateComfortScore(weatherData, isOutdoor, activityLevel, userProfile);
+            const dressingLayer = getDressingRecommendation(scoreDetails.ComfortScore);
+            const reasonSummary = generateDetailedReason(inputs, scoreDetails);
+            const newRecommendation = {
+              comfort_score: scoreDetails.ComfortScore,
+              score_details: scoreDetails,
+              recommendation_layers: dressingLayer.layers,
+              accessories: dressingLayer.accessories,
+              label: dressingLayer.label,
+              notes: dressingLayer.notes,
+              reason_summary: reasonSummary,
+              health_messages: []
+            };
+            setRecommendation({
+              recommendation: newRecommendation
+            });
+            console.log('首次加载：本地计算完成（新推荐）', newRecommendation);
+            // 更新用户画像 ref
+            previousUserProfileRef.current = currentProfileStr;
+            // 标记首次加载完成
+            isFirstLoadRef.current = false;
+            return;
+          } catch (error) {
+            console.error('首次加载：本地计算失败，回退到API:', error);
+            // 如果本地计算失败，回退到API请求
+          }
+        }
       }
       
       setLoading(true);
@@ -528,13 +586,6 @@ const Home = () => {
       hasWeatherData: !!weatherData
     });
     
-    // 如果正在初始化或首次加载，只更新 ref，不重新计算
-    if (initializing || isFirstLoadRef.current || !currentLocation || !weatherData) {
-      console.log('跳过计算：初始化或缺少数据');
-      previousUserProfileRef.current = currentProfileStr;
-      return;
-    }
-
     // 检查是否有 profileChanged 标记
     const profileChanged = localStorage.getItem('profileChanged') === 'true';
     
@@ -545,84 +596,107 @@ const Home = () => {
       profileChanged,
       profileActuallyChanged,
       currentProfileStr,
-      previousProfileStr
+      previousProfileStr,
+      initializing,
+      isFirstLoad: isFirstLoadRef.current,
+      hasLocation: !!currentLocation,
+      hasWeatherData: !!weatherData
     });
 
-    // 只有当标记存在且用户画像真的变化时才重新计算
-    if (profileChanged && profileActuallyChanged) {
-      console.log('开始重新计算推荐（用户画像变化）');
-      // 清除标记
-      localStorage.removeItem('profileChanged');
-      
-      // 优先使用本地计算（如果有完整数据），避免请求后端
-      // 即使没有原有推荐，只要有天气数据，也可以使用本地计算生成新推荐
-      if (weatherData && weatherData.current && weatherData.current.temperature_c !== undefined) {
-        try {
-          // 如果有原有推荐，使用本地计算更新
-          if (recommendation?.recommendation && canUseLocalCalculation(weatherData, recommendation.recommendation)) {
-            // 使用本地计算重新生成推荐
-            const recalculated = recalculateRecommendation(
-              recommendation.recommendation,
-              weatherData,
-              isOutdoor,
-              activityLevel,
-              userProfile
-            );
+    // 如果正在初始化或首次加载，但有 profileChanged 标记，说明用户从Settings返回
+    // 此时应该等待初始化完成后再计算，或者直接使用本地计算
+    if (initializing || isFirstLoadRef.current || !currentLocation || !weatherData) {
+      console.log('跳过计算：初始化或缺少数据', {
+        profileChanged,
+        profileActuallyChanged
+      });
+      // 如果有 profileChanged 标记，保留它，等待条件满足后再计算
+      // 如果没有标记，更新 ref
+      if (!profileChanged) {
+        previousUserProfileRef.current = currentProfileStr;
+      }
+      return;
+    }
 
-            // 更新推荐结果
-            setRecommendation({
-              ...recommendation,
-              recommendation: recalculated
-            });
-            console.log('用户画像变化：本地计算完成（更新推荐）', recalculated);
-          } else {
-            // 如果没有原有推荐，使用本地计算生成新推荐
-            const current = weatherData.current || {};
-            const inputs = {
-              temperature_c: current.temperature_c || 0,
-              relative_humidity: current.relative_humidity || 0,
-              wind_m_s: current.wind_m_s || 0,
-              gust_m_s: current.gust_m_s || 0,
-              uv_index: current.uv_index || 0
-            };
-            
-            // 使用本地规则引擎生成推荐
-            const scoreDetails = calculateComfortScore(weatherData, isOutdoor, activityLevel, userProfile);
-            const dressingLayer = getDressingRecommendation(scoreDetails.ComfortScore);
-            const reasonSummary = generateDetailedReason(inputs, scoreDetails);
-            
-            // 创建新的推荐结果
-            const newRecommendation = {
-              comfort_score: scoreDetails.ComfortScore,
-              score_details: scoreDetails,
-              recommendation_layers: dressingLayer.layers,
-              accessories: dressingLayer.accessories,
-              label: dressingLayer.label,
-              notes: dressingLayer.notes,
-              reason_summary: reasonSummary,
-              health_messages: [] // 本地计算不包含健康提醒
-            };
-            
-            setRecommendation({
-              recommendation: newRecommendation
-            });
-            console.log('本地计算完成（新推荐）:', newRecommendation);
+    // 如果标记存在，即使用户画像看起来没变化，也应该重新计算
+    // 因为可能是 userProfile 还没更新，或者需要强制刷新
+    if (profileChanged) {
+      // 如果用户画像真的变化了，或者 previousProfileStr 为 null（首次），都应该重新计算
+      if (profileActuallyChanged || previousProfileStr === null) {
+        console.log('开始重新计算推荐（用户画像变化）');
+        // 清除标记
+        localStorage.removeItem('profileChanged');
+        
+        // 优先使用本地计算（如果有完整数据），避免请求后端
+        // 即使没有原有推荐，只要有天气数据，也可以使用本地计算生成新推荐
+        if (weatherData && weatherData.current && weatherData.current.temperature_c !== undefined) {
+          try {
+            // 如果有原有推荐，使用本地计算更新
+            if (recommendation?.recommendation && canUseLocalCalculation(weatherData, recommendation.recommendation)) {
+              // 使用本地计算重新生成推荐
+              const recalculated = recalculateRecommendation(
+                recommendation.recommendation,
+                weatherData,
+                isOutdoor,
+                activityLevel,
+                userProfile
+              );
+
+              // 更新推荐结果
+              setRecommendation({
+                ...recommendation,
+                recommendation: recalculated
+              });
+              console.log('用户画像变化：本地计算完成（更新推荐）', recalculated);
+            } else {
+              // 如果没有原有推荐，使用本地计算生成新推荐
+              const current = weatherData.current || {};
+              const inputs = {
+                temperature_c: current.temperature_c || 0,
+                relative_humidity: current.relative_humidity || 0,
+                wind_m_s: current.wind_m_s || 0,
+                gust_m_s: current.gust_m_s || 0,
+                uv_index: current.uv_index || 0
+              };
+              
+              // 使用本地规则引擎生成推荐
+              const scoreDetails = calculateComfortScore(weatherData, isOutdoor, activityLevel, userProfile);
+              const dressingLayer = getDressingRecommendation(scoreDetails.ComfortScore);
+              const reasonSummary = generateDetailedReason(inputs, scoreDetails);
+              
+              // 创建新的推荐结果
+              const newRecommendation = {
+                comfort_score: scoreDetails.ComfortScore,
+                score_details: scoreDetails,
+                recommendation_layers: dressingLayer.layers,
+                accessories: dressingLayer.accessories,
+                label: dressingLayer.label,
+                notes: dressingLayer.notes,
+                reason_summary: reasonSummary,
+                health_messages: [] // 本地计算不包含健康提醒
+              };
+              
+              setRecommendation({
+                recommendation: newRecommendation
+              });
+              console.log('本地计算完成（新推荐）:', newRecommendation);
+            }
+          } catch (error) {
+            console.error('Local calculation failed, falling back to API:', error);
+            // 如果本地计算失败，回退到API请求
+            calculateRecommendation(0, true);
           }
-        } catch (error) {
-          console.error('Local calculation failed, falling back to API:', error);
-          // 如果本地计算失败，回退到API请求
+        } else {
+          console.log('天气数据不完整，回退到API请求');
+          // 如果没有完整数据，回退到API请求
           calculateRecommendation(0, true);
         }
       } else {
-        console.log('天气数据不完整，回退到API请求');
-        // 如果没有完整数据，回退到API请求
-        calculateRecommendation(0, true);
+        // 如果标记存在但用户画像没有变化，且 previousProfileStr 不为 null
+        // 说明用户从 Settings 返回但没有修改设置，清除标记
+        console.log('清除profileChanged标记（用户画像未变化）');
+        localStorage.removeItem('profileChanged');
       }
-    } else if (profileChanged && !profileActuallyChanged) {
-      console.log('清除profileChanged标记（用户画像未变化）');
-      // 如果标记存在但用户画像没有变化，说明用户从 Settings 返回但没有修改设置
-      // 清除标记，避免下次误触发
-      localStorage.removeItem('profileChanged');
     } else if (!profileChanged && profileActuallyChanged) {
       console.log('用户画像变化但无标记，可能是页面刷新导致');
     }
