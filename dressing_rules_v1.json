@@ -124,11 +124,6 @@
       "id": "heat_humidity_risk",
       "condition": "temperature_c >= 30 && relative_humidity >= 70",
       "message": "高温高湿，中暑/脱水风险，建议轻薄透气衣物、补水、避免高强度活动"
-    },
-    {
-      "id": "rain_alert",
-      "condition": "precip_prob > 50",
-      "message": "预计有降雨，建议带雨具"
     }
   ],
   "push_triggers": [
