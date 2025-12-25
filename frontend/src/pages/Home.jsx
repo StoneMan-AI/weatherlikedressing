@@ -9,7 +9,7 @@ import HealthAlerts from '../components/HealthAlerts';
 import TravelRecommendation from '../components/TravelRecommendation';
 import { useLocationContext } from '../contexts/LocationContext';
 import { useAuth } from '../contexts/AuthContext';
-import { recalculateRecommendation, canUseLocalCalculation } from '../utils/recommendationCalculator';
+import { recalculateRecommendation, canUseLocalCalculation, calculateComfortScore, getDressingRecommendation, generateDetailedReason } from '../utils/recommendationCalculator';
 import './Home.css';
 
 const Home = () => {
@@ -510,8 +510,67 @@ const Home = () => {
       // 清除标记
       localStorage.removeItem('profileChanged');
       
-      // 重新计算推荐
-      calculateRecommendation(0, true);
+      // 优先使用本地计算（如果有完整数据），避免请求后端
+      // 即使没有原有推荐，只要有天气数据，也可以使用本地计算生成新推荐
+      if (weatherData && weatherData.current && weatherData.current.temperature_c !== undefined) {
+        try {
+          // 如果有原有推荐，使用本地计算更新
+          if (recommendation?.recommendation && canUseLocalCalculation(weatherData, recommendation.recommendation)) {
+            // 使用本地计算重新生成推荐
+            const recalculated = recalculateRecommendation(
+              recommendation.recommendation,
+              weatherData,
+              isOutdoor,
+              activityLevel,
+              userProfile
+            );
+
+            // 更新推荐结果
+            setRecommendation({
+              ...recommendation,
+              recommendation: recalculated
+            });
+          } else {
+            // 如果没有原有推荐，使用本地计算生成新推荐
+            const current = weatherData.current || {};
+            const inputs = {
+              temperature_c: current.temperature_c || 0,
+              relative_humidity: current.relative_humidity || 0,
+              wind_m_s: current.wind_m_s || 0,
+              gust_m_s: current.gust_m_s || 0,
+              uv_index: current.uv_index || 0
+            };
+            
+            // 使用本地规则引擎生成推荐
+            const scoreDetails = calculateComfortScore(weatherData, isOutdoor, activityLevel, userProfile);
+            const dressingLayer = getDressingRecommendation(scoreDetails.ComfortScore);
+            const reasonSummary = generateDetailedReason(inputs, scoreDetails);
+            
+            // 创建新的推荐结果
+            const newRecommendation = {
+              comfort_score: scoreDetails.ComfortScore,
+              score_details: scoreDetails,
+              recommendation_layers: dressingLayer.layers,
+              accessories: dressingLayer.accessories,
+              label: dressingLayer.label,
+              notes: dressingLayer.notes,
+              reason_summary: reasonSummary,
+              health_messages: [] // 本地计算不包含健康提醒
+            };
+            
+            setRecommendation({
+              recommendation: newRecommendation
+            });
+          }
+        } catch (error) {
+          console.error('Local calculation failed, falling back to API:', error);
+          // 如果本地计算失败，回退到API请求
+          calculateRecommendation(0, true);
+        }
+      } else {
+        // 如果没有完整数据，回退到API请求
+        calculateRecommendation(0, true);
+      }
     } else if (profileChanged && !profileActuallyChanged) {
       // 如果标记存在但用户画像没有变化，说明用户从 Settings 返回但没有修改设置
       // 清除标记，避免下次误触发

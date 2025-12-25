@@ -123,7 +123,7 @@ function calculateUserAdjustment(userProfile, inputs) {
 /**
  * 计算舒适度分数
  */
-function calculateComfortScore(weatherData, isOutdoor, activityLevel, userProfile = {}) {
+export function calculateComfortScore(weatherData, isOutdoor, activityLevel, userProfile = {}) {
   const { weights } = RULES_CONFIG;
   const current = weatherData.current || {};
 
@@ -231,7 +231,7 @@ const DRESSING_LAYERS = [
 /**
  * 根据舒适度分数获取穿衣推荐
  */
-function getDressingRecommendation(comfortScore) {
+export function getDressingRecommendation(comfortScore) {
   // 找到匹配的推荐层级
   for (const layer of DRESSING_LAYERS) {
     if (comfortScore >= layer.min_score) {
@@ -257,7 +257,7 @@ function getDressingRecommendation(comfortScore) {
 /**
  * 生成详细理由（简化版）
  */
-function generateDetailedReason(inputs, scoreDetails) {
+export function generateDetailedReason(inputs, scoreDetails) {
   const parts = [];
   
   if (scoreDetails.T_score > 0) {
