@@ -432,27 +432,27 @@ class RuleEngine {
     const { temperature_c, wind_m_s, gust_m_s, aqi, precip_prob } = inputs;
     const score = scoreDetails.ComfortScore;
 
-    // 极端情况：极高优先级
+    // 极端情况：需警惕
     if (score < -20 || temperature_c < -10 || (wind_m_s >= 10 && temperature_c < 0)) {
-      return '极高';
+      return '需警惕';
     }
 
-    // 高风险情况：高优先级
+    // 高风险情况：需注意
     if (score < -10 || 
         (temperature_c < 5 && wind_m_s >= 5) ||
         aqi >= 200 ||
         (gust_m_s >= 15)) {
-      return '高';
+      return '需注意';
     }
 
-    // 中等风险：中优先级
+    // 中等风险：需留意
     if (score < 0 || 
         precip_prob > 70 ||
         aqi >= 151) {
-      return '中';
+      return '需留意';
     }
 
-    return '低';
+    return '舒适';
   }
 
   /**
@@ -516,7 +516,7 @@ class RuleEngine {
         reason_summary: detailedReason || '',
         health_messages: healthMessages || [],
         score_details: scoreDetails,
-        urgency: urgency || '低',
+        urgency: urgency || '舒适',
         confidence: confidence || 0.8
       };
     } catch (error) {

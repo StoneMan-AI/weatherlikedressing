@@ -335,6 +335,82 @@ class WeatherService {
     // 如果都没找到，返回当前数据
     return forecastData.current;
   }
+
+  /**
+   * 获取指定日期的全天天气数据（用于生成全天推荐）
+   * @param {Object} forecastData - 天气数据
+   * @param {string} targetDate - 目标日期（YYYY-MM-DD格式）
+   * @param {string} timezone - 时区
+   * @returns {Object} 综合的天气数据
+   */
+  getWeatherForDay(forecastData, targetDate, timezone = 'Asia/Shanghai') {
+    // 优先从daily数据中获取
+    if (forecastData.daily && forecastData.daily.length > 0) {
+      for (const day of forecastData.daily) {
+        const dayDateStr = day.date.split('T')[0]; // 提取日期部分
+        if (dayDateStr === targetDate) {
+          // 使用全天数据：平均温度、最高风速、最高UV等
+          // 温度使用最高最低的平均值，更接近体感
+          const avgTemp = (day.temperature_max + day.temperature_min) / 2;
+          
+          return {
+            timestamp: day.date,
+            temperature_c: avgTemp,
+            temperature_max: day.temperature_max,
+            temperature_min: day.temperature_min,
+            relative_humidity: null, // daily数据中没有湿度，尝试从hourly获取
+            wind_m_s: day.wind_speed_max || 0,
+            gust_m_s: day.wind_gust_max || 0,
+            uv_index: day.uv_index_max || 0,
+            precip_prob: day.precipitation_probability_max || 0,
+            precipitation: day.precipitation_sum || 0
+          };
+        }
+      }
+    }
+
+    // 如果daily数据中没有，尝试从hourly数据中计算平均值
+    if (forecastData.hourly && forecastData.hourly.length > 0) {
+      const targetDateObj = new Date(targetDate + 'T00:00:00');
+      const nextDateObj = new Date(targetDateObj);
+      nextDateObj.setDate(nextDateObj.getDate() + 1);
+      
+      const dayHours = [];
+      for (const hour of forecastData.hourly) {
+        const hourTime = new Date(hour.timestamp);
+        if (hourTime >= targetDateObj && hourTime < nextDateObj) {
+          dayHours.push(hour);
+        }
+      }
+      
+      if (dayHours.length > 0) {
+        // 计算平均值
+        const avgTemp = dayHours.reduce((sum, h) => sum + (h.temperature_c || 0), 0) / dayHours.length;
+        const avgHumidity = dayHours.reduce((sum, h) => sum + (h.relative_humidity || 0), 0) / dayHours.filter(h => h.relative_humidity != null).length || null;
+        const maxWind = Math.max(...dayHours.map(h => h.wind_m_s || 0));
+        const maxGust = Math.max(...dayHours.map(h => h.gust_m_s || 0));
+        const maxUV = Math.max(...dayHours.map(h => h.uv_index || 0));
+        const maxPrecipProb = Math.max(...dayHours.map(h => h.precip_prob || 0));
+        const totalPrecip = dayHours.reduce((sum, h) => sum + (h.precipitation || 0), 0);
+        
+        return {
+          timestamp: targetDate + 'T12:00:00',
+          temperature_c: avgTemp,
+          temperature_max: Math.max(...dayHours.map(h => h.temperature_c || 0)),
+          temperature_min: Math.min(...dayHours.map(h => h.temperature_c || 0)),
+          relative_humidity: avgHumidity,
+          wind_m_s: maxWind,
+          gust_m_s: maxGust,
+          uv_index: maxUV,
+          precip_prob: maxPrecipProb,
+          precipitation: totalPrecip
+        };
+      }
+    }
+
+    // 如果都没找到，返回当前数据
+    return forecastData.current;
+  }
 }
 
 module.exports = WeatherService;

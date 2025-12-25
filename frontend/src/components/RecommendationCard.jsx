@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './RecommendationCard.css';
 
-const RecommendationCard = ({ recommendation }) => {
+const RecommendationCard = ({ recommendation, onViewTomorrow, isViewingTomorrow = false }) => {
   const [expanded, setExpanded] = useState(false);
 
   if (!recommendation) return null;
@@ -37,9 +37,9 @@ const RecommendationCard = ({ recommendation }) => {
         <div className="header-right">
           {recommendation.urgency && (
             <span className={`urgency-badge urgency-${recommendation.urgency}`}>
-              {recommendation.urgency === '极高' ? '⚠️ 极高' :
-               recommendation.urgency === '高' ? '🔴 高' :
-               recommendation.urgency === '中' ? '🟡 中' : '🟢 低'}
+              {recommendation.urgency === '需警惕' ? '⚠️ 需警惕' :
+               recommendation.urgency === '需注意' ? '🔴 需注意' :
+               recommendation.urgency === '需留意' ? '🟡 需留意' : '🟢 舒适'}
             </span>
           )}
           <button
@@ -52,12 +52,23 @@ const RecommendationCard = ({ recommendation }) => {
       </div>
 
       <div className="recommendation-main">
-        <h3>
-          穿衣建议
-          {recommendation.score_details && (
-            <span className="total-score-inline">（体感得分：{recommendation.comfort_score}分）</span>
+        <div className="recommendation-title-row">
+          <h3>
+            穿衣建议
+            {recommendation.score_details && (
+              <span className="total-score-inline">（体感得分：{recommendation.comfort_score}分）</span>
+            )}
+          </h3>
+          {onViewTomorrow && (
+            <button
+              className="btn-view-tomorrow"
+              onClick={onViewTomorrow}
+              title={isViewingTomorrow ? '查看今天' : '查看明天'}
+            >
+              {isViewingTomorrow ? '看今天' : '看明天'}
+            </button>
           )}
-        </h3>
+        </div>
         <div className="layers-list">
           {recommendation.recommendation_layers.map((layer, index) => (
             <div key={index} className="layer-item">

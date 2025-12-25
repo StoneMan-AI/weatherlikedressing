@@ -68,15 +68,69 @@
   background: rgba(74, 144, 226, 0.4) !important;
 }
 
+.recommendation-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
 .recommendation-main h3 {
   font-size: 20px;
-  margin-bottom: var(--spacing-md);
+  margin: 0;
   color: var(--text-primary);
   font-weight: 500;
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
   flex-wrap: wrap;
+  flex: 1;
+}
+
+.btn-view-tomorrow {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: rgba(74, 144, 226, 0.3) !important;
+  background: rgba(74, 144, 226, 0.3) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  -webkit-backface-visibility: hidden !important;
+  -webkit-transform: translateZ(0) !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-view-tomorrow:hover {
+  background-color: rgba(74, 144, 226, 0.4) !important;
+  background: rgba(74, 144, 226, 0.4) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+@media (max-width: 768px) {
+  .recommendation-title-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .recommendation-main h3 {
+    font-size: 18px;
+  }
+  
+  .btn-view-tomorrow {
+    font-size: 13px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
 }
 
 .total-score-inline {
@@ -163,22 +217,22 @@
   white-space: nowrap;
 }
 
-.urgency-极高 {
+.urgency-需警惕 {
   background: #F44336;
   color: white;
 }
 
-.urgency-高 {
+.urgency-需注意 {
   background: #FF5722;
   color: white;
 }
 
-.urgency-中 {
+.urgency-需留意 {
   background: #FF9800;
   color: white;
 }
 
-.urgency-低 {
+.urgency-舒适 {
   background: #4CAF50;
   color: white;
 }

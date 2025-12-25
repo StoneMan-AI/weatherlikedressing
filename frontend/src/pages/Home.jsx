@@ -32,6 +32,7 @@ const Home = () => {
   const [loading, setLoading] = useState(false);
   const [recommendationLoading, setRecommendationLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
+  const [isViewingTomorrow, setIsViewingTomorrow] = useState(false);
   
   // 使用 ref 跟踪初始化状态，避免重复执行
   const initializationRef = useRef({ initialized: false });
@@ -120,7 +121,7 @@ const Home = () => {
   };
 
   // 计算推荐（带重试机制）- 优化：只更新推荐，不重新获取天气数据
-  const calculateRecommendation = async (retryCount = 0, skipLoading = false) => {
+  const calculateRecommendation = async (retryCount = 0, skipLoading = false, targetTime = null) => {
     if (!currentLocation) {
       return;
     }
@@ -132,14 +133,21 @@ const Home = () => {
     }
     
     try {
-      const res = await axios.post('/api/recommendations/calculate', {
+      const requestBody = {
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
         timezone: currentLocation.timezone || 'Asia/Shanghai',
         is_outdoor: isOutdoor,
         activity_level: activityLevel,
         user_profile: userProfile // 传递用户画像数据以生成个性化建议
-      });
+      };
+      
+      // 如果指定了目标时间，添加到请求中
+      if (targetTime) {
+        requestBody.target_time = targetTime;
+      }
+      
+      const res = await axios.post('/api/recommendations/calculate', requestBody);
       
       setRecommendation(res.data.data);
     } catch (error) {
@@ -176,6 +184,62 @@ const Home = () => {
         setRecommendationLoading(false);
       }
     }
+  };
+
+  // 获取明天的穿衣建议
+  const handleViewTomorrow = async () => {
+    if (!currentLocation || !weatherData) {
+      return;
+    }
+
+    try {
+      setRecommendationLoading(true);
+      
+      // 计算明天的日期（在指定时区）
+      const timezone = currentLocation.timezone || 'Asia/Shanghai';
+      
+      // 获取当前时间在指定时区
+      const now = new Date();
+      
+      // 获取明天在指定时区的日期
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      // 获取明天的日期字符串（YYYY-MM-DD格式）
+      const dateFormatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const tomorrowDateStr = dateFormatter.format(tomorrow);
+      
+      // 调用API获取明天的推荐（使用全天数据）
+      const res = await axios.post('/api/recommendations/calculate', {
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+        timezone: timezone,
+        is_outdoor: isOutdoor,
+        activity_level: activityLevel,
+        user_profile: userProfile,
+        target_date: tomorrowDateStr // 使用target_date而不是target_time
+      });
+      
+      setRecommendation(res.data.data);
+      setIsViewingTomorrow(true);
+    } catch (error) {
+      console.error('Failed to fetch tomorrow recommendation:', error);
+      alert('获取明天的穿衣建议失败，请稍后重试');
+    } finally {
+      setRecommendationLoading(false);
+    }
+  };
+
+  // 查看今天的穿衣建议
+  const handleViewToday = async () => {
+    setIsViewingTomorrow(false);
+    // 重新计算今天的推荐
+    await calculateRecommendation(0, false, null);
   };
 
   // 使用 useRef 跟踪是否是首次加载
@@ -314,7 +378,11 @@ const Home = () => {
 
               {recommendation && (
                 <>
-                  <RecommendationCard recommendation={recommendation.recommendation} />
+                  <RecommendationCard 
+                    recommendation={recommendation.recommendation}
+                    onViewTomorrow={isViewingTomorrow ? handleViewToday : handleViewTomorrow}
+                    isViewingTomorrow={isViewingTomorrow}
+                  />
                   {recommendation.recommendation.health_messages &&
                     recommendation.recommendation.health_messages.length > 0 && (
                       <HealthAlerts messages={recommendation.recommendation.health_messages} />
