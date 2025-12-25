@@ -24,17 +24,22 @@ export const LocationProvider = ({ children }) => {
     if (savedLocations) {
       try {
         const parsed = JSON.parse(savedLocations);
-        setLocations(parsed);
+        // 为旧数据添加last_used_at字段（兼容性处理）
+        const parsedWithTimestamp = parsed.map(loc => ({
+          ...loc,
+          last_used_at: loc.last_used_at || (loc.is_default ? Date.now() : 0)
+        }));
+        setLocations(parsedWithTimestamp);
         
         // 优先恢复用户最后选择的地区
         let targetLocation = null;
         if (savedCurrentLocationId) {
-          targetLocation = parsed.find(loc => loc.id === parseInt(savedCurrentLocationId));
+          targetLocation = parsedWithTimestamp.find(loc => loc.id === parseInt(savedCurrentLocationId));
         }
         
         // 如果保存的地区ID不存在，则使用默认地区或第一个地区
         if (!targetLocation) {
-          targetLocation = parsed.find(loc => loc.is_default) || parsed[0];
+          targetLocation = parsedWithTimestamp.find(loc => loc.is_default) || parsedWithTimestamp[0];
         }
         
         if (targetLocation) {
@@ -72,7 +77,8 @@ export const LocationProvider = ({ children }) => {
       latitude: location.latitude,
       longitude: location.longitude,
       timezone: location.timezone || 'Asia/Shanghai',
-      is_default: location.is_default || false
+      is_default: location.is_default || false,
+      last_used_at: Date.now() // 添加最近使用时间
     };
 
     let newLocations;
@@ -87,6 +93,7 @@ export const LocationProvider = ({ children }) => {
     saveLocations(newLocations);
     
     if (newLocation.is_default || locations.length === 0) {
+      // 新添加的位置被设为当前时，直接设置（last_used_at已经在创建时设置）
       setCurrentLocation(newLocation);
       saveCurrentLocationId(newLocation.id);
     }
@@ -125,12 +132,23 @@ export const LocationProvider = ({ children }) => {
     }
   };
 
-  // 设置当前位置（增强版，保存到localStorage）
+  // 设置当前位置（增强版，保存到localStorage，并更新最近使用时间）
   const setCurrentLocationWithSave = (location) => {
-    setCurrentLocation(location);
     if (location) {
+      const now = Date.now();
+      // 更新该地区的最近使用时间
+      const newLocations = locations.map(loc => 
+        loc.id === location.id 
+          ? { ...loc, last_used_at: now }
+          : loc
+      );
+      saveLocations(newLocations);
+      // 更新当前location对象，包含最新的last_used_at
+      const updatedLocation = { ...location, last_used_at: now };
+      setCurrentLocation(updatedLocation);
       saveCurrentLocationId(location.id);
     } else {
+      setCurrentLocation(null);
       saveCurrentLocationId(null);
     }
   };

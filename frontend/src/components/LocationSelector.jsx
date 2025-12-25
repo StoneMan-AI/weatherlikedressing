@@ -90,6 +90,21 @@ const LocationSelector = () => {
     }
   };
 
+  // 按最近使用时间排序地区列表（最近使用的在前）
+  const sortedLocations = [...locations].sort((a, b) => {
+    // 首先按最近使用时间降序排序
+    const timeA = a.last_used_at || 0;
+    const timeB = b.last_used_at || 0;
+    if (timeB !== timeA) {
+      return timeB - timeA; // 降序，最近使用的在前
+    }
+    // 如果时间相同，默认地区优先
+    if (a.is_default && !b.is_default) return -1;
+    if (!a.is_default && b.is_default) return 1;
+    // 否则按ID排序
+    return a.id - b.id;
+  });
+
   return (
     <div className="location-selector">
       <div className="location-header">
@@ -103,7 +118,7 @@ const LocationSelector = () => {
               value={currentLocation?.id || ''}
               onChange={handleLocationChange}
             >
-              {locations.map(location => (
+              {sortedLocations.map(location => (
                 <option key={location.id} value={location.id}>
                   {location.name}{location.is_default ? ' (默认)' : ''}
                 </option>
