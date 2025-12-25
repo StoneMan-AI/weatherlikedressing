@@ -456,9 +456,20 @@ const Home = () => {
     if (isFirstLoad) {
       // 检查是否有 profileChanged 标记（仅在非位置变化的情况下检查）
       const profileChanged = localStorage.getItem('profileChanged') === 'true';
-      const currentProfileStr = JSON.stringify(userProfile);
+      // 直接从 user 对象获取最新的 profile_json，避免使用可能过时的 userProfile
+      const currentUserProfile = user?.profile_json || {};
+      const currentProfileStr = JSON.stringify(currentUserProfile);
       const previousProfileStr = previousUserProfileRef.current;
       const profileActuallyChanged = currentProfileStr !== previousProfileStr;
+      
+      console.log('首次加载：用户画像检查', {
+        profileChanged,
+        profileActuallyChanged,
+        currentProfileStr,
+        previousProfileStr,
+        userProfileFromState: JSON.stringify(userProfile),
+        userProfileFromUser: JSON.stringify(currentUserProfile)
+      });
       
       // 如果标记存在但用户画像没有变化，说明用户从 Settings 返回但没有修改设置
       // 此时不应该重新计算，直接使用已有的推荐数据
@@ -483,6 +494,7 @@ const Home = () => {
         localStorage.removeItem('profileChanged');
         
         // 使用本地计算生成推荐
+        // 注意：使用 currentUserProfile（从 user 对象直接获取），而不是 userProfile（可能还没更新）
         if (weatherData && weatherData.current && weatherData.current.temperature_c !== undefined) {
           try {
             const current = weatherData.current || {};
@@ -493,7 +505,11 @@ const Home = () => {
               gust_m_s: current.gust_m_s || 0,
               uv_index: current.uv_index || 0
             };
-            const scoreDetails = calculateComfortScore(weatherData, isOutdoor, activityLevel, userProfile);
+            console.log('首次加载：使用用户画像进行计算', {
+              userProfile: currentUserProfile,
+              userProfileStr: JSON.stringify(currentUserProfile)
+            });
+            const scoreDetails = calculateComfortScore(weatherData, isOutdoor, activityLevel, currentUserProfile);
             const dressingLayer = getDressingRecommendation(scoreDetails.ComfortScore);
             const reasonSummary = generateDetailedReason(inputs, scoreDetails);
             const newRecommendation = {
@@ -534,7 +550,7 @@ const Home = () => {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentLocation, weatherData, initializing]);
+  }, [currentLocation, weatherData, initializing, user]); // 添加 user 依赖，确保 user 更新时重新计算
 
   // 当活动场景或活动强度改变时，使用本地计算（不请求后端）
   useEffect(() => {
