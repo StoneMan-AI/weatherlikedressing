@@ -279,12 +279,23 @@ const Home = () => {
 
   // 当位置改变时获取天气数据（只在位置变化时调用，不依赖活动场景/强度）
   useEffect(() => {
-    if (currentLocation && !initializing) {
-      // 位置变化时，重置首次加载标志，确保会重新计算推荐
-      isFirstLoadRef.current = true;
-      // 获取新位置的天气数据
-      fetchWeatherData();
+    if (!currentLocation || initializing) {
+      return;
     }
+
+    // 检查位置是否真的变化了（通过比较位置ID）
+    const currentLocationId = currentLocation.id || `${currentLocation.latitude}_${currentLocation.longitude}`;
+    const lastLocationId = lastLocationIdRef.current;
+    
+    // 如果位置没有变化，且已经有天气数据，就不重新获取
+    if (lastLocationId === currentLocationId && weatherData) {
+      return;
+    }
+
+    // 位置变化时，重置首次加载标志，确保会重新计算推荐
+    isFirstLoadRef.current = true;
+    // 获取新位置的天气数据
+    fetchWeatherData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLocation, initializing]);
 
@@ -297,7 +308,26 @@ const Home = () => {
     const isFirstLoad = isFirstLoadRef.current;
     
     // 如果是首次加载（位置变化或天气数据更新），显示全屏 loading 并请求后端
+    // 但需要检查是否有 profileChanged 标记，如果有且用户画像没有变化，就不重新计算
     if (isFirstLoad) {
+      // 检查是否有 profileChanged 标记
+      const profileChanged = localStorage.getItem('profileChanged') === 'true';
+      const currentProfileStr = JSON.stringify(userProfile);
+      const previousProfileStr = previousUserProfileRef.current;
+      const profileActuallyChanged = currentProfileStr !== previousProfileStr;
+      
+      // 如果标记存在但用户画像没有变化，说明用户从 Settings 返回但没有修改设置
+      // 此时不应该重新计算，直接使用已有的推荐数据
+      if (profileChanged && !profileActuallyChanged) {
+        // 清除标记，避免误触发
+        localStorage.removeItem('profileChanged');
+        // 更新 ref，但不重新计算
+        previousUserProfileRef.current = currentProfileStr;
+        // 标记首次加载完成，避免后续触发
+        isFirstLoadRef.current = false;
+        return;
+      }
+      
       setLoading(true);
       // 使用最新的currentLocation和weatherData重新计算
       // 确保在调用时使用最新的currentLocation值（通过闭包捕获）
