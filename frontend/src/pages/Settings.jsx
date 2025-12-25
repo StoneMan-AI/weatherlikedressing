@@ -51,8 +51,91 @@ const Settings = () => {
       if (hasCustomSettings) {
         localStorage.setItem('hasCustomProfile', 'true');
       }
+    } else if (!token) {
+      // 如果没有user数据且没有token（匿名用户），尝试从后端加载用户数据
+      const loadAnonymousUser = async () => {
+        try {
+          const userId = getOrCreateUserId();
+          const config = {
+            headers: {
+              'X-User-ID': userId
+            }
+          };
+          
+          // 尝试从localStorage获取最新的profileHistory，如果有则使用它来同步后端
+          const savedHistory = localStorage.getItem('profileHistory');
+          let profileToSync = null;
+          if (savedHistory) {
+            try {
+              const history = JSON.parse(savedHistory);
+              if (history.length > 0) {
+                // 使用最新的历史记录来同步后端
+                profileToSync = history[0].profile;
+              }
+            } catch (e) {
+              console.error('Failed to parse profileHistory:', e);
+            }
+          }
+          
+          // 如果有历史记录，使用它来同步后端；否则发送默认值来获取用户数据
+          const profileData = profileToSync || {
+            age_group: 'adult',
+            sensitivity: 'none',
+            conditions: []
+          };
+          
+          // 调用PUT接口来同步后端数据（如果用户不存在会创建，如果存在会更新）
+          const res = await axios.put('/api/users/profile', {
+            profile_json: profileData
+          }, config);
+          
+          if (res.data && res.data.data) {
+            const userData = res.data.data;
+            updateUser(userData);
+            
+            // 初始化表单数据（使用后端返回的数据，确保数据一致）
+            setFormData({
+              age_group: userData.profile_json?.age_group || 'adult',
+              sensitivity: userData.profile_json?.sensitivity || 'none',
+              conditions: userData.profile_json?.conditions || []
+            });
+            
+            // 检查是否有自定义设置
+            const profile = userData.profile_json || {};
+            const hasCustomSettings = 
+              profile.age_group && profile.age_group !== 'adult' ||
+              profile.sensitivity && profile.sensitivity !== 'none' ||
+              (profile.conditions && profile.conditions.length > 0);
+            
+            if (hasCustomSettings) {
+              localStorage.setItem('hasCustomProfile', 'true');
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load anonymous user profile:', error);
+          // 如果加载失败，尝试从localStorage的profileHistory初始化
+          const savedHistory = localStorage.getItem('profileHistory');
+          if (savedHistory) {
+            try {
+              const history = JSON.parse(savedHistory);
+              if (history.length > 0) {
+                const latestProfile = history[0].profile;
+                setFormData({
+                  age_group: latestProfile.age_group || 'adult',
+                  sensitivity: latestProfile.sensitivity || 'none',
+                  conditions: latestProfile.conditions || []
+                });
+              }
+            } catch (e) {
+              console.error('Failed to parse profileHistory:', e);
+            }
+          }
+        }
+      };
+      
+      loadAnonymousUser();
     }
-  }, [user]);
+  }, [user, token, updateUser]);
 
   // 更新用户资料
   const updateProfileMutation = useMutation({
