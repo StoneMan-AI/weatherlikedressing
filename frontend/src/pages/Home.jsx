@@ -272,6 +272,8 @@ const Home = () => {
       setWeatherData(null); // 清空旧的天气数据
       setIsViewingTomorrow(false); // 重置"看明天"状态
       isFirstLoadRef.current = true; // 重置首次加载标志，确保会重新计算推荐
+      // 清除 profileChanged 标记，因为位置变化时应该重新计算，不受此标记影响
+      localStorage.removeItem('profileChanged');
     }
     
     lastLocationIdRef.current = currentLocationId;
@@ -309,8 +311,9 @@ const Home = () => {
     
     // 如果是首次加载（位置变化或天气数据更新），显示全屏 loading 并请求后端
     // 但需要检查是否有 profileChanged 标记，如果有且用户画像没有变化，就不重新计算
+    // 注意：位置变化时，profileChanged 标记会被清除，所以位置变化时总是重新计算
     if (isFirstLoad) {
-      // 检查是否有 profileChanged 标记
+      // 检查是否有 profileChanged 标记（仅在非位置变化的情况下检查）
       const profileChanged = localStorage.getItem('profileChanged') === 'true';
       const currentProfileStr = JSON.stringify(userProfile);
       const previousProfileStr = previousUserProfileRef.current;
@@ -318,7 +321,8 @@ const Home = () => {
       
       // 如果标记存在但用户画像没有变化，说明用户从 Settings 返回但没有修改设置
       // 此时不应该重新计算，直接使用已有的推荐数据
-      if (profileChanged && !profileActuallyChanged) {
+      // 但前提是位置没有变化（如果位置变化了，标记会被清除，这里不会进入）
+      if (profileChanged && !profileActuallyChanged && previousProfileStr !== null) {
         // 清除标记，避免误触发
         localStorage.removeItem('profileChanged');
         // 更新 ref，但不重新计算
@@ -335,6 +339,8 @@ const Home = () => {
       calculateRecommendation(0, false, null).finally(() => {
         setLoading(false);
         isFirstLoadRef.current = false; // 标记首次加载完成
+        // 更新用户画像 ref，用于下次比较
+        previousUserProfileRef.current = JSON.stringify(userProfile);
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
