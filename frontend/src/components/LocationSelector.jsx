@@ -86,7 +86,7 @@ const LocationSelector = () => {
       setShowAddForm(false);
       setSearchResults(null);
     } catch (error) {
-      alert('未找到该城市，请检查城市名称是否正确');
+      alert('未找到该城市，你可以换成地级市试试。');
       setSearchResults(null);
     } finally {
       setSearching(false);
