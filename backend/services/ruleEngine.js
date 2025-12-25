@@ -323,7 +323,7 @@ class RuleEngine {
     }
 
     // 添加新的健康规则
-    const { temperature_c, relative_humidity, uv_index, aqi, user_profile } = inputs;
+    const { temperature_c, relative_humidity, uv_index, aqi, user_profile, precip_prob = 0 } = inputs;
 
     // 高温高湿
     if (temperature_c >= 30 && relative_humidity >= 70) {
