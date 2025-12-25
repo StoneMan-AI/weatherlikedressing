@@ -357,6 +357,18 @@ const Settings = () => {
                 const date = new Date(item.timestamp);
                 const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
                 
+                // 时间段显示（今天、昨天、或具体日期）
+                const now = new Date();
+                const itemDate = new Date(item.timestamp);
+                const diffTime = now - itemDate;
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                let timeDisplay = formattedDate;
+                if (diffDays === 0) {
+                  timeDisplay = `今天 ${String(itemDate.getHours()).padStart(2, '0')}:${String(itemDate.getMinutes()).padStart(2, '0')}`;
+                } else if (diffDays === 1) {
+                  timeDisplay = `昨天 ${String(itemDate.getHours()).padStart(2, '0')}:${String(itemDate.getMinutes()).padStart(2, '0')}`;
+                }
+                
                 // 年龄段标签映射
                 const ageGroupLabels = {
                   'child_0_2': '0-2岁',
@@ -385,7 +397,6 @@ const Settings = () => {
                 };
                 
                 // 检查当前用户设置是否与历史记录匹配
-                // 优先使用 user.profile_json（后端保存的数据），如果没有则使用 formData
                 const currentProfile = user?.profile_json || formData;
                 const isCurrentProfile = 
                   currentProfile.age_group === item.profile.age_group &&
@@ -393,40 +404,69 @@ const Settings = () => {
                   JSON.stringify([...(currentProfile.conditions || [])].sort()) === JSON.stringify([...(item.profile.conditions || [])].sort());
                 
                 return (
-                  <div key={item.id} className={`profile-history-item ${isCurrentProfile ? 'is-current' : ''}`}>
-                    <div className="history-item-header">
-                      <span className="history-item-date">{formattedDate}</span>
-                      {!isCurrentProfile && (
+                  <div key={item.id} className={`profile-history-card ${isCurrentProfile ? 'is-current' : ''}`}>
+                    <div className="history-card-header">
+                      <div className="history-card-title">
+                        <span className="history-card-icon">⚙️</span>
+                        <div className="history-card-title-text">
+                          <span className="history-card-label">定制方案</span>
+                          <span className="history-card-date">{timeDisplay}</span>
+                        </div>
+                      </div>
+                      {isCurrentProfile && (
+                        <span className="current-status-badge">
+                          <span className="status-dot"></span>
+                          当前使用
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="history-card-body">
+                      <div className="history-info-grid">
+                        <div className="history-info-item">
+                          <div className="info-icon">👤</div>
+                          <div className="info-content">
+                            <div className="info-label">年龄段</div>
+                            <div className="info-value">{ageGroupLabels[item.profile.age_group] || item.profile.age_group}</div>
+                          </div>
+                        </div>
+                        
+                        <div className="history-info-item">
+                          <div className="info-icon">🌡️</div>
+                          <div className="info-content">
+                            <div className="info-label">温度敏感度</div>
+                            <div className="info-value">{sensitivityLabels[item.profile.sensitivity] || item.profile.sensitivity}</div>
+                          </div>
+                        </div>
+                        
+                        {item.profile.conditions && item.profile.conditions.length > 0 && (
+                          <div className="history-info-item history-info-item-full">
+                            <div className="info-icon">🏥</div>
+                            <div className="info-content">
+                              <div className="info-label">健康状况</div>
+                              <div className="info-tags">
+                                {item.profile.conditions.map(c => (
+                                  <span key={c} className="info-tag">
+                                    {conditionLabels[c] || c}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {!isCurrentProfile && (
+                      <div className="history-card-footer">
                         <button
                           type="button"
                           className="btn-apply-history"
                           onClick={() => handleApplyHistory(item)}
                         >
+                          <span className="btn-icon">✓</span>
                           应用此设置
                         </button>
-                      )}
-                    </div>
-                    <div className="history-item-content">
-                      <div className="history-item-field">
-                        <span className="field-label">年龄段：</span>
-                        <span className="field-value">{ageGroupLabels[item.profile.age_group] || item.profile.age_group}</span>
-                      </div>
-                      <div className="history-item-field">
-                        <span className="field-label">敏感度：</span>
-                        <span className="field-value">{sensitivityLabels[item.profile.sensitivity] || item.profile.sensitivity}</span>
-                      </div>
-                      {item.profile.conditions && item.profile.conditions.length > 0 && (
-                        <div className="history-item-field" style={{ gridColumn: '1 / -1' }}>
-                          <span className="field-label">健康状况：</span>
-                          <span className="field-value">
-                            {item.profile.conditions.map(c => conditionLabels[c] || c).join('、')}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    {isCurrentProfile && (
-                      <div className="history-item-actions">
-                        <span className="current-badge">当前设置</span>
                       </div>
                     )}
                   </div>
