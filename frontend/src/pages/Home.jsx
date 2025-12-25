@@ -46,8 +46,9 @@ const Home = () => {
       console.log('收到 customProfileUpdated 事件，准备重新计算');
       // 延迟一下，确保userProfile已经更新
       setTimeout(() => {
-        // 强制触发一次检查
-        const currentProfileStr = JSON.stringify(userProfile);
+        // 从最新的user获取userProfile，避免闭包问题
+        const latestUserProfile = user?.profile_json || {};
+        const currentProfileStr = JSON.stringify(latestUserProfile);
         const previousProfileStr = previousUserProfileRef.current;
         const profileChanged = localStorage.getItem('profileChanged') === 'true';
         const profileActuallyChanged = currentProfileStr !== previousProfileStr;
@@ -58,11 +59,14 @@ const Home = () => {
           currentProfileStr,
           previousProfileStr,
           hasLocation: !!currentLocation,
-          hasWeatherData: !!weatherData
+          hasWeatherData: !!weatherData,
+          initializing,
+          isFirstLoad: isFirstLoadRef.current
         });
         
-        // 如果标记存在且用户画像真的变化了，且有必要的条件，则触发计算
-        if (profileChanged && profileActuallyChanged && currentLocation && weatherData && !initializing && !isFirstLoadRef.current) {
+        // 如果标记存在，且有必要的条件，则触发计算
+        // 注意：即使profileActuallyChanged为false，如果有标记也应该重新计算（可能是userProfile还没更新）
+        if (profileChanged && currentLocation && weatherData && !initializing && !isFirstLoadRef.current) {
           console.log('通过事件触发重新计算');
           // 清除标记
           localStorage.removeItem('profileChanged');
@@ -76,13 +80,13 @@ const Home = () => {
                   weatherData,
                   isOutdoor,
                   activityLevel,
-                  userProfile
+                  latestUserProfile
                 );
                 setRecommendation({
                   ...recommendation,
                   recommendation: recalculated
                 });
-                console.log('事件触发：本地计算完成（更新推荐）');
+                console.log('事件触发：本地计算完成（更新推荐）', recalculated);
               } else {
                 const current = weatherData.current || {};
                 const inputs = {
@@ -92,7 +96,7 @@ const Home = () => {
                   gust_m_s: current.gust_m_s || 0,
                   uv_index: current.uv_index || 0
                 };
-                const scoreDetails = calculateComfortScore(weatherData, isOutdoor, activityLevel, userProfile);
+                const scoreDetails = calculateComfortScore(weatherData, isOutdoor, activityLevel, latestUserProfile);
                 const dressingLayer = getDressingRecommendation(scoreDetails.ComfortScore);
                 const reasonSummary = generateDetailedReason(inputs, scoreDetails);
                 const newRecommendation = {
@@ -108,8 +112,11 @@ const Home = () => {
                 setRecommendation({
                   recommendation: newRecommendation
                 });
-                console.log('事件触发：本地计算完成（新推荐）');
+                console.log('事件触发：本地计算完成（新推荐）', newRecommendation);
               }
+              
+              // 更新 ref
+              previousUserProfileRef.current = currentProfileStr;
             } catch (error) {
               console.error('事件触发：本地计算失败，回退到API:', error);
               calculateRecommendation(0, true);
@@ -118,11 +125,16 @@ const Home = () => {
             console.log('事件触发：天气数据不完整，回退到API');
             calculateRecommendation(0, true);
           }
-          
-          // 更新 ref
-          previousUserProfileRef.current = currentProfileStr;
+        } else {
+          console.log('事件触发：条件不满足，跳过计算', {
+            profileChanged,
+            hasLocation: !!currentLocation,
+            hasWeatherData: !!weatherData,
+            initializing,
+            isFirstLoad: isFirstLoadRef.current
+          });
         }
-      }, 100);
+      }, 200); // 增加延迟时间，确保userProfile已经更新
     };
     
     window.addEventListener('customProfileUpdated', handleProfileUpdate);
@@ -130,7 +142,7 @@ const Home = () => {
       window.removeEventListener('customProfileUpdated', handleProfileUpdate);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userProfile, currentLocation, weatherData, initializing]);
+  }, [user, currentLocation, weatherData, initializing, recommendation, isOutdoor, activityLevel]);
 
   // 首次打开时获取位置（仅使用IP定位）
   useEffect(() => {
@@ -227,81 +239,6 @@ const Home = () => {
     }
   };
 
-  // 刷新页面数据（带超时机制）
-  const handleRefresh = async () => {
-    if (!currentLocation) {
-      return;
-    }
-
-    // 重置状态
-    setLoading(true);
-    setRecommendationLoading(true);
-    setRecommendation(null);
-    setWeatherData(null);
-    isFirstLoadRef.current = true;
-
-    // 设置整体超时时间（30秒）
-    const REFRESH_TIMEOUT = 30000;
-    let timeoutId = null;
-    let isTimeout = false;
-
-    try {
-      // 创建超时 Promise
-      const timeoutPromise = new Promise((_, reject) => {
-        timeoutId = setTimeout(() => {
-          isTimeout = true;
-          reject(new Error('刷新超时，请稍后重试'));
-        }, REFRESH_TIMEOUT);
-      });
-
-      // 创建刷新任务 Promise
-      const refreshTask = async () => {
-        try {
-          // 重新获取天气数据（10秒超时）
-          const newWeatherData = await fetchWeatherData(10000);
-          
-          if (newWeatherData) {
-            // 如果天气数据获取成功，重新计算推荐（20秒超时）
-            await Promise.race([
-              calculateRecommendation(0, false, null),
-              new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('计算推荐超时')), 20000)
-              )
-            ]);
-          } else {
-            // 如果天气数据获取失败，也尝试重新计算（可能会使用缓存或失败）
-            await Promise.race([
-              calculateRecommendation(0, false, null),
-              new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('计算推荐超时')), 20000)
-              )
-            ]);
-          }
-        } catch (error) {
-          console.error('Refresh task failed:', error);
-          throw error;
-        }
-      };
-
-      // 使用 Promise.race 实现整体超时控制
-      await Promise.race([refreshTask(), timeoutPromise]);
-    } catch (error) {
-      console.error('Refresh failed:', error);
-      if (isTimeout) {
-        alert('刷新超时，请检查网络连接后重试');
-      } else {
-        alert(error.message || '刷新失败，请稍后重试');
-      }
-    } finally {
-      // 清除超时定时器
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      // 确保恢复按钮状态
-      setLoading(false);
-      setRecommendationLoading(false);
-    }
-  };
 
   // 计算推荐（带重试机制）- 优化：只更新推荐，不重新获取天气数据
   const calculateRecommendation = async (retryCount = 0, skipLoading = false, targetTime = null, forceOutdoor = false) => {
@@ -438,7 +375,7 @@ const Home = () => {
   const lastLocationIdRef = useRef(null);
   const locationChangedRef = useRef(false); // 标记位置是否变化
 
-  // 当位置改变时，立即清空旧的推荐数据和重置状态
+  // 当位置改变时，标记位置变化（不清空数据，让后续逻辑处理）
   useEffect(() => {
     if (!currentLocation) {
       return;
@@ -446,28 +383,14 @@ const Home = () => {
 
     const currentLocationId = currentLocation.id || `${currentLocation.latitude}_${currentLocation.longitude}`;
     
-    // 如果位置发生了变化，清空旧的推荐数据并强制重新计算
+    // 如果位置发生了变化，标记位置变化，但不清空数据
+    // 数据会在后续的useEffect中根据位置变化自动更新
     if (lastLocationIdRef.current !== null && lastLocationIdRef.current !== currentLocationId) {
-      console.log('Location changed, clearing old recommendation data');
-      
-      // 检查是否有 profileChanged 标记，如果有，说明用户刚修改了私人定制
-      // 此时不应该清空推荐数据，而是保留标记，让用户画像变化的useEffect来处理
-      const profileChanged = localStorage.getItem('profileChanged') === 'true';
-      
-      if (!profileChanged) {
-        // 只有在没有 profileChanged 标记时才清空数据
-        // 这样可以避免在用户从Settings返回时误清空推荐数据
-        setRecommendation(null); // 清空旧的推荐数据
-        setWeatherData(null); // 清空旧的天气数据
-        setIsViewingTomorrow(false); // 重置"看明天"状态
-        isFirstLoadRef.current = true; // 重置首次加载标志，确保会重新计算推荐
-        // 标记位置已变化
-        locationChangedRef.current = true;
-      } else {
-        console.log('检测到profileChanged标记，保留推荐数据，等待用户画像变化处理');
-        // 如果有 profileChanged 标记，不清空推荐数据，只标记位置变化
-        locationChangedRef.current = true;
-      }
+      console.log('Location changed, marking location change (not clearing data)');
+      setIsViewingTomorrow(false); // 重置"看明天"状态
+      isFirstLoadRef.current = true; // 重置首次加载标志，确保会重新计算推荐
+      // 标记位置已变化
+      locationChangedRef.current = true;
     } else {
       // 位置没变化，清除标记
       locationChangedRef.current = false;
@@ -651,6 +574,7 @@ const Home = () => {
               ...recommendation,
               recommendation: recalculated
             });
+            console.log('用户画像变化：本地计算完成（更新推荐）', recalculated);
           } else {
             // 如果没有原有推荐，使用本地计算生成新推荐
             const current = weatherData.current || {};
@@ -820,32 +744,6 @@ const Home = () => {
         </div>
       )}
 
-      {/* 显示刷新按钮：当有位置但没有天气数据或推荐数据时 */}
-      {currentLocation && !initializing && !locationLoading && (!weatherData || !recommendation) && !loading && (
-        <div className="empty-state">
-          <p className="text-gray">内容加载失败</p>
-          <p className="text-gray" style={{ fontSize: '14px', marginTop: '8px', marginBottom: '16px' }}>
-            请点击刷新按钮重试
-          </p>
-          <button 
-            className="btn-refresh" 
-            onClick={handleRefresh}
-            disabled={loading || recommendationLoading}
-          >
-            {loading || recommendationLoading ? (
-              <>
-                <div className="loading-spinner-small"></div>
-                <span>刷新中...</span>
-              </>
-            ) : (
-              <>
-                <span>🔄</span>
-                <span>刷新</span>
-              </>
-            )}
-          </button>
-        </div>
-      )}
     </div>
   );
 };
