@@ -1,10 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './DailyForecast.css';
 
 const DailyForecast = ({ dailyData }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 检测是否为移动端
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   if (!dailyData || dailyData.length === 0) {
     return null;
   }
+
+  // 移动端默认显示5天，PC端显示全部
+  const defaultDisplayCount = isMobile ? 5 : 15;
+  const displayCount = isExpanded || !isMobile ? dailyData.length : defaultDisplayCount;
+  const shouldShowToggle = isMobile && dailyData.length > 5;
 
   // 判断是否是今天（使用时区正确的日期比较）
   const isToday = (dateString) => {
@@ -110,10 +129,18 @@ const DailyForecast = ({ dailyData }) => {
     <div className="daily-forecast">
       <div className="forecast-header">
         <h3>15天预报</h3>
+        {shouldShowToggle && (
+          <button
+            className="btn-toggle-forecast"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
+            {isExpanded ? '收起' : '展开全部'}
+          </button>
+        )}
       </div>
 
       <div className="forecast-list">
-        {dailyData.slice(0, 15).map((day, index) => {
+        {dailyData.slice(0, displayCount).map((day, index) => {
           // 使用实际的日期字段（可能是date或time）
           const dateString = day.date || day.time || day.timestamp;
           const dateInfo = formatDate(dateString);
