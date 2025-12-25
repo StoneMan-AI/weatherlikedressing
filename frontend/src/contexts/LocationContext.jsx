@@ -91,6 +91,29 @@ export const LocationProvider = ({ children }) => {
 
   // 添加位置
   const addLocation = (location) => {
+    // 检查位置是否已存在（通过经纬度判断，允许0.001度的误差）
+    const existingLocation = locations.find(loc => {
+      const latDiff = Math.abs(loc.latitude - location.latitude);
+      const lonDiff = Math.abs(loc.longitude - location.longitude);
+      return latDiff < 0.001 && lonDiff < 0.001;
+    });
+
+    // 如果位置已存在，更新最近使用时间并返回现有位置
+    if (existingLocation) {
+      const now = Date.now();
+      const updatedLocations = locations.map(loc => 
+        loc.id === existingLocation.id 
+          ? { ...loc, last_used_at: now }
+          : loc
+      );
+      saveLocations(updatedLocations);
+      const updatedLocation = { ...existingLocation, last_used_at: now };
+      setCurrentLocation(updatedLocation);
+      saveCurrentLocationId(updatedLocation.id);
+      return updatedLocation;
+    }
+
+    // 位置不存在，创建新位置
     const newLocation = {
       id: Date.now(),
       name: location.name,
@@ -107,9 +130,11 @@ export const LocationProvider = ({ children }) => {
       newLocations = locations.map(loc => ({ ...loc, is_default: false }));
       newLocations.push(newLocation);
     } else {
+      // 添加到现有位置列表，保留所有历史位置
       newLocations = [...locations, newLocation];
     }
 
+    // 保存所有位置（包括历史位置）
     saveLocations(newLocations);
     
     if (newLocation.is_default || locations.length === 0) {
