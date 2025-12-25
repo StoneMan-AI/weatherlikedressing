@@ -283,7 +283,9 @@ const LocationSelector = () => {
           >
             私人定制
             {hasCustomProfile && (
-              <span className="custom-profile-badge" />
+              <span className="custom-profile-badge" title="已启用个性化设置">
+                ✓
+              </span>
             )}
           </button>
           <button

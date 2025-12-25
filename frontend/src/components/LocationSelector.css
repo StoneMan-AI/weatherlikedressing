@@ -70,25 +70,36 @@
 
 .custom-profile-badge {
   position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 8px;
-  height: 8px;
-  background-color: #FF4444;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
   border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 4px rgba(255, 68, 68, 0.6);
-  animation: pulse 2s ease-in-out infinite;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 6px rgba(74, 144, 226, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  color: #FFFFFF;
+  line-height: 1;
+  padding: 0;
+  animation: badgeAppear 0.3s ease-out;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
+@keyframes badgeAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0);
   }
   50% {
-    opacity: 0.8;
     transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
