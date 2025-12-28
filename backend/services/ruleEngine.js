@@ -204,6 +204,11 @@ class RuleEngine {
    * 根据舒适度分数获取穿衣推荐
    */
   getDressingRecommendation(comfortScore) {
+    // 验证layers配置
+    if (!this.layers || this.layers.length === 0) {
+      throw new Error('Layers configuration is empty or not initialized');
+    }
+
     // 从高到低找到第一个匹配的层级
     for (const layer of this.layers) {
       if (comfortScore >= layer.min_score) {
@@ -219,6 +224,11 @@ class RuleEngine {
    */
   getDressingRecommendationEnhanced(comfortScore, inputs, userProfile) {
     let baseLayer = this.getDressingRecommendation(comfortScore);
+    
+    // 验证baseLayer
+    if (!baseLayer) {
+      throw new Error('Failed to get base dressing layer');
+    }
     
     // 个性化调整：65+老人在ComfortScore < 0时提高一层保暖
     if (userProfile?.age_group === 'elderly_65_plus' && comfortScore < 0) {
@@ -815,6 +825,11 @@ class RuleEngine {
    */
   generateRecommendation(inputs, weatherData = null) {
     try {
+      // 验证规则引擎配置
+      if (!this.layers || this.layers.length === 0) {
+        throw new Error('Rule engine layers configuration is empty or not initialized');
+      }
+
       // 计算舒适度分数
       const scoreDetails = this.calculateComfortScore(inputs);
 
@@ -830,6 +845,11 @@ class RuleEngine {
         inputs,
         userProfile
       );
+
+      // 验证dressingLayer
+      if (!dressingLayer || !dressingLayer.layers) {
+        throw new Error('Invalid dressingLayer from getDressingRecommendationEnhanced');
+      }
 
       // 检查健康规则（增强版）
       const healthMessages = this.checkHealthRules(inputs);

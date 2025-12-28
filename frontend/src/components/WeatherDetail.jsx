@@ -42,7 +42,6 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
   // 获取今天24小时的数据（0时-23时）
   const todayHours = useMemo(() => {
     if (!hourly || hourly.length === 0) {
-      console.warn('WeatherDetail: No hourly data available');
       return [];
     }
     
@@ -158,14 +157,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
         return originalHour ? originalHour.timestamp : h.timestamp;
       }));
       
-      console.log('WeatherDetail: Today hours data prepared', {
-        totalHours: hours.length,
-        firstHour: hours[0]?.hour,
-        lastHour: hours[hours.length - 1]?.hour,
-        hourlyDataLength: hourly.length,
-        uniqueTempCount: uniqueTemps.size,
-        uniqueTimestampCount: uniqueTimestamps.size,
-        allTemps: hours.map(h => ({ 
+      // WeatherDetail: Today hours data prepared 
           hour: h.hour, 
           temp: h.temperature_c,
           originalTimestamp: sortedHourly.find(h2 => {
@@ -202,10 +194,7 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
   const currentHourIndex = useMemo(() => {
     const currentTime = getCurrentTimeInTimezone;
     const hour = currentTime.getHours();
-    console.log('WeatherDetail: Current hour index calculated', {
-      currentHour: hour,
-      currentTime: currentTime.toISOString()
-    });
+    // WeatherDetail: Current hour index calculated
     return hour;
   }, [getCurrentTimeInTimezone]);
 

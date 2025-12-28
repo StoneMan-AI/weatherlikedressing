@@ -33,8 +33,16 @@ try {
   const rulesConfig = loadRulesConfig();
   ruleEngine = new RuleEngine(rulesConfig);
   travelRecommendationService = new TravelRecommendationService(ruleEngine);
+  
+  // 验证规则引擎初始化
+  if (!ruleEngine.layers || ruleEngine.layers.length === 0) {
+    console.error('Rule engine initialized but layers configuration is empty');
+    throw new Error('Rule engine layers configuration is empty');
+  }
+  console.log(`Rule engine initialized successfully with ${ruleEngine.layers.length} layers`);
 } catch (error) {
   console.error('Failed to initialize rule engine:', error);
+  console.error('Error stack:', error.stack);
 }
 
 /**
@@ -167,13 +175,25 @@ router.post('/calculate', async (req, res) => {
       
       // 验证推荐结果
       if (!recommendation || !recommendation.comfort_score) {
+        console.error('Invalid recommendation result:', {
+          recommendation: recommendation,
+          hasComfortScore: !!recommendation?.comfort_score,
+          inputs: JSON.stringify(inputs),
+          weatherDataKeys: weatherData ? Object.keys(weatherData) : null
+        });
         throw new Error('Invalid recommendation result');
       }
     } catch (recommendationError) {
       console.error('Failed to generate recommendation:', recommendationError);
+      console.error('Error stack:', recommendationError.stack);
+      console.error('Inputs:', JSON.stringify(inputs, null, 2));
+      console.error('Weather data available:', !!weatherData);
+      console.error('Rule engine initialized:', !!ruleEngine);
+      console.error('Rule engine layers count:', ruleEngine?.layers?.length || 0);
       return res.status(500).json({ 
         error: '生成推荐失败，请稍后重试',
-        retryable: true 
+        retryable: true,
+        details: process.env.NODE_ENV === 'development' ? recommendationError.message : undefined
       });
     }
 
