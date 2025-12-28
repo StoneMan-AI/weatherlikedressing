@@ -229,7 +229,7 @@ const DRESSING_LAYERS = [
 ];
 
 /**
- * 根据舒适度分数获取穿衣推荐
+ * 根据舒适度分数获取穿衣推荐 
  */
 export function getDressingRecommendation(comfortScore) {
   // 找到匹配的推荐层级
