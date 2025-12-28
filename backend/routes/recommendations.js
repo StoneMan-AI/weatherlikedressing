@@ -174,10 +174,14 @@ router.post('/calculate', async (req, res) => {
       recommendation = ruleEngine.generateRecommendation(inputs, weatherData);
       
       // 验证推荐结果
-      if (!recommendation || !recommendation.comfort_score) {
+      // 检查 comfort_score 是否存在且为有效数字（包括0）
+      if (!recommendation || typeof recommendation.comfort_score !== 'number') {
         console.error('Invalid recommendation result:', {
           recommendation: recommendation,
-          hasComfortScore: !!recommendation?.comfort_score,
+          hasComfortScore: recommendation?.comfort_score !== undefined,
+          comfortScoreValue: recommendation?.comfort_score,
+          comfortScoreType: typeof recommendation?.comfort_score,
+          recommendationKeys: recommendation ? Object.keys(recommendation) : null,
           inputs: JSON.stringify(inputs),
           weatherDataKeys: weatherData ? Object.keys(weatherData) : null
         });
