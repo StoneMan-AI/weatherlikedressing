@@ -157,33 +157,9 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
         return originalHour ? originalHour.timestamp : h.timestamp;
       }));
       
-      // WeatherDetail: Today hours data prepared 
-          hour: h.hour, 
-          temp: h.temperature_c,
-          originalTimestamp: sortedHourly.find(h2 => {
-            const h2Time = new Date(h2.timestamp);
-            const targetTime = new Date(todayStart);
-            targetTime.setHours(h.hour);
-            return Math.abs(h2Time.getTime() - targetTime.getTime()) < 30 * 60 * 1000;
-          })?.timestamp || 'N/A'
-        })),
-        sampleTemps: hours.slice(0, 10).map(h => ({ 
-          hour: h.hour, 
-          temp: h.temperature_c,
-          timestamp: new Date(h.timestamp).toLocaleString('zh-CN', { timeZone: timezone })
-        })),
-        pastTemps: hours.slice(0, debugCurrentHourIndex + 1).map(h => ({ 
-          hour: h.hour, 
-          temp: h.temperature_c 
-        }))
-      });
-      
       // 如果所有温度都相同，发出警告
       if (uniqueTemps.size <= 2 && hours.length > 2) {
-        console.warn('WeatherDetail: Warning - Most temperatures are the same!', {
-          uniqueTemps: Array.from(uniqueTemps),
-          allTemps: hours.map(h => ({ hour: h.hour, temp: h.temperature_c }))
-        });
+        // WeatherDetail: Warning - Most temperatures are the same!
       }
     }
     
@@ -273,20 +249,12 @@ const WeatherDetail = ({ weatherData, timezone = 'Asia/Shanghai' }) => {
       
       // 调试信息
       if (key === 'temperature_c') {
-        console.log('WeatherDetail: Future path generated', {
-          futurePointsLength: futurePoints.length,
-          pathLength: path.length,
-          lastPoint: futurePoints[futurePoints.length - 1],
-          currentHourIndex: safeCurrentHourIndex
-        });
+        // WeatherDetail: Future path generated
       }
     } else if (!isPast && futurePoints.length === 1) {
       // 如果只有一个点（当前时间点），至少绘制一个点
       path = `M ${futurePoints[0].x} ${futurePoints[0].y} L ${futurePoints[0].x} ${futurePoints[0].y}`;
-      console.warn('WeatherDetail: Only one future point available', {
-        currentHourIndex: safeCurrentHourIndex,
-        totalPoints: points.length
-      });
+      // WeatherDetail: Only one future point available
     }
 
     return { path, points, currentPoint, range };
