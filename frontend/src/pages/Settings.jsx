@@ -5,6 +5,8 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { getOrCreateUserId } from '../utils/userId';
 import storageManager from '../utils/storage';
+import SuccessModal from '../components/SuccessModal';
+import ErrorModal from '../components/ErrorModal';
 import './Settings.css';
 
 const Settings = () => {
@@ -20,6 +22,14 @@ const Settings = () => {
     sensitivity: 'none',
     conditions: []
   });
+
+  // 成功弹框状态
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  
+  // 错误弹框状态
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // 从localStorage加载用户画像记录
   useEffect(() => {
@@ -274,16 +284,19 @@ const Settings = () => {
       // 触发自定义事件，通知其他组件更新
       window.dispatchEvent(new CustomEvent('customProfileUpdated'));
       
-      alert('用户画像更新成功！系统将根据您的个人属性提供个性化穿衣建议。');
+      // 显示成功弹框
+      setSuccessMessage('系统将为您的个人属性提供更精确的个性化穿衣建议。');
+      setShowSuccessModal(true);
       // 停留在当前页面，不跳转
     },
     onError: (error) => {
       console.error('Failed to update profile:', error);
       if (error.response?.status === 401) {
-        alert('认证失败，请重新登录');
+        setErrorMessage('认证失败，请重新登录');
       } else {
-        alert('保存失败，请重试');
+        setErrorMessage('保存失败，请重试');
       }
+      setShowErrorModal(true);
     }
   });
 
@@ -385,7 +398,9 @@ const Settings = () => {
       // 触发自定义事件，通知其他组件更新
       window.dispatchEvent(new CustomEvent('customProfileUpdated'));
       
-      alert('设置已应用并保存成功！');
+      // 显示成功弹框
+      setSuccessMessage('设置已应用并保存成功！');
+      setShowSuccessModal(true);
       
       // 滚动到表单顶部，让用户看到已应用设置
       const formElement = document.querySelector('.settings-form');
@@ -395,15 +410,29 @@ const Settings = () => {
     } catch (error) {
       console.error('Failed to apply profile:', error);
       if (error.response?.status === 401) {
-        alert('认证失败，请重新登录');
+        setErrorMessage('认证失败，请重新登录');
       } else {
-        alert('保存失败，请重试');
+        setErrorMessage('保存失败，请重试');
       }
+      setShowErrorModal(true);
     }
   };
 
   return (
     <div className="settings-page container">
+      {showSuccessModal && (
+        <SuccessModal
+          message={successMessage}
+          onClose={() => setShowSuccessModal(false)}
+          duration={3000}
+        />
+      )}
+      {showErrorModal && (
+        <ErrorModal
+          message={errorMessage}
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
       <div className="settings-header">
         <button 
           className="btn-back"
