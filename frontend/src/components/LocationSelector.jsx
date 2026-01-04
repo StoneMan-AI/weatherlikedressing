@@ -211,17 +211,7 @@ const LocationSelector = () => {
       return;
     }
     setConfirmMessage('确定要删除这个位置吗？');
-    setConfirmCallback(() => () => {
-      deleteLocation(id);
-      setShowConfirmModal(false);
-    });
-    setShowConfirmModal(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (confirmCallback) {
-      confirmCallback();
-    }
+    setConfirmCallback(() => {
       deleteLocation(id);
       // 如果删除的是当前选中的位置，切换到第一个位置
       if (currentLocation?.id === id) {
@@ -230,6 +220,14 @@ const LocationSelector = () => {
           setCurrentLocation(remainingLocations[0]);
         }
       }
+      setShowConfirmModal(false);
+    });
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (confirmCallback) {
+      confirmCallback();
     }
   };
 
