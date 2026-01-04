@@ -75,6 +75,16 @@
   position: relative;
 }
 
+/* Android webview特殊处理：确保日期选择器对话框中的按钮可见 */
+@supports (-webkit-appearance: none) {
+  /* Android webview检测 */
+  .date-input {
+    /* 移除可能影响日期选择器对话框的样式 */
+    -webkit-appearance: textfield !important;
+    appearance: textfield !important;
+  }
+}
+
 /* 移动端webview中日期控件的原生按钮样式修复 */
 .date-input::-webkit-calendar-picker-indicator {
   background-color: rgba(255, 255, 255, 0.8) !important;
