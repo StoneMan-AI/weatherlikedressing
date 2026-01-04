@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { useLocationContext } from '../contexts/LocationContext';
 import { useAuth } from '../contexts/AuthContext';
+import InfoModal from './InfoModal';
+import ConfirmModal from './ConfirmModal';
 import './LocationSelector.css';
 
 const LocationSelector = () => {
@@ -26,6 +28,14 @@ const LocationSelector = () => {
   const [hasCustomProfile, setHasCustomProfile] = useState(false);
   const dropdownRef = useRef(null);
   const triggerRef = useRef(null);
+  
+  // 弹框状态
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [infoMessage, setInfoMessage] = useState('');
+  const [infoType, setInfoType] = useState('info');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState('');
+  const [confirmCallback, setConfirmCallback] = useState(null);
 
   // 检查用户是否设置了私人定制
   const checkCustomProfile = () => {
@@ -62,7 +72,9 @@ const LocationSelector = () => {
   const handleSearchCity = async (e) => {
     e.preventDefault();
     if (!cityName.trim()) {
-      alert('请输入城市名称');
+      setInfoMessage('请输入城市名称');
+      setInfoType('warning');
+      setShowInfoModal(true);
       return;
     }
 
@@ -86,7 +98,9 @@ const LocationSelector = () => {
       setShowAddForm(false);
       setSearchResults(null);
     } catch (error) {
-      alert('未找到该城市，你可以换成地级市试试。');
+      setInfoMessage('未找到该城市，你可以换成地级市试试。');
+      setInfoType('warning');
+      setShowInfoModal(true);
       setSearchResults(null);
     } finally {
       setSearching(false);
@@ -191,10 +205,23 @@ const LocationSelector = () => {
   const handleDeleteLocation = (e, id) => {
     e.stopPropagation();
     if (locations.length <= 1) {
-      alert('至少需要保留一个位置');
+      setInfoMessage('至少需要保留一个位置');
+      setInfoType('warning');
+      setShowInfoModal(true);
       return;
     }
-    if (confirm('确定要删除这个位置吗？')) {
+    setConfirmMessage('确定要删除这个位置吗？');
+    setConfirmCallback(() => () => {
+      deleteLocation(id);
+      setShowConfirmModal(false);
+    });
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (confirmCallback) {
+      confirmCallback();
+    }
       deleteLocation(id);
       // 如果删除的是当前选中的位置，切换到第一个位置
       if (currentLocation?.id === id) {
@@ -208,6 +235,21 @@ const LocationSelector = () => {
 
   return (
     <div className="location-selector">
+      {showInfoModal && (
+        <InfoModal
+          message={infoMessage}
+          type={infoType}
+          onClose={() => setShowInfoModal(false)}
+          duration={0}
+        />
+      )}
+      {showConfirmModal && (
+        <ConfirmModal
+          message={confirmMessage}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setShowConfirmModal(false)}
+        />
+      )}
       <div className="location-header">
         <div className="location-title-section">
           <h2 className="location-title">

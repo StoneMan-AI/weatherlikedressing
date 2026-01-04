@@ -7,6 +7,7 @@ import DailyForecast from '../components/DailyForecast';
 import LocationSelector from '../components/LocationSelector';
 import HealthAlerts from '../components/HealthAlerts';
 import TravelRecommendation from '../components/TravelRecommendation';
+import InfoModal from '../components/InfoModal';
 import { useLocationContext } from '../contexts/LocationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { recalculateRecommendation, canUseLocalCalculation, calculateComfortScore, getDressingRecommendation, generateDetailedReason } from '../utils/recommendationCalculator';
@@ -374,9 +375,9 @@ const Home = () => {
         
         // 只在最后一次失败时显示错误提示
         if (retryCount === 0 || !isRetryable) {
-          // 可以显示更友好的错误提示，而不是alert
-          // 这里暂时保留alert，但可以后续改为Toast组件
-          alert(errorMessage);
+          setInfoMessage(errorMessage);
+          setInfoType('error');
+          setShowInfoModal(true);
         }
       }
     } finally {
@@ -429,7 +430,9 @@ const Home = () => {
       setIsViewingTomorrow(true);
     } catch (error) {
       console.error('Failed to fetch tomorrow recommendation:', error);
-      alert('获取明天的穿衣建议失败，请稍后重试');
+      setInfoMessage('获取明天的穿衣建议失败，请稍后重试');
+      setInfoType('error');
+      setShowInfoModal(true);
     } finally {
       setRecommendationLoading(false);
     }
@@ -772,6 +775,14 @@ const Home = () => {
 
   return (
     <div className="home">
+      {showInfoModal && (
+        <InfoModal
+          message={infoMessage}
+          type={infoType}
+          onClose={() => setShowInfoModal(false)}
+          duration={0}
+        />
+      )}
       <LocationSelector />
 
       {currentLocation && (

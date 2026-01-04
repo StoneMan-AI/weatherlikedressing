@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import InfoModal from '../components/InfoModal';
 import './Products.css';
 
 const Products = () => {
   const { user } = useAuth();
   const [page, setPage] = useState(1);
   const [category, setCategory] = useState('');
+  
+  // 弹框状态
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [infoMessage, setInfoMessage] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['products', page, category, user?.country_code],
@@ -21,7 +26,8 @@ const Products = () => {
 
   const addToCart = (product) => {
     // 简单的购物车功能，这里可以后续扩展
-    alert(`已将 ${product.title_cn || product.title_en} 加入购物车`);
+    setInfoMessage(`已将 ${product.title_cn || product.title_en} 加入购物车`);
+    setShowInfoModal(true);
   };
 
   if (isLoading) {
@@ -34,6 +40,14 @@ const Products = () => {
 
   return (
     <div className="products-page container">
+      {showInfoModal && (
+        <InfoModal
+          message={infoMessage}
+          type="success"
+          onClose={() => setShowInfoModal(false)}
+          duration={2000}
+        />
+      )}
       <h1 className="page-title">商品商城</h1>
 
       {user?.country_code === 'CN' ? (
