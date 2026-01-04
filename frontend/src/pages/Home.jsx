@@ -98,6 +98,11 @@ const Home = () => {
   const [initializing, setInitializing] = useState(true);
   const [isViewingTomorrow, setIsViewingTomorrow] = useState(false);
   
+  // 弹框状态
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [infoMessage, setInfoMessage] = useState('');
+  const [infoType, setInfoType] = useState('error');
+  
   // 使用 ref 跟踪初始化状态，避免重复执行
   const initializationRef = useRef({ initialized: false });
   
