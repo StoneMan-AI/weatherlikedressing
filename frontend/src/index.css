@@ -235,6 +235,49 @@ textarea {
   outline: none !important;
 }
 
+/* 移动端webview中日期控件的原生按钮样式修复 */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: #1C1C1E !important;
+  cursor: pointer;
+  opacity: 1 !important;
+  padding: 4px;
+  border-radius: 4px;
+  margin-right: 4px;
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  background-color: rgba(255, 255, 255, 1) !important;
+  background: rgba(255, 255, 255, 1) !important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:active,
+input[type="time"]::-webkit-calendar-picker-indicator:active {
+  background-color: rgba(74, 144, 226, 0.8) !important;
+  background: rgba(74, 144, 226, 0.8) !important;
+}
+
+/* 清除按钮样式（移动端） */
+input[type="date"]::-webkit-clear-button,
+input[type="time"]::-webkit-clear-button {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: #1C1C1E !important;
+  opacity: 1 !important;
+  cursor: pointer;
+}
+
+input[type="date"]::-webkit-clear-button:hover,
+input[type="time"]::-webkit-clear-button:hover {
+  background-color: rgba(255, 255, 255, 1) !important;
+  background: rgba(255, 255, 255, 1) !important;
+}
+
 /* 复选框和单选框特殊处理 */
 input[type="checkbox"],
 input[type="radio"] {
