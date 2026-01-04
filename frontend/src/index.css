@@ -18,9 +18,8 @@
    ============================================ */
 
 /* 全局重置所有表单控件的 Safari 默认样式 */
-/* 注意：排除日期和时间输入框，避免影响Android webview的日期选择器对话框 */
 button,
-input:not([type="date"]):not([type="time"]),
+input,
 select,
 textarea {
   /* 移除所有默认样式 */
@@ -43,13 +42,12 @@ textarea {
 }
 
 /* 所有状态的背景色设置 */
-/* 排除日期和时间输入框 */
 button:hover,
 button:focus,
 button:active,
-input:not([type="date"]):not([type="time"]):hover,
-input:not([type="date"]):not([type="time"]):focus,
-input:not([type="date"]):not([type="time"]):active,
+input:hover,
+input:focus,
+input:active,
 select:hover,
 select:focus,
 select:active,
@@ -63,7 +61,7 @@ textarea:active {
 }
 
 button:disabled,
-input:not([type="date"]):not([type="time"]):disabled,
+input:disabled,
 select:disabled,
 textarea:disabled {
   background-color: rgba(74, 144, 226, 0.15) !important;
@@ -203,12 +201,13 @@ button {
 }
 
 /* 输入框样式 - iPhone风格 */
-/* 普通输入框 */
 .input,
 input[type="text"],
 input[type="email"],
 input[type="password"],
 input[type="number"],
+input[type="date"],
+input[type="time"],
 input[type="checkbox"],
 input[type="radio"],
 textarea {
@@ -236,31 +235,6 @@ textarea {
   outline: none !important;
 }
 
-/* 日期和时间输入框 - 特殊处理，避免影响Android webview的日期选择器对话框 */
-input[type="date"],
-input[type="time"] {
-  width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  padding-right: 40px; /* 为日历图标留出空间 */
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  border-radius: var(--border-radius);
-  font-size: 16px;
-  transition: all 0.3s ease;
-  background-color: rgba(255, 255, 255, 0.15) !important;
-  background: rgba(255, 255, 255, 0.15) !important;
-  color: #FFFFFF !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  /* Android webview兼容：使用textfield外观，避免影响日期选择器对话框 */
-  -webkit-appearance: textfield !important;
-  appearance: textfield !important;
-  -moz-appearance: textfield !important;
-  /* 防止 Safari 覆盖背景色 */
-  -webkit-backface-visibility: hidden !important;
-  -webkit-transform: translateZ(0) !important;
-  cursor: pointer;
-}
-
 /* 移动端webview中日期控件的原生按钮样式修复 */
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
@@ -274,26 +248,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   margin-right: 4px;
   filter: none !important;
   -webkit-filter: none !important;
-}
-
-/* Android webview特殊处理：日期选择器对话框样式 */
-/* Android webview中的日期选择器是独立对话框，需要确保按钮可见 */
-@media screen and (-webkit-min-device-pixel-ratio: 0) {
-  /* Android webview检测 */
-  input[type="date"],
-  input[type="time"] {
-    /* 使用textfield外观，避免影响日期选择器对话框 */
-    -webkit-appearance: textfield !important;
-    appearance: textfield !important;
-  }
-  
-  /* 确保日期选择器对话框中的按钮不受全局样式影响 */
-  input[type="date"]:focus,
-  input[type="time"]:focus {
-    /* 移除可能影响对话框的样式 */
-    background-color: rgba(255, 255, 255, 0.15) !important;
-    background: rgba(255, 255, 255, 0.15) !important;
-  }
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator:hover,

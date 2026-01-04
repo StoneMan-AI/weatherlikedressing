@@ -56,33 +56,16 @@
 
 .date-input {
   padding: var(--spacing-sm) var(--spacing-md);
-  padding-right: 40px; /* 为日历图标留出空间 */
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   font-size: 16px;
-  background-color: rgba(255, 255, 255, 0.15) !important;
-  background: rgba(255, 255, 255, 0.15) !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
   color: var(--text-primary) !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   cursor: pointer;
   transition: all 0.3s ease;
-  -webkit-appearance: none !important;
-  appearance: none !important;
-  -moz-appearance: none !important;
-  -webkit-backface-visibility: hidden !important;
-  -webkit-transform: translateZ(0) !important;
-  position: relative;
-}
-
-/* Android webview特殊处理：确保日期选择器对话框中的按钮可见 */
-@supports (-webkit-appearance: none) {
-  /* Android webview检测 */
-  .date-input {
-    /* 移除可能影响日期选择器对话框的样式 */
-    -webkit-appearance: textfield !important;
-    appearance: textfield !important;
-  }
 }
 
 /* 移动端webview中日期控件的原生按钮样式修复 */
@@ -424,28 +407,6 @@
 
   .date-input-group {
     width: 100%;
-  }
-
-  .date-input {
-    padding-right: 45px; /* 移动端为日历图标留出更多空间 */
-    font-size: 16px; /* 防止iOS自动缩放 */
-  }
-
-  /* 移动端webview中日期控件的按钮样式增强 */
-  .date-input::-webkit-calendar-picker-indicator {
-    width: 24px;
-    height: 24px;
-    background-color: rgba(255, 255, 255, 0.9) !important;
-    background: rgba(255, 255, 255, 0.9) !important;
-    border-radius: 4px;
-    padding: 2px;
-  }
-
-  .date-input::-webkit-clear-button {
-    width: 20px;
-    height: 20px;
-    background-color: rgba(255, 255, 255, 0.9) !important;
-    background: rgba(255, 255, 255, 0.9) !important;
   }
 
   .btn-generate-travel {
