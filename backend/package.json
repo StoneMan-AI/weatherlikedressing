@@ -1,7 +1,7 @@
 {
   "name": "dressing-app-backend",
   "version": "1.0.0",
-  "description": "穿衣指导应用后端API",
+  "description": "穿对了应用后端API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

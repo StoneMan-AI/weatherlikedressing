@@ -1,5 +1,5 @@
 /**
- * 穿衣指导应用后端服务器
+ * 穿对了应用后端服务器
  */
 
 const express = require('express');
