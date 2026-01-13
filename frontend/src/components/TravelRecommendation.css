@@ -253,6 +253,25 @@
   font-size: 48px;
   margin-bottom: var(--spacing-sm);
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+}
+
+.clothing-icon-image {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+.clothing-icon-emoji {
+  font-size: 48px;
+  line-height: 1;
+  display: inline-block;
 }
 
 .item-name {
